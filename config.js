@@ -12,6 +12,6 @@ window.APP_CONFIG = {
   // Codes from email-code-helper.html. Real email addresses never go in this file.
   household: [
     { emailCode: '8aadb3be033b560ed64b7eb1e3ee6eb267458b4bcb948e1f95b025d889250aca', name: 'Karl', preset: 'karl' },
-    { emailCode: 'PASTE_JEN_EMAIL_CODE', name: 'Jen', preset: 'default' }
+    { emailCode: '305a7cb59e10d46c6e83c2f3b0ceffea7ec71d9e221b35330042ee4fe5a0f19b', name: 'Jen', preset: 'default' }
   ]
 };
