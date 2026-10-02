@@ -2,7 +2,7 @@
 // These values are safe to publish; access to your data is controlled by the Firestore rules.
 window.APP_CONFIG = {
   firebase: {
-    apiKey: 'AIzaSyBwKc8dgFJJLJgXxArIsu5sPkUEDQ3Csu4',
+    apiKey: 'AIzaSyBwKc8dgFJJlJgXxArIsu5sPkUEDQ3Csu4',
     authDomain: 'personal-trainer-narad.firebaseapp.com',
     projectId: 'personal-trainer-narad',
     storageBucket: 'personal-trainer-narad.firebasestorage.app',
