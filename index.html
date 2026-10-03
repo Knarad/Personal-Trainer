@@ -427,6 +427,20 @@ const R={
   hbbowls:{cat:'breakfast',tag:'bfast',name:'Sausage, Egg, and Hash Brown Breakfast Bowls',url:'https://stayfitmom.com/breakfast-bowls/',serving:'1 bowl',yield:5,kcal:318,p:29,c:36,f:8,step:0.5,note:'Hash browns, turkey sausage, egg whites, peppers, and bacon bits. Reheat 2 to 3 minutes.'},
   sweetpotbowls:{cat:'breakfast',tag:'bfast',name:'Sweet Potato, Sausage, and Egg Breakfast Bowls',url:'https://www.hauteandhealthyliving.com/meal-prep-breakfast-bowls/',serving:'1 bowl',yield:6,kcal:472,p:25,c:35,f:26,step:0.5,note:'Roasted sweet potatoes, peppers, onion, and turkey sausage with scrambled eggs and cheddar. Freeze any not eaten within 3 days.'},
 
+  // ===== Added Oct 2026: slow cooker =====
+  bbqbeef:{cat:'main',tag:'comfort',slow:1,name:'Slow Cooked Barbecue Beef',url:EB+'/2011/04/slow-cooked-barbecue-beef.html',serving:'1/2 cup',yield:9,kcal:200,p:23,c:18,f:4,step:1,side:'bun',note:'Tangy shredded barbecue beef from Emily\u2019s mom. Great on a bun, over a baked potato, or in tortillas.'},
+  balsamicbeef:{cat:'main',tag:'comfort',slow:1,name:'Slow Cooker Balsamic Beef',url:EB+'/2012/12/slow-cooker-balsamic-beef.html',serving:'2/3 cup (3.5 oz beef)',yield:8,kcal:227,p:36,c:4,f:7,step:0.5,side:'mash',note:'Dump-and-go: no browning. Tender beef in a tangy balsamic jus. Great with mashed potatoes.'},
+  dumpstew:{cat:'main',tag:'soup',slow:1,name:'Dump-and-Go Slow Cooker Beef Stew',url:'https://www.graceandgoodeats.com/slow-cooker-beef-stew/',serving:'1/6 of the pot',yield:6,kcal:379,p:37,c:36,f:9,step:0.5,note:'Beef, potatoes, and carrots in a tomato and barbecue broth. Almost no prep, and it can be bagged and frozen ahead without the potatoes.'},
+  honeygarlic:{cat:'main',tag:'asian',slow:1,name:'Slow Cooker Honey Garlic Chicken',url:'https://www.thediaryofarealhousewife.com/slow-cooker-honey-garlic-chicken/',serving:'1/6 of the chicken',yield:6,kcal:247,p:33,c:18,f:3,step:0.5,side:'rice',note:'Six ingredients and 5 minutes of prep. Shred it and serve over rice.'},
+  crwhitechili:{cat:'main',tag:'soup',slow:1,name:'Creamy White Chicken Chili',url:'https://thecookinchicks.com/creamy-white-chicken-chili/',serving:'1/8 of the pot',yield:8,kcal:322,p:23,c:37,f:10,step:1,note:'Chicken, white beans, corn, and green chiles finished with a little cream cheese. Freezes well.'},
+  italianbeef:{cat:'main',tag:'italian',slow:1,name:'Crock Pot Italian Beef Sandwiches',url:'https://www.foxvalleyfoodie.com/crock-pot-italian-beef-sandwiches/',serving:'1/10 of the beef',yield:10,kcal:261,p:41,c:1,f:9,step:0.5,side:'bun',note:'Chicago-style shredded beef with pepperoncini and Italian seasoning. Dump everything in and walk away. Serve on a bun with some of the juice.'},
+  chxnoodle:{cat:'main',tag:'soup',slow:1,name:'Slow Cooker Chicken Noodle Soup',url:'https://myshapeyourfutureok.com/wprm_print/chicken-noodle-soup-2',serving:'1/12 of the pot (about 1 1/2 cups)',yield:12,kcal:160,p:19,c:15,f:3,step:1,side:'bun',note:'Classic and light: chicken, vegetables, and wide egg noodles in a water-based broth. Big batch. Noodles soften in the fridge, so add a splash of water when reheating.'},
+
+  // ===== Added Oct 2026: three more slow cooker recipes =====
+  potroast:{cat:'main',tag:'comfort',slow:1,name:'Slow Cooker Pot Roast',url:'https://cookingwithcurls.com/2014/08/18/slow-cooker-pot-roast/',serving:'1/10 of the pot',yield:10,kcal:332,p:29,c:14,f:15,step:1,note:'Chuck roast with potatoes and carrots in a savory broth. The recipe\u2019s optional dry red wine is swapped here for extra beef broth.'},
+  crchxpotpie:{cat:'main',tag:'comfort',slow:1,name:'Slow Cooker Chicken Pot Pie Soup',url:'https://reciperunner.com/slow-cooker-chicken-pot-pie-soup/',serving:'1/6 of the pot (about 2 cups)',yield:6,kcal:331,p:29,c:38,f:7,step:1,note:'Chicken, potatoes, peas, and carrots in a creamy broth thickened with milk and cornstarch, with no canned soup. A biscuit or roll on top is not included in the numbers.'},
+  crbeefbroc:{cat:'main',tag:'asian',slow:1,name:'Slow Cooker Beef and Broccoli',url:EB+'/2013/01/slow-cooker-beef-broccoli.html',serving:'1 cup',yield:4,kcal:305,p:29,c:20,f:11,step:0.5,side:'rice',note:'Thin-sliced beef and broccoli in a sweet soy glaze, lighter than takeout. Serve over rice.'},
+
   // ===== Grab-and-go lunches (no cooking; label values) =====
   grabsnackbox:{cat:'grab',tag:'grab',name:'Lunchmeat, Cheese, and Crackers Box',url:'',serving:'1 lunch',yield:null,kcal:455,p:26,c:55,f:16,step:1,note:'Pack it the night before.'},
   grabturkeysand:{cat:'grab',tag:'grab',name:'Turkey Sandwich and a Bag of Chips',url:'',serving:'1 lunch',yield:null,kcal:505,p:30,c:47,f:22,step:1,note:'Pack the sandwich the night before; keep the chips separate so the bag stays crunchy.'},
@@ -435,13 +449,24 @@ const R={
   grabpbj:{cat:'grab',tag:'grab',name:'PB and J with String Cheese',url:'',serving:'1 lunch',yield:null,kcal:480,p:22,c:49,f:24,step:1,note:'Pack it the night before.'},
   grabwrap:{cat:'grab',tag:'grab',name:'Turkey Ranch Wrap with Baby Carrots',url:'',serving:'1 lunch',yield:null,kcal:505,p:29,c:54,f:20,step:1,note:'Roll it the night before and wrap it tightly in foil.'},
   grabsalamibox:{cat:'grab',tag:'grab',name:'Salami, Cheese, and Crackers Box',url:'',serving:'1 lunch',yield:null,kcal:454,p:18,c:55,f:20,step:1,note:'Pack it the night before.'},
+  grabyogurt:{cat:'grab',tag:'grab',name:'Greek Yogurt Parfait with Almonds',url:'',serving:'1 lunch',yield:null,kcal:395,p:29,c:44,f:12,step:1,note:'Pack the granola separately so it stays crunchy.'},
+  grabtuna:{cat:'grab',tag:'grab',name:'Tuna Salad with Crackers and an Apple',url:'',serving:'1 lunch',yield:null,kcal:390,p:26,c:53,f:10,step:1,note:'Mix the tuna the night before.'},
+  grabchxsalad:{cat:'grab',tag:'grab',name:'Chicken Salad Sandwich with Grapes',url:'',serving:'1 lunch',yield:null,kcal:420,p:31,c:58,f:9,step:1,note:'Use leftover or rotisserie chicken. Mix the night before.'},
+  grabhummus:{cat:'grab',tag:'grab',name:'Hummus, Pita, and Veggie Box',url:'',serving:'1 lunch',yield:null,kcal:450,p:18,c:57,f:18,step:1,note:'Pack it the night before.'},
+  grabcaesar:{cat:'grab',tag:'grab',name:'Chicken Caesar Wrap',url:'',serving:'1 lunch',yield:null,kcal:420,p:27,c:41,f:16,step:1,note:'Use ready-to-eat grilled chicken strips. Roll it the night before.'},
+  grabcottage:{cat:'grab',tag:'grab',name:'Cottage Cheese, Pineapple, and Crackers',url:'',serving:'1 lunch',yield:null,kcal:485,p:32,c:55,f:18,step:1,note:'Pack it the night before.'},
   grabeggbox:{cat:'grab',tag:'grab',name:'Hard-Boiled Egg Protein Box',url:'',serving:'1 lunch',yield:null,kcal:444,p:23,c:49,f:20,step:1,note:'Hard-boil the week\u2019s eggs on Sunday.'},
 
   buffsalad:{cat:'main',tag:'apps',name:'Buffalo Chicken Salad',url:EB+'/2021/07/buffalo-chicken-salad.html',serving:'3/4 cup',yield:6,kcal:204,p:18,c:14,f:8,step:0.5,side:'bun',note:'Great on a roll or in a wrap for lunch.'},
 };
 const TAGS={bfast:'Breakfast',pasta:'Pasta',pizza:'Pizza-style',mexican:'Mexican',asian:'Asian rice and chicken',chicken:'Chicken',comfort:'Comfort food',pork:'Pulled pork',soup:'Soups and chili',apps:'Appetizers and handhelds',italian:'Italian',grab:'Grab-and-go lunches'};
 const POOLS={};for(const k in R){const t=R[k].tag;(POOLS[t]=POOLS[t]||[]).push(k);}POOLS.breakfast=POOLS.bfast;
-const SIDES={rice:{name:'1 cup cooked rice',kcal:205,p:4,c:45,f:0},potato:{name:'8 oz baked or roasted potato',kcal:180,p:5,c:41,f:0},pasta:{name:'2 oz dry pasta, cooked',kcal:200,p:7,c:42,f:1},fruit:{name:'1 banana or apple',kcal:100,p:1,c:26,f:0},eggwhites:{name:'1 cup liquid egg whites, scrambled',kcal:120,p:26,c:2,f:0},bun:{name:'1 whole-wheat bun',kcal:140,p:6,c:24,f:2},tortillas:{name:'2 small flour tortillas',kcal:180,p:5,c:30,f:5}};
+/* Slow cooker recipes: a filter that cuts across the cuisine categories, and the midweek cook's go-to every other week. */
+const SLOW=new Set(['salsachicken','stenchiladas','sttacos','skinnyteriyaki','stuffing','ebpork','stpork','sttacochili','stcarnitas','rfwlbuffchili']);
+const isSlow=k=>SLOW.has(k)||!!(R[k]&&R[k].slow);
+POOLS.slow=Object.keys(R).filter(k=>R[k].cat==='main'&&isSlow(k));
+const tagMatch=(k,tag)=>!tag||(tag==='slow'?isSlow(k):R[k].tag===tag);
+const SIDES={rice:{name:'1 cup cooked rice',kcal:205,p:4,c:45,f:0},potato:{name:'8 oz baked or roasted potato',kcal:180,p:5,c:41,f:0},pasta:{name:'2 oz dry pasta, cooked',kcal:200,p:7,c:42,f:1},fruit:{name:'1 banana or apple',kcal:100,p:1,c:26,f:0},eggwhites:{name:'1 cup liquid egg whites, scrambled',kcal:120,p:26,c:2,f:0},mash:{name:'1 cup mashed potatoes, made with milk and butter',kcal:237,p:4,c:35,f:9},mac:{name:'3/4 cup boxed macaroni and cheese, prepared',kcal:260,p:8,c:36,f:9},corn:{name:'1 cup corn, frozen or canned, with a little butter',kcal:150,p:4,c:30,f:3},bun:{name:'1 whole-wheat bun',kcal:140,p:6,c:24,f:2},tortillas:{name:'2 small flour tortillas',kcal:180,p:5,c:30,f:5}};
 // Grazing snacks with typical label values
 const QUICK=[
   {name:'Handful of pepperoni (1 oz, about 14 slices)',kcal:140,p:5,c:0,f:13},
@@ -460,6 +485,17 @@ const QUICK=[
   {name:'Chips (1 oz, about 15 chips)',kcal:150,p:2,c:15,f:10}
 ];
 
+const SIDE_OPTS=[['rice','Rice'],['potato','Baked or roasted potato'],['mash','Mashed potatoes'],['mac','Mac and cheese'],['corn','Corn'],['pasta','Pasta'],['bun','Whole-wheat bun'],['tortillas','Tortillas'],['none','No starch side']];
+const SIDE_SHOP={rice:n=>'Rice: '+fmtS(n)+' servings, about '+fmtS(Math.ceil(n/3*2)/2)+' cups dry',potato:n=>'Potatoes for baking or roasting: '+fmtS(n)+' servings, about '+fmtS(Math.ceil(n)/2)+' lb',
+  mash:n=>'Mashed potatoes: '+fmtS(n)+' servings. Buy about '+fmtS(Math.ceil(n)/2)+' lb potatoes, '+fmtS(Math.ceil(n*2/8*4)/4)+' cups milk, and '+fmtS(Math.ceil(n/2))+' tbsp butter',
+  mac:n=>'Boxed macaroni and cheese: '+fmtS(n)+' servings, '+Math.ceil(n/4)+' box'+(Math.ceil(n/4)>1?'es':'')+' (7.25 oz), plus the milk and butter the box calls for',
+  corn:n=>'Corn, frozen or canned: '+fmtS(n)+' servings, about '+fmtS(Math.ceil(n))+' cups (a 12 oz bag or a 15 oz can is about 2 1/2 cups)',
+  pasta:n=>'Pasta for sides: '+fmtS(n)+' servings, about '+fmtS(Math.ceil(n*2/16*4)/4)+' lb dry',bun:n=>'Whole-wheat buns: '+Math.ceil(n),tortillas:n=>'Small flour tortillas: '+Math.ceil(n*2),
+  fruit:n=>'Bananas or apples for breakfast: '+Math.ceil(n),eggwhites:n=>'Liquid egg whites: '+fmtS(n)+' cups'};
+function sideFor(key,date){const r=R[key];if(!r)return null;if(date&&r.cat==='main'){const o=S.house&&S.house.sides&&S.house.sides[monday(date)]&&S.house.sides[monday(date)][key];if(o==='none')return null;if(o&&SIDES[o])return o;}return r.side||null;}
+function sideCounts(wk){const o={},ppl=eaters();for(const c of prepCells(wk)){if(!c.key)continue;const sd=sideFor(c.key,c.date);if(!sd)continue;for(const p of ppl)if(eatsCell(p,c,wk))o[sd]=(o[sd]||0)+1;}return o;}
+function sideSelect(key,wk){const cur=(S.house.sides&&S.house.sides[wk]&&S.house.sides[wk][key])||'',def=R[key].side;
+  return '<label class="f" style="min-width:180px">Side<select data-side="'+key+'">'+'<option value=""'+(!cur?' selected':'')+'>'+(def?'Recipe default: '+esc((SIDE_OPTS.find(x=>x[0]===def)||[0,def])[1]):'Recipe default: none')+'</option>'+SIDE_OPTS.map(([v,l])=>'<option value="'+v+'"'+(cur===v?' selected':'')+'>'+esc(l)+'</option>').join('')+'</select></label>';}
 const VEG={name:'1 1/2 cups green vegetables or a side salad with light dressing',kcal:50,p:3,c:9,f:1};
 const SNACKS=[
   {needs:['whey','apples','string','almonds'],name:'Protein shake, apple, and string cheese',items:['1 scoop whey protein with water','1 apple','1 string cheese','10 almonds'],kcal:365,p:34,c:32,f:14},
@@ -490,7 +526,7 @@ function eveningPool(){const p=EVENING.filter(x=>likesYogurt()||!hasYogurt(x));r
 const SLICE={kcal:300,p:13,c:34,f:12};
 const PIZZA={fixed:'pizza',name:'Pizza Tuesday at the in-laws',items:['Plan on 3 slices','Fill the rest of the plate with salad and eat it first','Water or diet soda to drink'],kcal:3*SLICE.kcal+80,p:3*SLICE.p+2,c:3*SLICE.c+8,f:3*SLICE.f+4,prep:'A fourth or fifth slice is not a failure. Log the real number and the weekly budget spreads it across the rest of the week.'};
 const STAPLES=[
-  {sec:'Sides for chicken and meatloaf nights',items:['Rice','Potatoes','Pasta','Frozen broccoli and green beans','Salad greens and light dressing']},
+  {sec:'Vegetables for lunches and dinners',items:['Frozen broccoli and green beans','Salad greens and light dressing']},
   {sec:'Prep supplies',items:['Snack bags for pre-portioning','Meal-prep containers with lids','Freezer bags for Thursday and Friday portions','Food scale']}
 ];
 
@@ -552,7 +588,7 @@ const DEFAULT_SCHED={wake:'06:00',breakfast:'06:45',leave:'',lunch:'12:00',snack
   pizzaTue:true,pizzaTime:'18:15',monLate:false,monWorkout:'18:00',monDinner:'18:50',friSkate:false,friDinner:'18:00',deskBreaks:false,sundayPrep:true};
 
 /* =============== State =============== */
-const S={tm:{restEnd:0,restLen:90},autoRest:true,recOpen:{},stepsDone:{},salad:{t:{},d:1},reportDays:0,profile:null,days:{},house:null,shared:{},view:'today',viewing:null,date:null,menuWeek:null,uid:null,user:null,sync:'cloud',openCustom:null,ready:false};
+const S={tm:{restEnd:0,restLen:90},autoRest:true,recOpen:{},salad:{t:{},d:1},reportDays:0,profile:null,days:{},house:null,shared:{},view:'today',viewing:null,date:null,menuWeek:null,uid:null,user:null,sync:'cloud',openCustom:null,ready:false};
 const CFG=window.APP_CONFIG||{};
 function sha256Hex(str){
   const b=new TextEncoder().encode(str),K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
@@ -575,7 +611,7 @@ function defaultProfile(name,preset){const k=preset==='karl';
   return {v:3,name:name||'Me',sex:k?'male':'female',age:k?33:30,heightIn:k?70:65,startDate:k&&todayStr()>'2026-09-28'?'2026-09-28':todayStr(),startWeight:k?270:170,goal1:k?199:150,goal2:k?180:140,pace:k?1.5:1,activity:k?1.4:1.5,
     training:k?'home':'own',legsLevel:0,kneeCheck:k,kcalOffset:0,sched:clone(k?KARL_SCHED:DEFAULT_SCHED),share:clone(SHARE_DEFAULT),ratings:{},eaten:{},coachNote:null,pendingNotes:[],lunchStyle:(!k&&String(name||'').toLowerCase()==='jen')?'grab':'menu'};}
 function migrate(p){const d=defaultProfile(p&&p.name,'default');const o=Object.assign(d,p||{});o.sched=Object.assign(clone(DEFAULT_SCHED),o.sched||{});o.share=Object.assign(clone(SHARE_DEFAULT),o.share||{});o.ratings=o.ratings||{};o.eaten=o.eaten||{};o.pendingNotes=o.pendingNotes||[];return o;}
-const HOUSE_DEFAULT={picked:{},snacks:{},lunch:{},grab:{},menus:{},hidden:{},made:{},extras:{breakfast:0,lunch:0,dinner:1},grocery:{},basis:{},estimates:{},prices:{}};
+const HOUSE_DEFAULT={photos:{},sides:{},picked:{},snacks:{},lunch:{},grab:{},menus:{},hidden:{},made:{},extras:{breakfast:0,lunch:0,dinner:1},grocery:{},basis:{},estimates:{},prices:{},stepsDone:{},foods:{},foodUse:{}};
 
 /* =============== Helpers =============== */
 const pad=n=>String(n).padStart(2,'0');
@@ -630,13 +666,13 @@ function adjustedTarget(date){
 }
 
 /* =============== Menus and portions =============== */
-const BATCH_TAGS=['pasta','italian','mexican','comfort','soup','pork'],MID_TAGS=['chicken','asian'];
+const BATCH_TAGS=['pasta','italian','mexican','comfort','soup','pork'],MID_TAGS=['slow','chicken','slow','asian'];
 const batchable=k=>!(R[k].step===1&&R[k].kcal<200);
 function suggestMenu(wk,seed,mid){
   const i=Math.round(diffD(wk,'2026-01-05')/7)+(seed||0),used=new Set();
   const pick=(pool,o)=>{let p=ranked(pool).filter(batchable);if(!p.length)p=ranked(pool);const N=Math.min(p.length,Math.max(3,Math.ceil(p.length/2)));const off=((i*3+o)%N+N)%N;
     const top=p.slice(0,N),order=top.slice(off).concat(top.slice(0,off),p.slice(N));const k=order.find(x=>!used.has(x))||order[0];used.add(k);return k;};
-  const NB=BATCH_TAGS.length,t1=BATCH_TAGS[((i%NB)+NB)%NB],t2=BATCH_TAGS[(((i+2)%NB)+NB)%NB],t3=MID_TAGS[((i%2)+2)%2];
+  const NB=BATCH_TAGS.length,t1=BATCH_TAGS[((i%NB)+NB)%NB],t2=BATCH_TAGS[(((i+2)%NB)+NB)%NB],t3=MID_TAGS[((i%MID_TAGS.length)+MID_TAGS.length)%MID_TAGS.length];
   return {b1:pick('bfast',0),b2:pick('bfast',2),m1:pick(t1,0),m2:pick(t2,1),m3:pick(t3,0),mid:mid===3?3:2,seed:seed||0};
 }
 const isHidden=k=>!!(S.house&&S.house.hidden&&S.house.hidden[k]);
@@ -678,10 +714,10 @@ function capSelect(key){const r=R[key],c=capFor(key),auto=isPiece(r)?'Auto (no c
 function portion(key,slotKcal,slot,date){
   const r=R[key];if(!r)return null;if(r.cat==='grab')return grabPortion(key);
   const pk=date?snackPicks(monday(date)):null;
-  const side=r.side?SIDES[r.side]:null,veg=(slot==='lunch'||slot==='dinner')?VEG:null;
+  const sd=sideFor(key,date),side=sd?SIDES[sd]:null,veg=(slot==='lunch'||slot==='dinner')?VEG:null;
   const base=(side?side.kcal:0)+(veg?veg.kcal:0);
   const cap=capFor(key),max=cap||(isPiece(r)?Math.min(10,Math.max(4,Math.ceil(slotKcal*1.2/r.kcal))):MAX_SERVINGS);
-  const fl=(FILLER_BY_SLOT[slot]||[]).filter(k=>!(r.side==='fruit'&&(k==='banana'||k==='apple'))&&!(r.side==='potato'&&k==='fries')&&(!pk||pk.includes(FILLER_ITEM[k]))),fk=fl.length?fl[(key.length+slot.length)%fl.length]:null,F=fk?FILLERS[fk]:null;
+  const fl=(FILLER_BY_SLOT[slot]||[]).filter(k=>!(r.side==='fruit'&&(k==='banana'||k==='apple'))&&!((sd==='potato'||sd==='mash')&&k==='fries')&&!(sd==='mac'&&k==='chips')&&(!pk||pk.includes(FILLER_ITEM[k]))),fk=fl.length?fl[(key.length+slot.length)%fl.length]:null,F=fk?FILLERS[fk]:null;
   let best=null;
   for(let n=isPiece(r)?r.step:Math.max(1,r.step);n<=max+1e-9;n+=r.step){
     for(let u=0;u<=(F?2:0);u++){const tot=n*r.kcal+base+u*(F?F.kcal:0);
@@ -700,7 +736,8 @@ function plannedMeals(date){
     if(slot==='lunch'&&!(l.swaps&&l.swaps.lunch)){const v=lunchPick(S.profile.name,monday(date),d);
       if(v==='__none'){const k=Math.round(target/10)*10;out[slot]={fixed:'none',name:'Eating out or buying lunch',items:['Your own pick for this day','Aim for about '+fmtN(k)+' calories with a protein at the center','Log what you eat with Ate something else'],kcal:k,p:Math.round(k*.25/4),c:Math.round(k*.45/4),f:Math.round(k*.3/9),prep:''};continue;}
       if(v==='__pizza'){const n=slicesFor(date,slot,target);out[slot]=Object.assign({},PIZZA,{name:'Pizza',slices:n,prep:'Your own pick for this day. Log the real slice count.',items:['Plan on '+n+' slices','Add a side salad first','Water or diet soda to drink'],kcal:n*SLICE.kcal+80,p:n*SLICE.p+2,c:n*SLICE.c+8,f:n*SLICE.f+4});continue;}
-      if(v){const pr=R[v].cat==='grab'?grabPortion(v):portion(v,target,slot,date);if(pr){pr.mine=true;out[slot]=pr;continue;}}}
+      if(v){const pr=R[v].cat==='grab'?grabPortion(v):portion(v,target,slot,date);if(pr){pr.mine=true;out[slot]=pr;continue;}}
+      if(d<5&&ownLunch({me:true})){out[slot]={fixed:'nolunch',name:'Pick your packed lunch',items:[],kcal:0,p:0,c:0,f:0,prep:'You pack your own weekday lunches. Pick one for this day in Meals, The week.'};continue;}}
     if(slot==='lunch'&&pizzaCell(date,'lunch')){const n=slicesFor(date,slot,target);out[slot]=Object.assign({},PIZZA,{name:'Pizza',slices:n,prep:'Planned as a pizza meal. Log the real slice count.',items:['Plan on '+n+' slices','Add a side salad first','Water or diet soda to drink'],kcal:n*SLICE.kcal+80,p:n*SLICE.p+2,c:n*SLICE.c+8,f:n*SLICE.f+4});continue;}
     if(slot==='dinner'&&pizzaCell(date,'dinner')){const tue=isPizza(date),n=tue?pizzaSlices(date):slicesFor(date,slot,target);out[slot]=Object.assign({},PIZZA,tue?{}:{name:'Pizza night',prep:'An extra pizza night. Log the real slice count.'},{slices:n,items:['Plan on '+n+' slices','Fill the rest of the plate with salad and eat it first','Water or diet soda to drink'],kcal:n*SLICE.kcal+80,p:n*SLICE.p+2,c:n*SLICE.c+8,f:n*SLICE.f+4});continue;}
     if(slot==='fruit'){out[slot]=snackForSlot('fruit',target,date);continue;}
@@ -782,13 +819,13 @@ function saveProfile(){debounce('profile',()=>wrote(FB.setDoc(refs.profile(),clo
 function hset(path,val){let o=S.house;for(let i=0;i<path.length-1;i++){o[path[i]]=o[path[i]]||{};o=o[path[i]];}o[path[path.length-1]]=val;wrote(FB.updateDoc(refs.house(),new FB.FieldPath(...path),clone(val)));scheduleNeeds();}
 function hdel(path){let o=S.house;for(let i=0;i<path.length-1;i++){o=o[path[i]]||{};}delete o[path[path.length-1]];wrote(FB.updateDoc(refs.house(),new FB.FieldPath(...path),FB.deleteField()));scheduleNeeds();}
 let lastBasis='';
-function scheduleNeeds(){debounce('basis',()=>{if(!S.house||!S.profile)return;const o={name:S.profile.name,kcal:targetsFor(todayStr()).kcal,lunch:S.profile.lunchStyle==='grab'?'grab':'menu'},j=JSON.stringify(o);if(j===lastBasis)return;lastBasis=j;S.house.basis=S.house.basis||{};S.house.basis[S.uid]=o;wrote(FB.updateDoc(refs.house(),new FB.FieldPath('basis',S.uid),o));},1500);}
+function scheduleNeeds(){debounce('basis',()=>{if(!S.house||!S.profile)return;const o={name:S.profile.name,kcal:targetsFor(todayStr()).kcal,lunch:['grab','own'].includes(S.profile.lunchStyle)?'own':'menu'},j=JSON.stringify(o);if(j===lastBasis)return;lastBasis=j;S.house.basis=S.house.basis||{};S.house.basis[S.uid]=o;wrote(FB.updateDoc(refs.house(),new FB.FieldPath('basis',S.uid),o));},1500);}
 function sharedSoon(){if(S._shPend)return;S._shPend=true;setTimeout(()=>{S._shPend=false;if(S.profile)wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2500);}
 function scheduleShared(){debounce('shared',()=>{if(!S.profile)return;wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2000);}
 function setSync(s){S.sync=s;const el=document.getElementById('sync');if(el)el.textContent=syncText();}
 function syncText(){return !navigator.onLine?'Offline; changes will sync':S.sync==='error'?'Last save failed':'Synced';}
 function nameOf(uid){if(uid===S.uid)return S.profile.name;const x=S.shared[uid];return (x&&x.name)||'Partner';}
-function softRender(){const a=document.activeElement;if(a&&['INPUT','TEXTAREA','SELECT'].includes(a.tagName)&&a.type!=='checkbox'&&a.type!=='radio'){S.dirty=true;return;}render();}
+function softRender(){if(S.scanning){S.dirty=true;return;}const a=document.activeElement;if(a&&['INPUT','TEXTAREA','SELECT'].includes(a.tagName)&&a.type!=='checkbox'&&a.type!=='radio'){S.dirty=true;return;}render();}
 document.addEventListener('focusout',e=>{if(S.dirty){const n=e.relatedTarget;if(n&&['INPUT','TEXTAREA','SELECT'].includes(n.tagName))return;S.dirty=false;setTimeout(render,50);}});
 window.addEventListener('online',()=>setSync(S.sync));window.addEventListener('offline',()=>setSync(S.sync));
 function round1(x){return Math.round(x*10)/10;}
@@ -797,9 +834,9 @@ function buildShared(){
   if(sh.goals)out.goals={goal1:p.goal1,goal2:p.goal2};
   const ws=Object.keys(S.days).filter(d=>S.days[d].weight).sort();
   if(sh.weight!=='hide'&&ws.length){const last=ws[ws.length-1],a=winAvg(last),st=+p.startWeight,ser=ws.slice(-90);
-    out.weight=sh.weight==='full'?{mode:'full',latest:+S.days[last].weight,avg7:round1(a),start:st,change:round1(a-st),series:ser.map(d=>[d,+S.days[d].weight])}:{mode:'change',change:round1(a-st),series:ser.map(d=>[d,round1(+S.days[d].weight-st)])};}
+    out.weight=sh.weight==='full'?{mode:'full',latest:+S.days[last].weight,avg7:round1(a),start:st,change:round1(a-st),series:ser.map(d=>({d,w:+S.days[d].weight}))}:{mode:'change',change:round1(a-st),series:ser.map(d=>({d,w:round1(+S.days[d].weight-st)}))};}
   if(sh.meals){out.plan={};const m0=monday(td);for(let i=0;i<14;i++){const d=addD(m0,i),pm=plannedMeals(d),l=S.days[d]||{},ml=l.meals||{},rows=[];
-    for(const it of scheduleFor(d)){const k=it.k,m=pm[k];if(!m)continue;const lg=ml[k];rows.push([k,m.name+(m.key&&m.n&&m.n!==1?' ('+fmtS(m.n)+' servings)':''),Math.round(m.kcal||0),lg?(lg.status==='skip'?'skip':'ate'):'',lg&&lg.name&&lg.name!==m.name?lg.name:'']);}
+    for(const it of scheduleFor(d)){const k=it.k,m=pm[k];if(!m)continue;const lg=ml[k];rows.push({k,n:m.name+(m.key&&m.n&&m.n!==1?' ('+fmtS(m.n)+' servings)':''),kc:Math.round(m.kcal||0),st:lg?(lg.status==='skip'?'skip':'ate'):'',alt:lg&&lg.name&&lg.name!==m.name?lg.name:''});}
     if(rows.length)out.plan[d]=rows;}
     const wk=curMenuWeek(),L=S.house&&S.house.lunch&&S.house.lunch[wk];out.planWeek=wk;}
   for(let i=0;i<28;i++){const d=addD(td,-i);if(d<p.startDate)break;const l=S.days[d];if(!l)continue;const x={};
@@ -814,7 +851,7 @@ function buildShared(){
 
 /* =============== Rendering =============== */
 function macroLine(m){return '<div class="macros"><span><b>'+fmtN(m.kcal)+'</b> kcal</span><span><b>'+fmtN(m.p)+'</b> g protein</span><span><b>'+fmtN(m.c)+'</b> g carbs</span><span><b>'+fmtN(m.f)+'</b> g fat</span></div>';}
-function srcName(u){const h=(u||'').replace(/^https?:\/\/(www\.)?/,'').split('/')[0];return ({'emilybites.com':'EmilyBites','momontimeout.com':'Mom On Timeout','kristineskitchenblog.com':'Kristine\'s Kitchen','healthyfitnessmeals.com':'Healthy Fitness Meals','theseasonedmom.com':'The Seasoned Mom','upstate.edu':'Upstate Medical University','simplehealthykitchen.com':'Simple Healthy Kitchen','bitzngiggles.com':'Bitz & Giggles','tasteofhome.com':'Taste of Home','jerseygirlcooks.com':'Jersey Girl Cooks','stayfitmom.com':'Stay Fit Mom','skinnykitchen.com':'Skinny Kitchen','skinnytaste.com':'Skinnytaste','fitfoodiefinds.com':'Fit Foodie Finds','hauteandhealthyliving.com':'Haute and Healthy Living','organizeyourselfskinny.com':'Organize Yourself Skinny','theskinnyishdish.com':'The Skinnyish Dish','theskinnyfork.com':'The Skinny Fork','skinnyfitalicious.com':'Skinny Fitalicious','cookingmadehealthy.com':'Cooking Made Healthy','slimmingeats.com':'Slimming Eats','cheatdaydesign.com':'Cheat Day Design','eatwithclarity.com':'Eat With Clarity','drizzlemeskinny.com':'Drizzle Me Skinny','realfoodwholelife.com':'Real Food Whole Life','mommafitlyndsey.com':'Momma Fit Lyndsey'})[h]||h;}
+function srcName(u){const h=(u||'').replace(/^https?:\/\/(www\.)?/,'').split('/')[0];return ({'emilybites.com':'EmilyBites','momontimeout.com':'Mom On Timeout','kristineskitchenblog.com':'Kristine\'s Kitchen','healthyfitnessmeals.com':'Healthy Fitness Meals','theseasonedmom.com':'The Seasoned Mom','upstate.edu':'Upstate Medical University','simplehealthykitchen.com':'Simple Healthy Kitchen','bitzngiggles.com':'Bitz & Giggles','tasteofhome.com':'Taste of Home','jerseygirlcooks.com':'Jersey Girl Cooks','stayfitmom.com':'Stay Fit Mom','graceandgoodeats.com':'Grace and Good Eats','thediaryofarealhousewife.com':'The Diary of a Real Housewife','thecookinchicks.com':'The Cookin Chicks','foxvalleyfoodie.com':'Fox Valley Foodie','myshapeyourfutureok.com':'Shape Your Future','skinnykitchen.com':'Skinny Kitchen','skinnytaste.com':'Skinnytaste','fitfoodiefinds.com':'Fit Foodie Finds','hauteandhealthyliving.com':'Haute and Healthy Living','organizeyourselfskinny.com':'Organize Yourself Skinny','theskinnyishdish.com':'The Skinnyish Dish','theskinnyfork.com':'The Skinny Fork','skinnyfitalicious.com':'Skinny Fitalicious','cookingmadehealthy.com':'Cooking Made Healthy','slimmingeats.com':'Slimming Eats','cheatdaydesign.com':'Cheat Day Design','eatwithclarity.com':'Eat With Clarity','drizzlemeskinny.com':'Drizzle Me Skinny','realfoodwholelife.com':'Real Food Whole Life','mommafitlyndsey.com':'Momma Fit Lyndsey','cookingwithcurls.com':'Cooking with Curls','reciperunner.com':'Recipe Runner'})[h]||h;}
 const MUSH='The original recipe includes mushrooms. Leave them out, or use cream of chicken soup wherever it calls for cream of mushroom.';
 function srcLink(m){return m.url?'<div class="src">Recipe: <a href="'+esc(m.url)+'" target="_blank" rel="noopener">'+esc(m.name)+' on '+esc(srcName(m.url))+'</a></div>'+(m.mush?'<div class="src">'+MUSH+'</div>':''):'';}
 function notesPanel(){
@@ -826,6 +863,7 @@ function notesPanel(){
 }
 function render(){
   const app=document.getElementById('app');
+  if(S.scanning)stopScan();
   if(!S.ready){app.innerHTML=S.screen||'<main><p>Loading...</p></main>';return;}
   const PP=[['today','Today'],['week','This week'],['progress','Progress'],['plan','My plan']],inPP=PP.some(t=>t[0]===S.view);if(inPP)S.lastPP=S.view;
   const tabs=[[S.lastPP||'today','Plan and Progress',inPP],['workout','Workout',S.view==='workout'],['menu','Meals',S.view==='menu']];
@@ -842,6 +880,7 @@ function render(){
     if(S.view==='menu'){const st=S.mpStep||'plan';h+='<nav aria-label="Meals" class="subnav">';for(const[k,v]of MP_STEPS)h+='<button class="stepb" data-action="mpstep" data-v="'+k+'"'+(st===k?' aria-current="page"':'')+'>'+v+'</button>';h+='</nav>';}}
   h+='</div></header><main>'+(viewingOther?viewPartner(S.viewing):S.view==='today'?viewToday():S.view==='week'?viewWeek():S.view==='workout'?viewWorkout():S.view==='menu'?viewMenu():S.view==='progress'?viewProgress():S.view==='plan'?viewPlan():viewPlan())+'</main>';h+=quoteOverlay();
   app.innerHTML=h;
+  if(S.fp&&S.fp.mode==='scan'&&S.fp.auto){S.fp.auto=false;setTimeout(startScan,0);}
 }
 
 function viewToday(){
@@ -880,7 +919,7 @@ function viewToday(){
   const ex=l.extras||[];let xs='';
   if(ex.length)ex.forEach((x,i)=>{xs+='<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:6px 0"><span>'+esc(x.name)+' <span class="kicker">'+fmtN(n0(x.kcal))+' kcal, '+fmtN(n0(x.p))+' g protein</span></span><button class="btn ghost" data-action="delextra" data-v="'+i+'">Remove</button></div>';});
   xs+='<div class="subhead">Quick add from the fridge</div><div class="row">'+QUICK.map((q,i)=>'<button class="btn" data-action="quick" data-v="'+i+'">'+esc(q.name.split(' (')[0])+' <span class="kicker">'+q.kcal+'</span></button>').join('')+'</div>';
-  xs+='<div class="form"><label class="f wide">Something else<input type="text" id="xName" placeholder="Example: nachos at the rink"></label><label class="f">Calories<input type="number" inputmode="numeric" id="xK"></label><label class="f">Protein g<input type="number" inputmode="numeric" id="xP"></label><label class="f">Carbs g<input type="number" inputmode="numeric" id="xC"></label><label class="f">Fat g<input type="number" inputmode="numeric" id="xF"></label></div><div class="row" style="margin-top:10px"><button class="btn" data-action="addextra">Add to today</button></div>';
+  xs+=(S.fp&&S.fp.tgt==='extra')?foodPicker():'<div class="row" style="margin-top:10px"><button class="btn primary" data-action="addfood">Add food</button><span class="hint">Search your foods, scan a barcode, or create one.</span></div>';
   h+=sec('extras','Snacks and anything else <span class="src">'+(ex.length?ex.length+' logged':'none yet')+'</span>',xs);
   // Tips (rule-based), folded
   const tips=[];
@@ -902,6 +941,7 @@ function viewToday(){
   let ct=notesPanel(true);
   ct+='<div class="subhead">Send an update to Claude</div><p class="src" style="margin-top:0">Builds a summary of meals, workouts, check-ins, notes, and this week\'s menu. Copy it into your chat with Claude.</p><div class="row"><button class="btn" data-action="report" data-v="1">Today</button><button class="btn primary" data-action="report" data-v="7">Last 7 days</button><button class="btn" data-action="report" data-v="14">Last 14 days</button></div>';
   if(S.reportDays)ct+='<textarea id="reportBox" style="margin-top:10px;min-height:180px;font-size:13px" readonly></textarea><div class="row" style="margin-top:8px"><button class="btn primary" data-action="copyreport">Copy to clipboard</button><span class="hint" id="copymsg">If copying is blocked, select the text and copy it manually.</span></div>';
+  ct+='<div class="subhead">Food list for Claude</div><p class="src" style="margin-top:0">Saves a file with the foods you two have created or scanned, how often you log them, and your last 60 days of food logs. Attach it in a chat with Claude whenever you like; Claude checks the numbers, adds them to the app\u2019s built-in list, and sends back a new index.html.</p><div class="row"><button class="btn" data-action="foodexport">Save food list file</button></div>';
   ct+='<div class="subhead">Paste an update from Claude</div><textarea id="updBox" placeholder="Paste Claude\'s reply here"></textarea><div class="row" style="margin-top:8px"><button class="btn primary" data-action="applyupd">Apply update</button><span class="hint" id="updmsg">'+esc(S.updMsg||'')+'</span></div>';
   const pend=(S.profile.pendingNotes||[]).length;
   h+='<div class="section">'+sec('claude','Claude tools <span class="src">'+(pend?pend+' note'+(pend>1?'s':'')+' waiting':'notes, report, and updates')+'</span>',ct,!!(S.reportDays||S.updMsg))+'</div>';
@@ -919,12 +959,11 @@ function mealCard(date,slot,m,time){
     if(m.fixed==='pizza'){
       h+='<div class="row">';for(let n=1;n<=6;n++)h+='<button class="btn'+(n===m.slices?' primary':'')+'" data-action="slices" data-slot="'+slot+'" data-v="'+n+'">'+n+' slices</button>';
       h+='</div><div class="row" style="margin-top:8px"><button class="btn" data-action="custom" data-slot="'+slot+'">Ate something else</button></div>';
-    }else if(m.fixed==='nosnack')h+='<div class="row"><button class="btn primary" data-action="gosnacks">Pick this week\u2019s snacks</button><button class="btn" data-action="custom" data-slot="'+slot+'">Log what I ate</button><button class="btn" data-action="skipmeal" data-slot="'+slot+'">Skipped</button></div>';
+    }else if(m.fixed==='nolunch')h+='<div class="row"><button class="btn primary" data-action="golunch">Pick lunches</button><button class="btn" data-action="custom" data-slot="'+slot+'">Log what I ate</button></div>';
+    else if(m.fixed==='nosnack')h+='<div class="row"><button class="btn primary" data-action="gosnacks">Pick this week\u2019s snacks</button><button class="btn" data-action="custom" data-slot="'+slot+'">Log what I ate</button><button class="btn" data-action="skipmeal" data-slot="'+slot+'">Skipped</button></div>';
     else if(m.fixed==='none')h+='<div class="row"><button class="btn primary" data-action="custom" data-slot="'+slot+'">Log what I ate</button><button class="btn" data-action="skipmeal" data-slot="'+slot+'">Skipped</button></div>';
     else h+='<div class="row"><button class="btn primary" data-action="ate" data-slot="'+slot+'">Ate this</button><button class="btn" data-action="custom" data-slot="'+slot+'">Ate something else</button><button class="btn" data-action="skipmeal" data-slot="'+slot+'">Skipped</button></div>';
-    if(S.openCustom===slot){
-      h+='<div class="form"><label class="f wide">What did you eat<input type="text" id="cName" placeholder="Example: 2 servings EmilyBites goulash"></label><label class="f">Calories<input type="number" inputmode="numeric" id="cK"></label><label class="f">Protein g<input type="number" inputmode="numeric" id="cP"></label><label class="f">Carbs g<input type="number" inputmode="numeric" id="cC"></label><label class="f">Fat g<input type="number" inputmode="numeric" id="cF"></label></div>'+
-        '<div class="row" style="margin-top:10px"><button class="btn primary" data-action="savecustom" data-slot="'+slot+'">Log it</button><button class="btn ghost" data-action="cancelcustom">Cancel</button></div>';}
+    if(S.fp&&S.fp.tgt==='meal'&&S.fp.slot===slot)h+=foodPicker();
     if(!m.revised&&!m.fixed&&(slot==='breakfast'||slot==='lunch'||slot==='dinner')){
       const wkm=menuFor(monday(date)),picks=[...new Set([wkm.b1,wkm.b2,wkm.m1,wkm.m2,wkm.m3].concat(Object.values(wkm.cells||{})))].filter(k=>R[k]&&!isHidden(k)&&(slot==='breakfast'?R[k].cat==='breakfast':R[k].cat==='main'));
       h+='<details class="swap"><summary>Swap for another prepped meal this week</summary><div style="margin-top:8px"><select data-swap="'+slot+'" aria-label="Choose a replacement meal"><option value="">Keep the planned meal</option>'+picks.map(k=>'<option value="'+k+'"'+(l.swaps&&l.swaps[slot]===k?' selected':'')+'>'+esc(R[k].name)+'</option>').join('')+'</select></div></details>';}
@@ -1136,12 +1175,14 @@ function snackForSlot(slot,kcal,date){const x=composeSnack(slot,kcal,date);retur
    No entry means that person eats the household plan's lunch. Picks move servings between recipes for the week's cooking. */
 const pkey=p=>String(p.name||'').toLowerCase();
 function lunchPick(name,wk,d){if(d>4)return null;const L=S.house&&S.house.lunch&&S.house.lunch[wk],v=L&&L[String(name).toLowerCase()]&&L[String(name).toLowerCase()][d];if(!v)return null;if(v==='__pizza'||v==='__none')return v;return R[v]&&!isHidden(v)?v:null;}
-function eatsCell(p,c,wk){if(c.only)return pkey(p)===c.only;if(c.slot==='lunch'&&lunchPick(p.name,wk,c.d))return false;return true;}
+function ownLunch(p){if(p.me)return ['grab','own'].includes(S.profile.lunchStyle);if(p.est)return String(p.name).toLowerCase()==='jen';const b=S.house.basis&&S.house.basis[p.id];return !!(b&&['grab','own'].includes(b.lunch));}
+function eatsCell(p,c,wk){if(c.only)return pkey(p)===c.only;if(c.slot==='lunch'&&(lunchPick(p.name,wk,c.d)||(c.d<5&&ownLunch(p))))return false;return true;}
 function personalCells(wk){const out=[];for(const p of eaters())for(let d=0;d<5;d++){const v=lunchPick(p.name,wk,d);if(v&&R[v]&&R[v].cat==='main')out.push({d,date:addD(wk,d),slot:'lunch',key:v,only:pkey(p),personal:true});}return out;}
 function prepCells(wk){return weekCells(wk).concat(personalCells(wk));}
 function grabDay(p,wk,d){const v=lunchPick(p.name,wk,d);return v&&R[v]&&R[v].cat==='grab'?v:null;}
 function grabCounts(wk){const o={};for(const p of eaters())for(let d=0;d<5;d++){const k=grabDay(p,wk,d);if(k)o[k]=(o[k]||0)+1;}return o;}
-function lunchOptions(wk,d,name,cur){const date=addD(wk,d),c=weekCells(wk).find(x=>x.d===d&&x.slot==='lunch'),plan=c?(c.pizza?'Pizza':c.none?'Eating out':c.key?R[c.key].name:'nothing planned'):'';
+function lunchOptions(wk,d,name,cur,own){
+  if(own)return '<option value="__plan"'+(!cur?' selected':'')+'>Not picked yet</option><optgroup label="Packed lunches">'+(POOLS.grab||[]).filter(k=>!isHidden(k)&&(k!=='grabpizza'||d>=2)).map(k=>'<option value="'+k+'"'+(k===cur?' selected':'')+'>'+esc(R[k].name)+'</option>').join('')+'</optgroup><option value="__pizza"'+(cur==='__pizza'?' selected':'')+'>Pizza</option><option value="__none"'+(cur==='__none'?' selected':'')+'>Eating out or buying lunch</option>';const date=addD(wk,d),c=weekCells(wk).find(x=>x.d===d&&x.slot==='lunch'),plan=c?(c.pizza?'Pizza':c.none?'Eating out':c.key?R[c.key].name:'nothing planned'):'';
   let o='<option value="__plan"'+(!cur?' selected':'')+'>Same as the plan: '+esc(plan)+'</option>';
   o+='<optgroup label="Grab-and-go">'+(POOLS.grab||[]).filter(k=>!isHidden(k)).map(k=>'<option value="'+k+'"'+(k===cur?' selected':'')+'>'+esc(R[k].name)+'</option>').join('')+'</optgroup>';
   const m=menuFor(wk),planned=[...new Set(['m1','m2','m3'].map(k=>m[k]).concat(Object.values(m.cells||{})))].filter(k=>R[k]&&!isHidden(k)&&R[k].cat==='main');
@@ -1150,13 +1191,175 @@ function lunchOptions(wk,d,name,cur){const date=addD(wk,d),c=weekCells(wk).find(
   return o+'<option value="__pizza"'+(cur==='__pizza'?' selected':'')+'>Pizza</option><option value="__none"'+(cur==='__none'?' selected':'')+'>Eating out or buying lunch</option>';}
 function lunchCard(wk){const ppl=eaters(),prev=addD(wk,-7),hasPrev=S.house.lunch&&S.house.lunch[prev]&&Object.keys(S.house.lunch[prev]).length;
   let h='<div class="section" style="margin-top:0"><h2>Weekday lunches by person</h2><div class="card"><p class="hint" style="margin-top:0">Each of you can take something different to work. Leave a day on Same as the plan to eat the household lunch. Grab-and-go items go on the shopping list, a different recipe adds servings to that recipe, and pizza or eating out takes your servings off. The count above updates as you pick.</p>'+(hasPrev?'<div class="row" style="margin-bottom:8px"><button class="btn" data-action="lunchcopy">Same lunches as last week</button></div>':'')+'<div class="lgrid" style="display:grid;grid-template-columns:auto repeat('+ppl.length+',minmax(0,1fr));gap:8px;align-items:center">';
+  const owners=ppl.filter(ownLunch);if(owners.length)h+='<div class="note" style="margin-bottom:8px">'+owners.map(p=>esc(p.name)).join(' and ')+' packs '+(owners.length>1?'their':'her or his').replace('her or his',owners[0].name.toLowerCase()==='jen'?'her':'his')+' own weekday lunches, so none of the prepped servings are set aside for them. Pick from the packed lunches below.'+owners.map(p=>'<button class="btn" style="margin-left:8px" data-action="lunchfill" data-v="'+esc(pkey(p))+'">Fill '+esc(p.name)+'\u2019s open days</button>').join('')+'</div>';
   h+='<span></span>'+ppl.map(p=>'<strong>'+esc(p.name)+'</strong>').join('');
   for(let d=0;d<5;d++){h+='<span class="src">'+DAYN[d].slice(0,3)+' '+fmtShort(addD(wk,d))+'</span>';
-    for(const p of ppl){const cur=lunchPick(p.name,wk,d);h+='<select data-pl="'+esc(pkey(p))+'|'+d+'" aria-label="'+esc(p.name+' '+DAYN[d]+' lunch')+'" style="min-width:0;width:100%">'+lunchOptions(wk,d,p.name,cur)+'</select>';}}
+    for(const p of ppl){const cur=lunchPick(p.name,wk,d);h+='<select data-pl="'+esc(pkey(p))+'|'+d+'" aria-label="'+esc(p.name+' '+DAYN[d]+' lunch')+'" style="min-width:0;width:100%">'+lunchOptions(wk,d,p.name,cur,ownLunch(p))+'</select>';}}
   return h+'</div></div></div>';}
 function grabPortion(key){const r=R[key],d=RD[key];return {key,n:1,grab:true,name:r.name,url:'',items:d?d.ing.filter(t=>t[0]!=null).map(t=>(t[0]+(t[1]?' '+unitLabel(t[1],t[0]):'')+' '+t[2]).trim()):[],kcal:r.kcal,p:r.p,c:r.c,f:r.f,prep:r.note};}
 
 const RD={
+  potroast:{prep:15,cook:360,cookText:'6 hours on high (longer if the meat does not yet pull apart with two forks)',ing:[
+    [3,'lb','chuck roast','',A.me],
+    [2.75,'cup','beef broth','1 3/4 cups plus 1 cup used in place of the recipe\u2019s wine',A.ca],
+    [null,'','salt','to taste',A.sp],
+    [null,'','black pepper','to taste',A.sp],
+    [1,'','onion','large; cut into wedges',A.pr],
+    [2,'lb','mini yukon gold potatoes','halved',A.pr],
+    [1,'cup','baby carrots','',A.pr],
+    [3,'clove','garlic','minced',A.pr],
+    [1,'','bay leaf','',A.sp],
+    [4,'','fresh thyme sprigs','',A.sp]],
+    steps:[
+      'Put the chuck roast in the slow cooker and pour the beef broth over it. Season with salt and pepper.',
+      'Add the onion, potatoes, carrots, garlic, thyme sprigs, and bay leaf.',
+      'Cover and cook on high about 6 hours, until the meat pulls apart easily with two forks.',
+      'Pull out the bay leaf and thyme stems, then cut or shred the meat and serve with the vegetables and broth spooned over. Divide into 10 portions.']},
+  crchxpotpie:{prep:15,cook:345,cookText:'5 hours on low (or 3 on high), plus 45 to 60 minutes to thicken',ing:[
+    [1,'tbsp','butter','',A.da],
+    [1,'cup','onion','diced',A.pr],
+    [0.5,'cup','celery','diced',A.pr],
+    [2,'clove','garlic','minced',A.pr],
+    [1.25,'lb','boneless, skinless chicken breast','',A.me],
+    [3,'cup','reduced-sodium chicken broth','',A.ca],
+    [2,'','fresh thyme sprigs','',A.sp],
+    [1,'tsp','poultry seasoning','',A.sp],
+    [3,'cup','potatoes','Yukon gold; cut into 1/2-inch pieces',A.pr],
+    [12,'oz','frozen peas and carrots','thawed',A.fr],
+    [3,'tbsp','cornstarch','',A.pa],
+    [1.5,'cup','whole milk','warmed',A.da]],
+    steps:[
+      'Melt the butter in a skillet over medium-high heat and cook the onion, celery, and garlic until soft, 3 to 4 minutes, then move them into the slow cooker.',
+      'Add the potatoes and thyme sprigs, lay the chicken on top, and season with salt, pepper, and the poultry seasoning.',
+      'Pour in the broth, cover, and cook on low 5 hours or on high 3 hours. Remove the chicken, shred it, and stir it back in with the peas and carrots.',
+      'Whisk the cornstarch into the warm milk, stir it into the pot, and cook on high 45 to 60 minutes more until it thickens slightly. Pull out the thyme stems and divide into 6 portions.']},
+  crbeefbroc:{prep:10,cook:270,cookText:'4 hours on low, plus 30 minutes after adding the broccoli',ing:[
+    [1,'lb','lean beef round roast','sliced thin and cut into bite-sized pieces',A.me],
+    [1,'cup','low-sodium beef broth','',A.ca],
+    [0.5,'cup','low-sodium soy sauce','',A.oi],
+    [0.33,'cup','brown sugar','',A.pa],
+    [1,'tbsp','sesame oil','',A.oi],
+    [3,'clove','garlic','minced',A.pr],
+    [2,'tbsp','cornstarch','',A.pa],
+    [2,'cup','frozen broccoli florets','',A.fr]],
+    steps:[
+      'Stir the broth, soy sauce, brown sugar, sesame oil, and garlic together in the slow cooker, then add the raw beef and turn it to coat.',
+      'Cover and cook on low about 4 hours, until the beef is cooked through; check early since it can finish sooner.',
+      'Spoon a few tablespoons of the liquid into a small bowl, whisk in the cornstarch, then stir the mixture back into the pot.',
+      'Add the frozen broccoli, re-cover, and cook on low 30 minutes more until the broccoli is tender and the sauce has thickened. Divide into 4 cup portions over rice.']},
+  bbqbeef:{prep:15,cook:540,cookText:'8 to 9 hours on medium (or low)',ing:[
+    [2,'lb','lean beef round roast','trimmed; cut in thirds if thick',A.me],
+    [1.5,'cup','onion','chopped',A.pr],
+    [1.5,'cup','ketchup','',A.oi],
+    [0.33,'cup','Worcestershire sauce','',A.oi],
+    [3,'tbsp','brown sugar','',A.pa],
+    [3,'tbsp','apple cider vinegar','',A.oi],
+    [2,'tsp','salt','',A.sp]],
+    steps:[
+      'Mist a heavy pot with cooking spray and brown the beef on all sides over medium-high heat without cooking it through. Add the onion and cook until golden.',
+      'Move everything to the slow cooker, stir in the ketchup, Worcestershire, brown sugar, vinegar, and salt, and cook 7 to 8 hours on medium or low.',
+      'Shred the beef with two forks and stir it back into the sauce.',
+      'Turn the heat to high and cook uncovered 45 to 60 minutes more to thicken the sauce. Divide into 9 half-cup portions.']},
+  balsamicbeef:{prep:5,cook:450,cookText:'7 to 8 hours on low',ing:[
+    [3,'lb','lean beef round roast','trimmed; cut in thirds to fit',A.me],
+    [1,'cup','beef broth','',A.ca],
+    [0.5,'cup','balsamic vinegar','',A.oi],
+    [1,'tbsp','Worcestershire sauce','',A.oi],
+    [1,'tbsp','low-sodium soy sauce','',A.oi],
+    [1,'tbsp','honey','',A.ca],
+    [0.5,'tsp','crushed red pepper flakes','',A.sp],
+    [4,'clove','garlic','minced',A.pr]],
+    steps:[
+      'Put the beef in the slow cooker.',
+      'Whisk the broth, vinegar, Worcestershire, soy sauce, honey, red pepper flakes, and garlic and pour it over the beef.',
+      'Cover and cook on low 7 to 8 hours.',
+      'Break the beef apart with a fork and spoon the jus over it. Each serving is about 2/3 cup, or 3.5 oz of meat.']},
+  dumpstew:{prep:10,cook:480,cookText:'8 to 9 hours on low or 6 to 7 on high',ing:[
+    [1,'','onion','large; diced',A.pr],
+    [1.5,'lb','lean beef stew meat','1-inch chunks',A.me],
+    [2,'cup','water','',A.no],
+    [2,'cup','beef stock','',A.ca],
+    [1.5,'cup','V8 vegetable juice','',A.ca],
+    [0.33,'cup','barbecue sauce','',A.oi],
+    [3,'clove','garlic','',A.pr],
+    [1,'lb','carrots','sliced into coins',A.pr],
+    [4,'cup','potatoes','diced',A.pr],
+    [null,'','salt','to taste',A.sp],
+    [null,'','black pepper','to taste',A.sp]],
+    steps:[
+      'Put everything except the potatoes in the slow cooker and stir. (To freeze ahead instead, mix those in a freezer bag and freeze; add the potatoes on cooking day.)',
+      'Add the potatoes.',
+      'Cook on low 8 to 9 hours or on high 6 to 7 hours, until the beef and potatoes are tender. Season and divide into 6 portions.']},
+  honeygarlic:{prep:5,cook:300,cookText:'5 hours on low or 3 on high',ing:[
+    [2,'lb','boneless, skinless chicken breast','',A.me],
+    [0.33,'cup','honey','',A.ca],
+    [0.33,'cup','low-sodium soy sauce','',A.oi],
+    [0.33,'cup','reduced-sodium chicken broth','',A.ca],
+    [2,'tbsp','garlic','minced',A.pr],
+    [1,'tbsp','cornstarch','',A.pa],
+    [null,'','green onions','sliced, for garnish',A.pr]],
+    steps:[
+      'Put the chicken in the slow cooker.',
+      'Whisk the honey, soy sauce, broth, garlic, and cornstarch and pour it over the chicken.',
+      'Cook on low 5 hours or on high 3 hours, until the chicken is cooked through and tender.',
+      'Shred the chicken in the sauce, top with green onions, and divide into 6 portions over rice.']},
+  crwhitechili:{prep:10,cook:390,cookText:'6 to 8 hours on low or about 4 on high, plus 30 minutes',ing:[
+    [1,'lb','boneless, skinless chicken breast','',A.me],
+    [1,'','onion','diced',A.pr],
+    [4,'clove','garlic','minced',A.pr],
+    [24,'oz','chicken broth','',A.ca],
+    [30,'oz','great northern beans','two 15 oz cans; drained and rinsed',A.ca],
+    [8,'oz','diced green chiles','canned',A.ca],
+    [15,'oz','Mexicorn','one can; drained',A.ca],
+    [1,'tsp','salt','',A.sp],
+    [1,'tsp','black pepper','',A.sp],
+    [1,'tsp','ground cumin','',A.sp],
+    [0.5,'tsp','dried oregano','',A.sp],
+    [0.5,'tsp','chili powder','',A.sp],
+    [null,'','cayenne pepper','a dash',A.sp],
+    [4,'oz','cream cheese','',A.da],
+    [0.25,'cup','heavy whipping cream','',A.da]],
+    steps:[
+      'Put the chicken in the slow cooker and add the onion, garlic, broth, beans, green chiles, corn, and all the seasonings.',
+      'Cover and cook on low 6 to 8 hours or on high about 4 hours.',
+      'Shred the chicken and return it to the pot.',
+      'Stir in the cream cheese and cream and cook 30 minutes more, stirring well. Divide into 8 portions.']},
+  italianbeef:{prep:5,cook:270,cookText:'4 to 5 hours on high',ing:[
+    [4,'lb','beef rump roast','chuck roast works too',A.me],
+    [2,'cup','beef broth','',A.ca],
+    [1,'cup','sliced pepperoncini peppers','drained',A.ca],
+    [2,'','bay leaves','',A.sp],
+    [2,'','Italian dressing seasoning packets (0.7 oz each)','',A.sp],
+    [1,'tsp','black pepper','',A.sp],
+    [1,'tsp','dried oregano','',A.sp],
+    [1,'tsp','dried basil','',A.sp],
+    [1,'tsp','onion powder','',A.sp],
+    [1,'tsp','garlic powder','',A.sp],
+    [1,'tsp','salt','or to taste',A.sp],
+    [null,'','giardiniera','for topping, optional',A.ca]],
+    steps:[
+      'Put everything except the giardiniera in the slow cooker.',
+      'Cook on high 4 to 5 hours, until the roast shreds easily.',
+      'Shred the beef with forks in the juices and pull out the bay leaves.',
+      'Serve on buns with a splash of the juice and giardiniera if you like. Divide into 10 portions.']},
+  chxnoodle:{prep:15,cook:250,cookText:'4 hours on high or 8 on low, plus 10 minutes',ing:[
+    [1,'','onion','diced',A.pr],
+    [3,'clove','garlic','minced',A.pr],
+    [0.5,'lb','carrots','about 4; peeled and sliced',A.pr],
+    [4,'','celery ribs','diced',A.pr],
+    [2,'lb','boneless, skinless chicken breast','',A.me],
+    [2,'tbsp','Italian seasoning','',A.sp],
+    [1,'','bay leaf','',A.sp],
+    [0.25,'tsp','black pepper','',A.sp],
+    [8,'cup','water','',A.no],
+    [6,'oz','wide egg noodles','dry',A.pa],
+    [null,'','salt','to taste',A.sp],
+    [0.25,'cup','fresh parsley','chopped, optional',A.pr]],
+    steps:[
+      'Put the onion, garlic, carrots, and celery in a 6-quart slow cooker and lay the chicken on top. Add the Italian seasoning, bay leaf, pepper, and water.',
+      'Cook on high 4 hours or on low 8 hours.',
+      'Move the chicken to a cutting board, pull out the bay leaf, and stir the noodles into the pot.',
+      'Shred the chicken, return it to the pot, and cook 8 to 10 minutes until the noodles are tender. Season with salt, add parsley, and divide into 12 portions.']},
   fagioli:{prep:10,cook:35,ing:[
     [1,'tbsp','olive oil','',A.oi],
     [8,'oz','ham','chopped',A.me],
@@ -1421,6 +1624,18 @@ const RD={
     steps:['Spread the ranch down the middle of the tortilla, then layer the turkey, cheddar, and lettuce.','Roll it tightly, wrap it in foil, and refrigerate overnight. Pack the carrots in a bag.']},
   grabsalamibox:{prep:5,cook:0,ing:[[1,'oz','hard salami','',A.me],[1,'','string cheese','',A.da],[8,'','whole-grain crackers','',A.sn],[1,'cup','grapes','',A.pr]],
     steps:['Pack the salami, string cheese, and crackers in a divided container.','Add the grapes and refrigerate overnight.']},
+  grabyogurt:{prep:5,cook:0,ing:[[1,'cup','nonfat Greek yogurt','',A.da],[3,'tbsp','granola','',A.pa],[1,'cup','berries','fresh or frozen',A.pr],[15,'','almonds','',A.sn]],
+    steps:['Spoon the yogurt into a container and top with the berries.','Pack the granola and almonds in a separate bag and add them right before eating.']},
+  grabtuna:{prep:5,cook:0,ing:[[1,'can','light tuna in water (5 oz)','drained',A.ca],[1,'tbsp','light mayonnaise','',A.oi],[null,'','celery','chopped, optional',A.pr],[8,'','whole-grain crackers','',A.sn],[1,'','apple','',A.pr]],
+    steps:['Mix the tuna with the mayonnaise and celery and pack it in a small container.','Pack the crackers and apple alongside.']},
+  grabchxsalad:{prep:5,cook:0,ing:[[3,'oz','cooked chicken breast','chopped; rotisserie or leftover',A.me],[1,'tbsp','light mayonnaise','',A.oi],[null,'','celery','chopped, optional',A.pr],[2,'slice','whole wheat bread','',A.ba],[1,'cup','grapes','',A.pr]],
+    steps:['Mix the chicken, mayonnaise, and celery.','Make the sandwich, wrap it, and pack the grapes alongside.']},
+  grabhummus:{prep:5,cook:0,ing:[[4,'tbsp','hummus','',A.da],[1,'','whole-wheat pita (6 inch)','',A.ba],[1,'cup','baby carrots','',A.pr],[0.5,'','cucumber','sliced',A.pr],[1,'','string cheese','',A.da]],
+    steps:['Pack the hummus in a small container with the carrots and cucumber.','Cut the pita into wedges and pack it with the string cheese.']},
+  grabcaesar:{prep:5,cook:0,ing:[[1,'','large flour tortilla (10 inch)','',A.ba],[3,'oz','ready-to-eat grilled chicken strips','',A.me],[1,'cup','romaine lettuce','chopped',A.pr],[2,'tbsp','light Caesar dressing','',A.oi],[1,'tbsp','grated Parmesan cheese','',A.da]],
+    steps:['Toss the romaine with the dressing and Parmesan.','Lay the chicken and salad down the tortilla, roll it tightly, and wrap it in foil.']},
+  grabcottage:{prep:5,cook:0,ing:[[1,'cup','2% cottage cheese','',A.da],[1,'cup','pineapple chunks','',A.pr],[15,'','almonds','',A.sn],[6,'','whole-grain crackers','',A.sn]],
+    steps:['Pack the cottage cheese with the pineapple on top.','Pack the almonds and crackers in a separate bag.']},
   grabeggbox:{prep:5,cook:0,ing:[[2,'','eggs','large; hard-boiled on Sunday',A.da],[1,'','string cheese','',A.da],[6,'','whole-grain crackers','',A.sn],[1,'cup','grapes','',A.pr]],
     steps:['On Sunday, hard-boil the week\u2019s eggs: cover with water, bring to a boil, cover the pot, turn off the heat, and let them sit 12 minutes before an ice bath.','Pack 2 peeled eggs with the string cheese, crackers, and grapes.']},
   bubblebfast:{prep:25,cook:35,ing:[
@@ -3354,13 +3569,25 @@ function batchLabel(b){return b===0.5?'a half batch':b===1?'1 batch':fmtNum(b)+'
 function ingLine(t,b){const q=t[0],u=t[1],i=t[2],n=t[3];if(q==null)return esc(i)+(n?' <span class="src">('+esc(n)+')</span>':'');
   const s=q*b,fam=famOf(u),qty=(fam==='vol'||fam==='wt')?fmtBase(toBase(s,u),fam):fmtNum(s)+(u?' '+unitLabel(u,s):'');
   return '<strong>'+qty+'</strong> '+esc(itemName(i,u,s))+(n?' <span class="src">('+esc(n)+')</span>':'');}
+/* Recipe photos: looked up once from the source site's public WordPress API when a recipe is opened, then remembered for
+   both phones in house.photos[key] ({u:url} or {none:date}, retried after 30 days). The image loads from the blogger's own site. */
+const PHOTO_TRY={};
+function photoSlug(u){try{const x=new URL(u);const segs=x.pathname.split('/').filter(Boolean);return {host:x.origin,slug:(segs[segs.length-1]||'').replace(/\.html?$/,'')};}catch(e){return null;}}
+async function findPhoto(key){const r=R[key];if(!r||!r.url||PHOTO_TRY[key]||typeof fetch!=='function')return;PHOTO_TRY[key]=1;const ps=photoSlug(r.url);if(!ps||!ps.slug)return;
+  let url='';for(const kind of ['posts','pages']){try{const res=await fetch(ps.host+'/wp-json/wp/v2/'+kind+'?slug='+encodeURIComponent(ps.slug)+'&_embed=wp:featuredmedia',{mode:'cors',credentials:'omit'});if(!res.ok)continue;const js=await res.json();const it=Array.isArray(js)&&js[0];if(!it)continue;
+    const fm=it._embedded&&it._embedded['wp:featuredmedia']&&it._embedded['wp:featuredmedia'][0],sz=fm&&fm.media_details&&fm.media_details.sizes;
+    url=(sz&&((sz.medium_large||sz.large||sz.medium||{}).source_url))||(fm&&fm.source_url)||it.jetpack_featured_media_url||'';if(url)break;}catch(e){}}
+  if(!/^https:\/\//.test(url))url='';hset(['photos',key],url?{u:url}:{none:todayStr()});if(S.ready)softRender();}
+function photoHTML(key){const r=R[key];if(!r||!r.url)return '';const P=S.house&&S.house.photos&&S.house.photos[key];
+  if(P&&P.u)return '<a class="rphoto" href="'+esc(r.url)+'" target="_blank" rel="noopener"><img src="'+esc(P.u)+'" alt="'+esc(r.name)+'" loading="lazy" referrerpolicy="no-referrer" style="width:100%;max-height:260px;object-fit:cover;border-radius:10px;display:block;margin:4px 0 8px" onerror="this.parentNode.style.display=\'none\'"></a><div class="src" style="margin:-4px 0 8px">Photo from '+esc(srcName(r.url))+'. Tap it to open the original recipe.</div>';
+  if(!P||(P.none&&diffD(todayStr(),P.none)>30))setTimeout(()=>findPhoto(key),0);return '';}
 function recipePanel(key,batches){
   const d=RD[key],r=R[key];if(!d)return '';const b=batches||1;
-  let h='<div class="recpanel"><div class="src" style="margin-top:0">'+(r.yield?'One batch makes '+r.yield+' servings ('+esc(r.serving)+' each). ':'')+'Prep '+d.prep+' min'+(d.cook||d.cookText?', cook '+(d.cookText||d.cook+' min'):'')+(d.chill?', chill '+esc(d.chill):'')+'.'+(d.note?' '+esc(d.note):'')+'</div>';
+  let h='<div class="recpanel">'+photoHTML(key)+'<div class="src" style="margin-top:0">'+(r.yield?'One batch makes '+r.yield+' servings ('+esc(r.serving)+' each). ':'')+'Prep '+d.prep+' min'+(d.cook||d.cookText?', cook '+(d.cookText||d.cook+' min'):'')+(d.chill?', chill '+esc(d.chill):'')+'.'+(d.note?' '+esc(d.note):'')+'</div>';
   if(b!==1)h+='<div class="note good" style="margin:8px 0">Amounts are scaled to '+batchLabel(b)+' for this week.</div>';
   if(d.ahead)h+='<div class="note warn" style="margin:8px 0">'+esc(d.ahead)+'</div>';
   h+='<div class="subhead">Ingredients</div><ul class="ing">'+d.ing.map(t=>'<li>'+ingLine(t,b)+'</li>').join('')+'</ul>';
-  h+='<div class="subhead">Steps</div>'+d.steps.map((s,i)=>{const id=key+'|'+i,on=!!S.stepsDone[id];return '<label class="stepitem'+(on?' done':'')+'"><input type="checkbox" data-rstep="'+id+'"'+(on?' checked':'')+'><span><strong>'+(i+1)+'.</strong> '+esc(s)+'</span></label>';}).join('');
+  h+='<div class="subhead">Steps</div>'+d.steps.map((s,i)=>{const id=key+'|'+i,on=!!(S.house&&S.house.stepsDone&&S.house.stepsDone[id]);return '<label class="stepitem'+(on?' done':'')+'"><input type="checkbox" data-rstep="'+id+'"'+(on?' checked':'')+'><span><strong>'+(i+1)+'.</strong> '+esc(s)+'</span></label>';}).join('');
   if(!r.url)return h+'<div class="src" style="margin-top:8px">Nutrition uses typical label values.</div></div>';
   return h+'<div class="src" style="margin-top:8px">These steps are a shortened rewrite. <a href="'+esc(r.url)+'" target="_blank" rel="noopener">The original on '+esc(srcName(r.url))+'</a> has tips, photos, and variations.</div></div>';
 }
@@ -3378,10 +3605,19 @@ function groceryFor(wk){
     for(const t of d.ing){const q=t[0],u=t[1],i=t[2],n=t[3],a=t[4];if(a===A.no)continue;
       if(q==null){const e=taste[i]=taste[i]||{i,for:new Set()};e.for.add(nm);continue;}
       const fam=famOf(u),kk=a+'|'+i+'|'+fam,e=agg[kk]=agg[kk]||{i,a,fam,u,base:0,for:new Set(),n};e.base+=toBase(q*gc[k],u);e.for.add(nm);used.add(i);}}
+  // Picked snacks: a snack with its own ing list (RD-style, if the snack is itself a small recipe) merges into
+  // the aisle totals above like any other ingredient; a plain snack (almost all of them) is its own shopping line.
+  const snacks=[];
+  for(const x of snackPicks(wk).map(k=>SNACK_BY_ID[k]).filter(Boolean)){
+    if(x.ing){for(const t of x.ing){const q=t[0],u=t[1],i=t[2],n=t[3],a=t[4];if(a===A.no)continue;
+      if(q==null){const e=taste[i]=taste[i]||{i,for:new Set()};e.for.add(x.name);continue;}
+      const fam=famOf(u),k2=a+'|'+i+'|'+fam,e=agg[k2]=agg[k2]||{i,a,fam,u,base:0,for:new Set(),n};
+      e.base+=toBase(q,u);e.for.add(x.name);used.add(i);}continue;}
+    snacks.push({key:'s|Snacks|'+x.name,a:x.a,i:x.name,por:x.por||''});}
   const lines=Object.values(agg).map(e=>{let qty;if(e.fam==='vol'||e.fam==='wt')qty=fmtBase(e.base,e.fam);else{const c=Math.ceil(e.base-1e-9);qty=c+(e.u?' '+unitLabel(e.u,c):'');}
     return {key:e.a+'|'+e.i+'|'+e.fam,a:e.a,i:itemName(e.i,e.u,Math.ceil(e.base-1e-9)),qty,n:e.for.size===1?e.n:'',for:[...e.for],fam:e.fam,u:e.u,need:(e.fam==='vol'||e.fam==='wt')?e.base:Math.ceil(e.base-1e-9),pantry:(e.a===A.sp||e.a===A.oi||(e.a===A.pa&&e.fam==='vol')),pk:e.i.replace(/\//g,'-')+'|'+e.fam};}).sort((x,y)=>x.i<y.i?-1:1);
   const tastes=Object.values(taste).filter(t=>!used.has(t.i)).map(t=>({key:'t|'+t.i,i:t.i,for:[...t.for]}));
-  return {lines,tastes,missing};
+  return {lines,tastes,missing,snacks};
 }
 
 
@@ -3460,8 +3696,8 @@ function supplyTally(wk){
   for(const x of prepTotals(wk)){const r=R[x.key],cat=r.cat==='breakfast'?'breakfast':'main',b=multFor(x.key,wk);
     cats[cat].keys.push({key:x.key,b,makes:r.yield?r.yield*b:Math.ceil(x.total)*b,fit:!r.yield,uses:x.uses.length});}
   let snacks=0;for(let d=0;d<7;d++)for(const s of slotsFor(addD(wk,d)))if(['snack','evening','fruit','preshake'].includes(s))snacks++;
-  let grab=0,own=0;for(const p of ppl)for(let d=0;d<5;d++){const v=lunchPick(p.name,wk,d);if(!v)continue;if(v==='__pizza')pizza++;else if(v==='__none')none++;else if(R[v].cat==='grab')grab++;else own++;}
-  return {cats,pizza,none,snacks,grab,own};
+  let grab=0,own=0,packs=ppl.filter(ownLunch).map(p=>p.name);for(const p of ppl)for(let d=0;d<5;d++){const v=lunchPick(p.name,wk,d);if(!v)continue;if(v==='__pizza')pizza++;else if(v==='__none')none++;else if(R[v].cat==='grab')grab++;else own++;}
+  return {cats,pizza,none,snacks,grab,own,packs};
 }
 function tallyCard(wk){
   const T=supplyTally(wk),ppl=eaters().map(p=>p.name).join(' and ');
@@ -3473,7 +3709,7 @@ function tallyCard(wk){
   const m=T.cats.main.slots;
   let h='<div class="card tally-card"><div class="subhead" style="margin-top:0">Servings needed this week for '+esc(ppl)+'</div>';
   h+=block('Breakfasts',T.cats.breakfast,'');
-  h+=block('Lunches and dinners',T.cats.main,'About '+Math.ceil(m.lunch||0)+' for lunch and '+Math.ceil(m.dinner||0)+' for dinner'+(T.pizza?'; '+T.pizza+' pizza meal'+(T.pizza>1?'s':'')+' not counted':'')+(T.none?'; '+T.none+' meal'+(T.none>1?'s':'')+' marked as eating out':'')+(T.grab?'; '+T.grab+' grab-and-go lunch'+(T.grab>1?'es':'')+' not counted':'')+(T.own?'; '+T.own+' personal lunch pick'+(T.own>1?'s':'')+' included':''));
+  h+=block('Lunches and dinners',T.cats.main,'About '+Math.ceil(m.lunch||0)+' for lunch and '+Math.ceil(m.dinner||0)+' for dinner'+(T.pizza?'; '+T.pizza+' pizza meal'+(T.pizza>1?'s':'')+' not counted':'')+(T.none?'; '+T.none+' meal'+(T.none>1?'s':'')+' marked as eating out':'')+(T.grab?'; '+T.grab+' grab-and-go lunch'+(T.grab>1?'es':'')+' not counted':'')+(T.own?'; '+T.own+' personal lunch pick'+(T.own>1?'s':'')+' included':'')+(T.packs&&T.packs.length?'; '+T.packs.join(' and ')+' packs '+(T.packs.length>1?'their':'a')+' own weekday lunch'+(T.packs.length>1?'es':'')+', so those are not counted':''));
   h+='<div class="tblock"><div class="trow"><strong>Snacks</strong><span class="tnum">'+T.snacks+' for '+esc(S.profile.name)+'</span></div><div class="src">Afternoon, evening, and fruit snacks are grab-and-go from the shopping list. Nothing to cook.</div></div>';
   return h+'</div>';
 }
@@ -3482,13 +3718,13 @@ function mpPlan(wk){
   let h='<p class="prose" style="margin-top:0">Cook two breakfasts and two mains on Sunday, then one more main on '+DAYN[md]+' as the Sunday food runs low. The app spreads those five recipes across every breakfast, lunch, and dinner for both of you. Swap or choose any card, and fine-tune single meals in The week.</p>'+
     '<div class="row" style="margin-bottom:12px"><button class="btn" data-action="shuffle">Suggest a new week</button><button class="btn" data-action="copyweek">Repeat last week</button></div>'+tallyCard(wk);
   const card=r=>{const x=R[r.key],t=r.x;let c='<div class="slot"><div class="when">'+esc(r.label)+'</div><h3><a href="'+esc(x.url)+'" target="_blank" rel="noopener" style="color:inherit">'+esc(x.name)+'</a></h3>'+
-      '<div class="src">'+esc(TAGS[x.tag])+', '+esc(srcName(x.url))+'. Per '+esc(x.serving)+': '+x.kcal+' kcal, '+x.p+' g protein.'+(x.mush?' '+MUSH:'')+'</div>'+
+      '<div class="src">'+esc(TAGS[x.tag])+(isSlow(r.key)?', slow cooker':'')+', '+esc(srcName(x.url))+'. Per '+esc(x.serving)+': '+x.kcal+' kcal, '+x.p+' g protein.'+(x.mush?' '+MUSH:'')+'</div>'+
       '<div class="row" style="margin-top:4px">'+stars(r.key)+'<span class="src">'+recipeMeta(r.key)+'</span></div>'+
       '<div class="prep" style="margin:6px 0"><strong>'+makeText(t)+'</strong>, covering '+t.uses.length+' meals: '+esc(t.roles[0]||'none')+'. Servings: '+perText(t)+'.'+(t.freeze?' Freeze '+fmtS(t.freeze)+' servings on Sunday for Friday through Sunday.':'')+'</div>'+
-      '<div class="row">'+batchStepper(r.key,wk)+capSelect(r.key)+'<button class="btn" data-action="nextpick" data-v="'+r.role+'">Swap</button><button class="btn'+(S.pick===r.role?' on':'')+'" data-action="pickopen" data-v="'+r.role+'">Choose</button><button class="btn ghost" data-action="hide" data-k="'+r.key+'">'+(S.confirmHide===r.key?'Tap again to remove':'Remove from our list')+'</button></div>'+recBlock(r.key,'plan',t.total);
+      '<div class="row">'+batchStepper(r.key,wk)+capSelect(r.key)+(r.cat==='main'?sideSelect(r.key,wk):'')+'<button class="btn" data-action="nextpick" data-v="'+r.role+'">Swap</button><button class="btn'+(S.pick===r.role?' on':'')+'" data-action="pickopen" data-v="'+r.role+'">Choose</button><button class="btn ghost" data-action="hide" data-k="'+r.key+'">'+(S.confirmHide===r.key?'Tap again to remove':'Remove from our list')+'</button></div>'+recBlock(r.key,'plan',t.total);
     if(S.pick===r.role)c+=pickerHTML(r.role,r.cat,r.key);return c+'</div>';};
   h+='<div class="section" style="margin-top:0"><h2>Sunday cook</h2>'+rp.filter(r=>r.session==='sun').map(card).join('')+'</div>';
-  h+='<div class="section"><h2>Midweek cook</h2><div class="row" style="margin-bottom:10px"><span class="src">Cook on</span><button class="btn'+(md===2?' on':'')+'" data-action="midday" data-v="2">Wednesday</button><button class="btn'+(md===3?' on':'')+'" data-action="midday" data-v="3">Thursday</button></div>'+rp.filter(r=>r.session==='mid').map(card).join('')+'</div>';
+  h+='<div class="section"><h2>Midweek cook</h2><div class="row" style="margin-bottom:10px"><span class="src">Cook on</span><button class="btn'+(md===2?' on':'')+'" data-action="midday" data-v="2">Wednesday</button><button class="btn'+(md===3?' on':'')+'" data-action="midday" data-v="3">Thursday</button></div><p class="hint" style="margin:-4px 0 10px">Slow cooker recipes make an easy midweek cook. Tap Choose on this card and they are listed first.</p>'+rp.filter(r=>r.session==='mid').map(card).join('')+'</div>';
   if(SC().pizzaTue)h+='<div class="slot fixed"><div class="when">Tuesday dinner</div><h3>Pizza night</h3><div class="src">Nothing to prep. Each person\'s plan builds Tuesday around their own slice count.</div></div>';
   const extra=prepTotals(wk).filter(x=>![m.b1,m.b2,m.m1,m.m2,m.m3].includes(x.key));
   if(extra.length)h+='<div class="note" style="margin-top:10px">You also added '+extra.map(x=>esc(R[x.key].name)+' ('+esc(x.roles[0])+')').join(', ')+' in The week. It is included in the cooking list.</div>';
@@ -3497,10 +3733,10 @@ function mpPlan(wk){
 }
 function recipeScore(k){const r=rating(k)||3,ds=daysSince(S.house.made[k]);let s=r*10;if(ds!=null&&ds<10)s-=25;if(rating(k)&&rating(k)<=2)s-=20;return s;}
 function pickerHTML(role,cat,cur){
-  const tag=S.pickTag||'',ks=Object.keys(R).filter(k=>R[k].cat===cat&&!isHidden(k)&&k!==cur&&(!tag||R[k].tag===tag)).sort((a,b)=>recipeScore(b)-recipeScore(a));
+  const tag=S.pickTag||'',ks=Object.keys(R).filter(k=>R[k].cat===cat&&!isHidden(k)&&k!==cur&&tagMatch(k,tag)).sort((a,b)=>recipeScore(b)-recipeScore(a));
   let h='<div class="picker"><label class="f">Search<input type="text" id="pickq" placeholder="Search by name" autocomplete="off"></label>';
-  if(cat==='main'){h+='<div class="row" style="margin:8px 0"><button class="btn'+(!tag?' on':'')+'" data-action="picktag" data-v="">All</button>';for(const t in TAGS)if(t!=='bfast'&&t!=='grab')h+='<button class="btn'+(tag===t?' on':'')+'" data-action="picktag" data-v="'+t+'">'+esc(TAGS[t])+'</button>';h+='</div>';}
-  for(const k of ks){const x=R[k];h+='<div class="prep-row pickrow" data-q="'+esc(x.name.toLowerCase()+' '+TAGS[x.tag].toLowerCase())+'"><div><strong>'+esc(x.name)+'</strong><div class="src">'+esc(TAGS[x.tag])+'. '+x.kcal+' kcal and '+x.p+' g protein per serving.'+(rating(k)?' Rated '+rating(k)+' of 5.':'')+' '+recipeMeta(k)+'</div></div><button class="btn primary" data-action="pickuse" data-v="'+role+'" data-k="'+k+'">Use this</button></div>';}
+  if(cat==='main'){h+='<div class="row" style="margin:8px 0"><button class="btn'+(!tag?' on':'')+'" data-action="picktag" data-v="">All</button>';h+='<button class="btn'+(tag==='slow'?' on':'')+'" data-action="picktag" data-v="slow">Slow cooker</button>';for(const t in TAGS)if(t!=='bfast'&&t!=='grab')h+='<button class="btn'+(tag===t?' on':'')+'" data-action="picktag" data-v="'+t+'">'+esc(TAGS[t])+'</button>';h+='</div>';}
+  for(const k of ks){const x=R[k];h+='<div class="prep-row pickrow" data-q="'+esc(x.name.toLowerCase()+' '+TAGS[x.tag].toLowerCase())+'"><div><strong>'+esc(x.name)+'</strong><div class="src">'+esc(TAGS[x.tag])+(isSlow(k)?', slow cooker':'')+'. '+x.kcal+' kcal and '+x.p+' g protein per serving.'+(rating(k)?' Rated '+rating(k)+' of 5.':'')+' '+recipeMeta(k)+'</div></div><button class="btn primary" data-action="pickuse" data-v="'+role+'" data-k="'+k+'">Use this</button></div>';}
   return h+'<button class="btn ghost" data-action="pickclose">Close</button></div>';
 }
 function cellOptions(wk,d,slot,cur,def){
@@ -3552,9 +3788,9 @@ function viewLibrary(){
   let h='<div class="section"><h2>Recipe library</h2><div class="card"><p style="margin-top:0">'+vis+' recipes from EmilyBites, Skinnytaste, and similar sites, with each source\'s posted nutrition per serving. Tap Add to this week on any recipe to put it into the plan above. Recipes marked Full recipe in app have their ingredients and steps built in.</p>'+
     '<label class="f">Search recipes<input type="text" id="libq" placeholder="Example: teriyaki, pulled pork, burrito" autocomplete="off"></label><div class="row" style="margin:10px 0">'+
     '<button class="btn'+(!tag?' on':'')+'" data-action="libtag" data-v="">All</button>';
-  for(const t in TAGS)if(t!=='grab')h+='<button class="btn'+(tag===t?' on':'')+'" data-action="libtag" data-v="'+t+'">'+esc(TAGS[t])+' ('+POOLS[t].length+')</button>';
+  h+='<button class="btn'+(tag==='slow'?' on':'')+'" data-action="libtag" data-v="slow">Slow cooker ('+POOLS.slow.length+')</button>';for(const t in TAGS)if(t!=='grab')h+='<button class="btn'+(tag===t?' on':'')+'" data-action="libtag" data-v="'+t+'">'+esc(TAGS[t])+' ('+POOLS[t].length+')</button>';
   h+='</div><div id="liblist">';
-  for(const k of keys){const r=R[k];if(isHidden(k)||r.cat==='grab'||(tag&&r.tag!==tag))continue;
+  for(const k of keys){const r=R[k];if(isHidden(k)||r.cat==='grab'||!tagMatch(k,tag))continue;
     h+='<div class="librow" data-q="'+esc((r.name+' '+TAGS[r.tag]+' '+srcName(r.url)).toLowerCase())+'"><div class="prep-row"><div><a href="'+esc(r.url)+'" target="_blank" rel="noopener">'+esc(r.name)+'</a>'+(RD[k]?' <span class="tag good">Full recipe in app</span>':'')+'<div class="src">'+esc(TAGS[r.tag])+', '+esc(srcName(r.url))+'. Per '+esc(r.serving)+': '+r.kcal+' kcal, '+r.p+' g protein, '+r.c+' g carbs, '+r.f+' g fat.'+(r.mush?' '+MUSH:'')+'</div><div class="row">'+stars(k)+'<span class="src">'+recipeMeta(k)+'</span></div>'+(S.addKey===k?'<div class="row" style="margin-top:6px">'+roles().filter(x=>x.cat===r.cat).map(x=>'<button class="btn" data-action="addto" data-v="'+x.role+'" data-k="'+k+'">'+esc(x.label)+(x.session==='sun'?' (Sunday)':'')+'</button>').join('')+'</div>':'')+'</div><div style="display:grid;gap:4px;justify-items:end"><button class="btn primary" data-action="addopen" data-k="'+k+'">'+(S.addKey===k?'Cancel':'Add to this week')+'</button>'+madeBtn(k)+'<button class="btn ghost" data-action="hide" data-k="'+k+'">'+(S.confirmHide===k?'Tap again to remove':'Remove')+'</button></div></div>'+recBlock(k,'lib',0)+'</div>';}
   const hid=keys.filter(isHidden);
   if(hid.length){h+='</div><details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600">Removed recipes ('+hid.length+')</summary><div>';for(const k of hid)h+='<div class="prep-row"><div>'+esc(R[k].name)+'</div><button class="btn" data-action="unhide" data-k="'+k+'">Restore</button></div>';h+='</div></details><div>';}
@@ -3605,6 +3841,7 @@ function viewPlan(){
     '<label class="f">Goal weight, lb<input type="number" data-pf="goal1" value="'+esc(p.goal1)+'"></label><label class="f">Stretch goal, lb<input type="number" data-pf="goal2" value="'+esc(p.goal2)+'"></label>'+
     '<label class="f wide">Weekly pace<'+sel('pace',[['0.5','About 1/2 lb per week'],['1','About 1 lb per week'],['1.5','About 1 1/2 lb per week'],['2','About 2 lb per week']]).slice(1)+'</label>'+
     '<label class="f wide">Activity level<'+sel('activity',[['1.3','Desk job, 2 to 3 workouts a week'],['1.4','Desk job, 4 to 6 workouts a week'],['1.5','On your feet some of the day, or intense training 4 to 6 times a week'],['1.6','Physical job plus regular training']]).slice(1)+'</label></div></div></div>';
+  {const own=['grab','own'].includes(p.lunchStyle);h+='<div class="section"><h2>Weekday lunches</h2><div class="card"><div class="row"><button class="btn'+(!own?' on':'')+'" data-action="lunchstyle" data-v="menu">I eat the prepped meals</button><button class="btn'+(own?' on':'')+'" data-action="lunchstyle" data-v="own">I pack my own</button></div><div class="hint">Packing your own takes your Monday through Friday lunches out of the cooking amounts. Pick a packed lunch for each day in Meals, The week. Dinners and weekend lunches still come from the prepped meals.</div></div></div>';}
   h+='<div class="section"><h2>Training</h2><div class="card"><div class="row"><button class="btn'+(p.training==='home'?' on':'')+'" data-action="training" data-v="home">Mainly the home plan</button><button class="btn'+(p.training==='own'?' on':'')+'" data-action="training" data-v="own">Mainly my own gym program</button></div>'+
     '<div class="hint">This sets which one Today shows first. You can log a home session, a gym workout, or both on any day from the Workout page, and both show on the day and in the week.</div>';
   if(p.training==='home')h+='<div class="subhead" style="margin-top:12px">Leg work</div><div class="row"><button class="btn'+(!p.legsLevel?' on':'')+'" data-action="legs" data-v="0">Knee protection</button><button class="btn'+(p.legsLevel?' on':'')+'" data-action="legs" data-v="1">Ready for light leg work</button></div>';
@@ -3637,14 +3874,14 @@ function viewGrocery(wk){
   let h='<p class="prose" style="margin-top:0">Every ingredient for this week\'s cooking, combined across recipes.</p><div class="row" style="margin-bottom:12px"><button class="btn" data-action="gclear">Clear checks</button></div><div class="card grocery">';
   h+=coverageNote(wk);
   h+='<p class="hint" style="margin-top:0">Scaled to the batches you picked. Cans, packets, and whole items round up.</p>';
-  for(const aisle of AISLES){const ls=G.lines.filter(x=>x.a===aisle);if(!ls.length)continue;h+='<h3>'+esc(aisle)+'</h3>';
-    for(const x of ls)h+=row('i|'+wk+'|'+x.key,'<strong>'+esc(x.qty)+'</strong> '+esc(x.i)+(x.n?' <span class="src">('+esc(x.n)+')</span>':'')+'<div class="src">for '+x.for.map(esc).join(', ')+'</div>');}
+  for(const aisle of AISLES){const ls=G.lines.filter(x=>x.a===aisle),sn=G.snacks.filter(x=>x.a===aisle);if(!ls.length&&!sn.length)continue;h+='<h3>'+esc(aisle)+'</h3>';
+    for(const x of ls)h+=row('i|'+wk+'|'+x.key,'<strong>'+esc(x.qty)+'</strong> '+esc(x.i)+(x.n?' <span class="src">('+esc(x.n)+')</span>':'')+'<div class="src">for '+x.for.map(esc).join(', ')+'</div>');
+    for(const x of sn)h+=row(x.key,esc(x.i)+(x.por?' <span class="src">('+esc(x.por)+')</span>':'')+'<div class="src">Picked for this week\u2019s snacks</div>');}
   if(G.tastes.length){h+='<h3>To taste (check your pantry)</h3>';for(const x of G.tastes)h+=row('i|'+wk+'|'+x.key,esc(x.i)+'<div class="src">for '+x.for.map(esc).join(', ')+'</div>');}
   if(G.missing.length){h+='<h3>Ingredient lists not added yet</h3><p class="hint">Open each recipe for its ingredients until these are added to the app.</p>';
     for(const x of G.missing){const r=R[x.key],key='r|'+wk+'|'+x.key;h+=row(key,esc(r.name)+': '+(r.yield?batchText(Math.ceil(x.total),r.yield):fmtS(x.total)+' servings')+'. <a href="'+esc(r.url)+'" target="_blank" rel="noopener">Ingredient list on '+esc(srcName(r.url))+'</a>');}}
-  const sp=snackPicks(wk).map(k=>SNACK_BY_ID[k]);h+='<h3>Snacks and sides you picked</h3>';
-  if(!sp.length)h+='<p class="hint">Nothing picked for this week. <button class="btn" data-action="mpstep" data-v="snacks">Pick snacks</button></p>';
-  for(const x of sp)h+=row('s|Snacks|'+x.name,esc(x.name)+'<div class="src">'+esc(x.a)+'</div>');
+  {const sc=sideCounts(wk),ks=Object.keys(sc).filter(k=>SIDE_SHOP[k]);if(ks.length){h+='<h3>Sides for this week\u2019s meals</h3>';for(const k of ks)h+=row('s|Side|'+k,esc(SIDE_SHOP[k](sc[k]))+'<div class="src">Counted from every planned meal that uses this side</div>');}}
+  if(!snackPicks(wk).length){h+='<h3>Snacks and sides you picked</h3><p class="hint">Nothing picked for this week. <button class="btn" data-action="mpstep" data-v="snacks">Pick snacks</button></p>';}
   for(const sec of STAPLES){h+='<h3>'+esc(sec.sec)+'</h3>';for(const it of sec.items){const k='s|'+sec.sec+'|'+it;h+=row(k,esc(it));}}
   return h+'</div>';
 }
@@ -3710,6 +3947,142 @@ function buildReport(n){
   return L.join('\n');
 }
 
+/* =============== Food log (works like MyFitnessPal) ===============
+   "Ate something else" and "Add food" open a food search. Foods come from FOODS (Claude's list, rebuilt from the
+   "Food list for Claude" file), house.foods (foods either person created or scanned, shared by both phones), the recipe
+   library per serving, weekly snack items, and each person's own earlier free-typed logs.
+   house.foodUse[id][name] = {c: times logged, l: last date} drives the Recent list.
+   Barcodes: native BarcodeDetector when the phone has it, otherwise ZXing loaded on demand; products are looked up in
+   house.foods first, then Open Food Facts. A scanned product is saved to house.foods so it is instant next time. */
+const FOODS=[
+  {id:'c:pscsand',n:'Pepperoni, salami, and cheese sandwich',s:'1 sandwich (estimate)',k:430,p:20,c:28,f:26,who:['karl']},
+  {id:'c:ccpancake',n:'Chocolate chip pancake, large',s:'1 pancake (estimate)',k:535,p:18,c:84,f:14,who:['karl']},
+  {id:'c:pizzaslice',n:'Pizza, pepperoni (pizza night)',s:'1 slice (estimate)',k:275,p:11,c:30,f:12,who:['karl']},
+  {id:'c:foxpep',n:'Fox\u2019s Big Daddy pepperoni pizza',s:'1 slice or square (estimate)',k:248,p:11,c:30,f:9,who:['karl']},
+  {id:'c:foxbread',n:'Fox\u2019s cheesy breadstick',s:'1 breadstick (estimate)',k:166,p:7,c:14,f:9,who:['karl']},
+  {id:'c:chilichx',n:'Chili chicken (pizza night)',s:'1 plate (estimate)',k:450,p:20,c:20,f:32,who:['karl']},
+  {id:'c:smashsquatch',n:'Baby SmashSquatch, The Smash Pit',s:'1 sandwich, no sides (estimate)',k:650,p:32,c:35,f:40,who:['karl']},
+  {id:'c:exportsweet',n:'Sweet and Spicy sandwich, Export Deli',s:'1 sandwich (estimate)',k:690,p:30,c:65,f:34,who:['karl']},
+  {id:'c:cheeseburgerfries',n:'Grilled cheeseburger with fries',s:'1 plate (estimate)',k:1000,p:30,c:85,f:60,who:['karl']},
+  {id:'c:mtndew20',n:'Mountain Dew',s:'20 oz bottle',k:290,p:0,c:77,f:0,who:['karl']},
+  {id:'c:sweettea',n:'Kool-Aid sweet tea',s:'16 oz (estimate)',k:180,p:0,c:45,f:0,who:['karl']},
+  {id:'c:icecream',n:'Ice cream',s:'1 scoop, about 1/2 cup',k:140,p:3,c:17,f:7,who:['karl']},
+  {id:'c:chipssalsa',n:'Tortilla chips with salsa',s:'about 10 chips and 2 tbsp salsa',k:150,p:2,c:20,f:7,who:['karl']}
+];
+const FOOD_TAG={claude:'Our list',mine:'Ours',scan:'Scanned',recipe:'Recipe',grab:'Packed lunch',snack:'Snack',history:'Logged before'};
+const myKey=()=>String(S.profile.name).toLowerCase();
+const fslug=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60);
+const r1=x=>Math.round(n0(x)*10)/10;
+function diaryNames(){const o=new Set();for(const e of DIARY)for(const D of e.days){for(const k in (D.meals||{}))if(D.meals[k]&&D.meals[k].name)o.add(D.meals[k].name);for(const x of (D.extras||[]))if(x&&x.name)o.add(x.name);}return o;}
+function historyFoods(){const out={},skip=diaryNames();
+  const see=(x,d)=>{if(!x||!x.name||x.items||x.fid||x.src==='claude'||skip.has(x.name)||x.name==='Skipped')return;const id='x:'+fslug(x.name);if(!fslug(x.name))return;const o=out[id]=out[id]||{id,n:x.name,s:'as logged',src:'history',hc:0,hl:''};o.hc++;if(d>=o.hl){o.hl=d;o.k=n0(x.kcal);o.p=n0(x.p);o.c=n0(x.c);o.f=n0(x.f);}};
+  for(const d in S.days){const l=S.days[d];if(!l)continue;for(const s in (l.meals||{})){const m=l.meals[s];if(m&&m.status==='custom')see(m,d);}for(const x of (l.extras||[]))see(x,d);}
+  return Object.values(out);}
+function foodSources(){const out=new Map(),put=f=>{if(!out.has(f.id))out.set(f.id,f);};
+  for(const f of FOODS)put(Object.assign({src:'claude',b:'',bc:''},f));
+  const H=(S.house&&S.house.foods)||{};
+  for(const id in H){const x=H[id];if(!x)continue;if(out.has(id)){const b=out.get(id);if(x.del)out.delete(id);else if(!b.bc&&x.bc)b.bc=x.bc;continue;}if(x.del)continue;
+    put({id,n:x.n||'Food',b:x.b||'',s:x.s||'1 serving',k:n0(x.k),p:n0(x.p),c:n0(x.c),f:n0(x.f),bc:x.bc||'',src:x.src==='scan'?'scan':'mine',by:x.by||'',own:true});}
+  for(const k in R){const r=R[k];put({id:'r:'+k,n:r.name,s:r.serving||'1 serving',k:r.kcal,p:r.p,c:r.c,f:r.f,src:r.cat==='grab'?'grab':'recipe'});}
+  for(const x of SNACK_ITEMS)if(x.por)put({id:'s:'+x.id,n:x.sh||x.name,s:x.por,k:x.kcal,p:x.p,c:x.c,f:x.f,src:'snack'});
+  for(const f of historyFoods())put(f);
+  return out;}
+function foodUse(f){const u=(((S.house&&S.house.foodUse)||{})[f.id]||{})[myKey()]||{};const c=n0(u.c)+(f.hc||0),l=[u.l||'',f.hl||''].sort().pop();return {c,l};}
+function recentFoods(all){const me=myKey(),L=[...all.values()].map(f=>Object.assign({},f,{u:foodUse(f)})).filter(f=>f.u.c>0);
+  L.sort((a,b)=>a.u.l<b.u.l?1:a.u.l>b.u.l?-1:b.u.c-a.u.c);const out=L.slice(0,12);
+  if(out.length<12)for(const f of all.values())if(f.who&&f.who.includes(me)&&!out.some(o=>o.id===f.id)&&out.length<12)out.push(f);
+  return out;}
+function searchFoods(all,q){const t=q.toLowerCase().split(/\s+/).filter(Boolean);if(!t.length)return [];const W={mine:12,scan:12,claude:10,history:9,recipe:6,grab:5,snack:5};
+  const L=[];for(const f of all.values()){const hay=(f.n+' '+(f.b||'')+' '+(f.s||'')+' '+(f.bc||'')).toLowerCase();if(!t.every(x=>hay.includes(x)))continue;const u=foodUse(f);
+    L.push([f,(u.c?40+Math.min(u.c,30):0)+(f.n.toLowerCase().startsWith(t[0])?15:0)+(W[f.src]||0)]);}
+  return L.sort((a,b)=>b[1]-a[1]).slice(0,30).map(x=>x[0]);}
+function fpRow(f){return '<div class="prep-row fprow" role="button" tabindex="0" data-action="fpsel" data-v="'+esc(f.id)+'" style="cursor:pointer;padding:8px 0"><div><strong>'+esc(f.n)+'</strong>'+(f.b?' <span class="src">'+esc(f.b)+'</span>':'')+'<div class="src">'+esc(f.s)+', '+fmtN(f.k)+' kcal, '+fmtN(f.p)+' g protein</div></div><span class="pill">'+esc(FOOD_TAG[f.src]||'')+'</span></div>';}
+function fpResults(){const fp=S.fp,all=foodSources(),q=(fp.q||'').trim();
+  if(q){const L=searchFoods(all,q);return L.length?L.map(fpRow).join(''):'<p class="hint">Nothing matches "'+esc(q)+'" yet. Tap <strong>Create a food</strong> to add it once; it will come up in searches for both of you from then on.</p>';}
+  const L=recentFoods(all);return '<div class="subhead" style="margin-top:6px">Recent</div>'+(L.length?L.map(fpRow).join(''):'<p class="hint">Foods you log show up here next time. Search above, scan a barcode, or create a food.</p>');}
+function fpTot(items){const t={k:0,p:0,c:0,f:0};for(const it of items)for(const k in t)t[k]+=n0(it[k]);return t;}
+function fpItemLabel(it){return it.n+' ('+(it.q===1?it.s:fmtNum(it.q)+' x '+it.s)+')';}
+function fpFood(id){const fp=S.fp;return (fp.temp&&fp.temp[id])||foodSources().get(id)||null;}
+function fpMacroText(f,q){return fmtN(Math.round(f.k*q))+' kcal, '+fmtN(Math.round(f.p*q))+' g protein, '+fmtN(Math.round(f.c*q))+' g carbs, '+fmtN(Math.round(f.f*q))+' g fat';}
+function foodPicker(){const fp=S.fp;if(!fp)return '';const meal=fp.tgt==='meal';
+  let h='<div class="card fp" style="margin-top:10px;border:1px solid var(--line)">';
+  if(fp.msg)h+='<div class="note good" style="margin-bottom:8px">'+esc(fp.msg)+'</div>';
+  if(fp.items.length){const t=fpTot(fp.items);h+='<div class="subhead" style="margin-top:0">'+(meal?'In this meal':'Adding to today')+'</div>';
+    fp.items.forEach((it,i)=>{h+='<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:4px 0"><span>'+esc(fpItemLabel(it))+' <span class="kicker">'+fmtN(Math.round(it.k))+' kcal</span></span><button class="btn ghost" data-action="fprm" data-v="'+i+'">Remove</button></div>';});
+    h+='<div class="row" style="margin:8px 0;justify-content:space-between"><span class="src">Total '+fmtN(Math.round(t.k))+' kcal, '+fmtN(Math.round(t.p))+' g protein</span><button class="btn primary" data-action="fplog">'+(meal?'Log this meal':'Add to today')+'</button></div>';}
+  if(fp.mode==='scan'){
+    h+='<div class="subhead" style="margin-top:0">Scan a barcode</div><video id="fpVid" playsinline muted autoplay style="width:100%;max-height:280px;background:#000;border-radius:10px;object-fit:cover"></video><div class="src" id="fpScanMsg" style="margin:6px 0">'+esc(fp.scanMsg||'Starting the camera...')+'</div>'+
+      '<div class="row"><input type="text" id="fpCode" inputmode="numeric" placeholder="Or type the barcode number" style="flex:1;min-width:160px"><button class="btn" data-action="fpcode">Look up</button></div><div class="row" style="margin-top:8px"><button class="btn" data-action="fpscan">Restart camera</button><button class="btn ghost" data-action="fpback">Back to search</button></div>';
+  }else if(fp.mode==='new'){const d=fp.draft||{};
+    h+='<div class="subhead" style="margin-top:0">'+(d.id?'Edit this food':'Create a food')+'</div><p class="src" style="margin-top:0">Copy the numbers from the label for one serving.</p><div class="form">'+
+      '<label class="f wide">Food name<input type="text" id="fnN" value="'+esc(d.n||'')+'" placeholder="Example: Clif Bar, chocolate chip"></label><label class="f">Brand (optional)<input type="text" id="fnB" value="'+esc(d.b||'')+'"></label><label class="f">Serving size<input type="text" id="fnS" value="'+esc(d.s||'')+'" placeholder="1 bar (68 g)"></label>'+
+      '<label class="f">Calories<input type="number" inputmode="decimal" id="fnK" value="'+esc(d.k==null?'':d.k)+'"></label><label class="f">Protein g<input type="number" inputmode="decimal" id="fnP" value="'+esc(d.p==null?'':d.p)+'"></label><label class="f">Carbs g<input type="number" inputmode="decimal" id="fnC" value="'+esc(d.c==null?'':d.c)+'"></label><label class="f">Fat g<input type="number" inputmode="decimal" id="fnF" value="'+esc(d.f==null?'':d.f)+'"></label>'+
+      '<label class="f">Barcode (optional)<input type="text" inputmode="numeric" id="fnBc" value="'+esc(d.bc||'')+'"></label></div>'+
+      (d.id?'':'<label class="row" style="gap:6px;margin:8px 0"><input type="checkbox" id="fnSave"'+(d.save===false?'':' checked')+'> Save to our foods so it comes up next time</label>')+
+      '<div class="row" style="margin-top:8px"><button class="btn primary" data-action="fpsavefood">'+(d.id?'Save changes':'Next: how much')+'</button><button class="btn ghost" data-action="fpback">Back</button>'+(d.id?'<button class="btn ghost" data-action="fpdelfood">Remove from our foods</button>':'')+'</div>';
+  }else if(fp.sel){const f=fpFood(fp.sel);if(!f){fp.sel=null;return foodPicker();}const q=fp.qty||1;
+    h+='<div class="subhead" style="margin-top:0">'+esc(f.n)+(f.b?' <span class="src">'+esc(f.b)+'</span>':'')+'</div><div class="src">One serving is '+esc(f.s)+': '+fpMacroText(f,1)+'.</div>'+
+      '<div class="row" style="margin-top:8px;align-items:center"><label class="f" style="max-width:140px">Servings<input type="number" inputmode="decimal" step="0.25" min="0.25" id="fpQty" value="'+q+'"></label>'+[0.5,1,1.5,2,3].map(n=>'<button class="btn'+(q===n?' on':'')+'" data-action="fpqty" data-v="'+n+'">'+fmtNum(n)+'</button>').join('')+'</div>'+
+      '<div class="src" id="fpMac" style="margin:6px 0">'+fpMacroText(f,q)+'</div><div class="row"><button class="btn primary" data-action="fpadd">'+(meal?'Add to this meal':'Add')+'</button>'+(!fp.items.length?'<button class="btn" data-action="fpadd" data-v="log">'+(meal?'Log just this':'Add to today now')+'</button>':'')+'<button class="btn ghost" data-action="fpback">Back</button>'+(f.own?'<button class="btn ghost" data-action="fpedit">Edit this food</button>':'')+'</div>';
+  }else{
+    h+='<div class="row"><input type="search" id="fpQ" value="'+esc(fp.q||'')+'" placeholder="Search foods, recipes, and snacks" style="flex:1;min-width:180px" autocomplete="off"></div>'+
+      '<div class="row" style="margin-top:8px"><button class="btn" data-action="fpscan">Scan a barcode</button><button class="btn" data-action="fpnew">Create a food</button></div><div id="fpRes" style="margin-top:6px">'+fpResults()+'</div>';}
+  return h+'<div class="row" style="margin-top:10px"><button class="btn ghost" data-action="fpcancel">Cancel</button></div></div>';}
+function fpOpen(tgt,slot){stopScan();S.fp={tgt,slot:slot||null,items:[],q:'',mode:'list',sel:null,qty:1,temp:{},msg:''};S.openCustom=tgt==='meal'?slot:null;}
+function fpClose(){stopScan();S.fp=null;S.openCustom=null;}
+function newFoodId(){return 'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function bumpUse(id,date){const me=myKey(),cur=((((S.house.foodUse||{})[id])||{})[me])||{c:0};hset(['foodUse',id,me],{c:n0(cur.c)+1,l:date});}
+function fpCommit(){const fp=S.fp,date=S.date;if(!fp||!fp.items.length)return;const t=fpTot(fp.items);
+  const items=fp.items.map(it=>({id:it.id,n:it.n,s:it.s,q:it.q,k:r1(it.k),p:r1(it.p),c:r1(it.c),f:r1(it.f)}));
+  for(const it of fp.items)if(!String(it.id).startsWith('t:'))bumpUse(it.id,date);
+  if(fp.tgt==='meal'){const slot=fp.slot;fpClose();logMeal(date,slot,{status:'custom',name:items.map(fpItemLabel).join(', ').slice(0,240),kcal:Math.round(t.k),p:Math.round(t.p),c:Math.round(t.c),f:Math.round(t.f),items});return;}
+  const l=day(date);l.extras=l.extras||[];for(const it of items)l.extras.push({name:fpItemLabel(it).slice(0,120),kcal:Math.round(it.k),p:Math.round(it.p),c:Math.round(it.c),f:Math.round(it.f),fid:it.id,q:it.q});
+  fpClose();saveDay(date);render();}
+/* Barcode scanning */
+const ZXING_URL='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+let SCAN=null;
+function loadScript(u){return new Promise((res,rej)=>{if(window.ZXing)return res();const s=document.createElement('script');s.src=u;s.onload=()=>res();s.onerror=()=>rej(new Error('Could not load the scanner'));document.head.appendChild(s);});}
+function scanMsg(t){if(S.fp)S.fp.scanMsg=t;const m=document.getElementById('fpScanMsg');if(m)m.textContent=t;}
+async function startScan(){stopScan();const v=document.getElementById('fpVid');if(!v||!S.fp)return;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){scanMsg('This browser cannot open the camera here. Type the barcode number below instead.');return;}
+  const run={on:true};SCAN=run;S.scanning=true;const cons={video:{facingMode:{ideal:'environment'},width:{ideal:1280}},audio:false};
+  try{
+    if('BarcodeDetector' in window){let fm=['ean_13','ean_8','upc_a','upc_e'];try{const sup=await window.BarcodeDetector.getSupportedFormats();fm=fm.filter(f=>sup.includes(f));}catch(e){}
+      if(fm.length){const st=await navigator.mediaDevices.getUserMedia(cons);run.stream=st;if(!run.on){st.getTracks().forEach(t=>t.stop());return;}v.srcObject=st;try{await v.play();}catch(e){}
+        const det=new window.BarcodeDetector({formats:fm});scanMsg('Point the camera at the barcode and hold steady.');
+        const tick=async()=>{if(!run.on)return;try{if(v.readyState>=2){const r=await det.detect(v);if(r&&r.length&&run.on){gotCode(r[0].rawValue);return;}}}catch(e){}run.t=setTimeout(tick,180);};tick();return;}}
+    scanMsg('Loading the scanner...');await loadScript(ZXING_URL);if(!run.on)return;
+    const Z=window.ZXing,hints=new Map();hints.set(Z.DecodeHintType.POSSIBLE_FORMATS,[Z.BarcodeFormat.EAN_13,Z.BarcodeFormat.EAN_8,Z.BarcodeFormat.UPC_A,Z.BarcodeFormat.UPC_E]);
+    const rd=new Z.BrowserMultiFormatReader(hints,200);run.reader=rd;
+    await rd.decodeFromConstraints(cons,v,res=>{if(res&&run.on)gotCode(res.getText());});
+    if(run.on)scanMsg('Point the camera at the barcode and hold steady.');
+  }catch(e){const blocked=e&&(e.name==='NotAllowedError'||e.name==='SecurityError');stopScan();scanMsg(blocked?'Camera access is blocked. Allow the camera for this site in your browser settings, or type the barcode number below.':'The camera could not start. Type the barcode number below instead.');}}
+function stopScan(){const r=SCAN;SCAN=null;const was=S.scanning;S.scanning=false;if(r){r.on=false;clearTimeout(r.t);try{if(r.reader)r.reader.reset();}catch(e){}if(r.stream)r.stream.getTracks().forEach(t=>t.stop());}
+  const v=document.getElementById('fpVid');if(v&&v.srcObject){try{v.srcObject.getTracks().forEach(t=>t.stop());}catch(e){}v.srcObject=null;}
+  if(was&&S.dirty){S.dirty=false;setTimeout(render,50);}}
+function gotCode(raw){stopScan();try{if(navigator.vibrate)navigator.vibrate(60);}catch(e){}lookupCode(raw);}
+function normCode(x){let s=String(x||'').replace(/\D/g,'');if(s.length===12)s='0'+s;return s.length>=8&&s.length<=14?s:'';}
+async function offLookup(code){const tries=[code];if(code.length===13&&code[0]==='0')tries.push(code.slice(1));let reached=false;
+  for(const c of tries){let j;try{const r=await fetch('https://world.openfoodfacts.org/api/v2/product/'+c+'.json?fields=product_name,product_name_en,brands,serving_size,serving_quantity,nutriments',{credentials:'omit'});reached=true;if(!r.ok)continue;j=await r.json();}catch(e){continue;}
+    if(!j||j.status!==1||!j.product)continue;const P=j.product,N=P.nutriments||{},sq=n0(P.serving_quantity),has=v=>v!=null&&v!=='';
+    const per=k=>has(N[k+'_serving'])?n0(N[k+'_serving']):(has(N[k+'_100g'])&&sq?n0(N[k+'_100g'])*sq/100:null);
+    let k=per('energy-kcal'),s=P.serving_size||'';if(k==null){const kj=per('energy');if(kj!=null)k=kj/4.184;}
+    let p=per('proteins'),cc=per('carbohydrates'),f=per('fat');
+    if(k==null){if(!has(N['energy-kcal_100g']))continue;k=n0(N['energy-kcal_100g']);p=n0(N.proteins_100g);cc=n0(N.carbohydrates_100g);f=n0(N.fat_100g);s='100 g';}
+    return {n:String(P.product_name_en||P.product_name||'Scanned food').slice(0,80),b:String(P.brands||'').split(',')[0].trim().slice(0,40),s:String(s||'1 serving').slice(0,40),k:Math.round(n0(k)),p:r1(p),c:r1(cc),f:r1(f)};}
+  return reached?null:false;}
+async function lookupCode(raw){const fp=S.fp;if(!fp)return;const code=normCode(raw);if(!code){scanMsg('That does not look like a barcode number.');return;}
+  const hit=[...foodSources().values()].find(f=>f.bc&&normCode(f.bc)===code);
+  if(hit){fp.mode='list';fp.sel=hit.id;fp.qty=1;fp.msg='';render();return;}
+  fp.mode='scan';scanMsg('Looking up '+code+'...');const p=await offLookup(code);if(!S.fp)return;
+  if(p){const id=newFoodId();hset(['foods',id],Object.assign(p,{bc:code,src:'scan',by:S.profile.name,t:todayStr()}));S.fp.mode='list';S.fp.sel=id;S.fp.qty=1;S.fp.msg='Found it in the Open Food Facts database and saved it to your foods. Compare it with the label once; tap Edit this food if anything is off.';render();return;}
+  S.fp.mode='new';S.fp.draft={bc:code,save:true,src:'scan'};S.fp.msg=p===false?'Could not reach the barcode database (no connection?). Enter it from the label and it will be saved under this barcode.':'That barcode is not in the public database yet. Enter it from the label once and it will come up instantly for both of you next time.';render();}
+function foodExport(){const me=myKey(),from=addD(todayStr(),-60),logged=[];
+  for(const d of Object.keys(S.days).sort()){if(d<from)continue;const l=S.days[d]||{};for(const s in (l.meals||{})){const m=l.meals[s];if(m&&m.status==='custom')logged.push({date:d,slot:s,name:m.name,kcal:m.kcal,p:m.p,c:m.c,f:m.f,items:m.items||null});}
+    for(const x of (l.extras||[]))logged.push({date:d,slot:'extra',name:x.name,kcal:x.kcal,p:x.p,c:x.c,f:x.f,fid:x.fid||null,q:x.q||null});}
+  const o={foodListForClaude:1,exportedAt:new Date().toISOString(),person:S.profile.name,foods:(S.house&&S.house.foods)||{},use:(S.house&&S.house.foodUse)||{},logged};
+  const blob=new Blob([JSON.stringify(o,null,1)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='foods-for-claude-'+me+'-'+todayStr()+'.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);return o;}
+
 /* =============== Events =============== */
 function logMeal(date,slot,rec){const l=day(date);l.meals=l.meals||{};l.meals[slot]=rec;S.openCustom=null;saveDay(date);render();}
 function planWeek(){return dow(todayStr())>=3?addD(monday(todayStr()),7):monday(todayStr());} // Thursday on, planning is for next week
@@ -3730,6 +4103,9 @@ document.addEventListener('click',ev=>{
   if(a==='lunchcopy'){const wk=curMenuWeek(),pv=clone((S.house.lunch||{})[addD(wk,-7)]||{});S.house.lunch=S.house.lunch||{};S.house.lunch[wk]=pv;hset(['lunch',wk],pv);render();return;}
   if(a==='snkcopy'){const wk=curMenuWeek(),o={};for(const k of snackPicks(addD(wk,-7)))o[k]=true;S.house.snacks=S.house.snacks||{};S.house.snacks[wk]=o;hset(['snacks',wk],o);render();return;}
   if(a==='snkclear'){const wk=curMenuWeek();S.house.snacks=S.house.snacks||{};S.house.snacks[wk]={};hset(['snacks',wk],{});render();return;}
+  if(a==='golunch'){S.view='menu';S.mpStep='week';S.menuWeek=monday(date);render();scrollTo(0,0);return;}
+  if(a==='lunchfill'){const wk=curMenuWeek(),ks=(POOLS.grab||[]).filter(k=>!isHidden(k));let i=Math.round(diffD(wk,'2026-01-05')/7)*3;for(let d=0;d<5;d++){if(lunchPick(v,wk,d))continue;let k=ks[(i++)%ks.length];if(k==='grabpizza'&&d<2)k=ks[(i++)%ks.length];hset(['lunch',wk,v,String(d)],k);}render();return;}
+  if(a==='lunchstyle'){S.profile.lunchStyle=v==='own'?'own':'menu';saveProfile();render();return;}
   if(a==='gosnacks'){S.view='menu';S.mpStep='snacks';S.menuWeek=monday(date);render();scrollTo(0,0);return;}
   if(a==='kneecheck'){S.profile.kneeCheck=!S.profile.kneeCheck;saveProfile();render();return;}
   if(a==='view'){S.view=v;window.scrollTo(0,0);render();return;}
@@ -3753,7 +4129,7 @@ document.addEventListener('click',ev=>{
     else status='done';
     l.workout.status=status;if(!l.workout.minutes){const m=Math.round(woElapsed(date)/60);if(m>0)l.workout.minutes=m;}
     S.tm.restEnd=0;saveDay(date);render();return;}
-  if(a==='date'){S.date=v==='0'?todayStr():addD(S.date,+v);S.openCustom=null;S.coachErr='';render();return;}
+  if(a==='date'){S.date=v==='0'?todayStr():addD(S.date,+v);fpClose();S.coachErr='';render();return;}
   if(a==='wkshift'){S.date=addD(S.date,+v);render();return;}
   if(a==='open'){S.date=v;S.view='today';window.scrollTo(0,0);render();return;}
   if(a==='gotomenu'){S.menuWeek=v;S.mpStep='prep';S.view='menu';window.scrollTo(0,0);render();return;}
@@ -3780,7 +4156,7 @@ document.addEventListener('click',ev=>{
   if(a==='shcancel'){S.shPrev=null;S.shMsg='';render();return;}
   if(a==='closequote'){S.quote=null;render();return;}
   if(a==='mpstep'){S.mpStep=v;S.pick=null;window.scrollTo(0,0);render();return;}
-  if(a==='pickopen'){S.pick=S.pick===v?null:v;S.pickTag='';render();const q=document.getElementById('pickq');if(q)q.focus();return;}
+  if(a==='pickopen'){S.pick=S.pick===v?null:v;S.pickTag=v==='m3'?'slow':'';render();const q=document.getElementById('pickq');if(q)q.focus();return;}
   if(a==='pickclose'){S.pick=null;render();return;}
   if(a==='picktag'){S.pickTag=v;render();return;}
   if(a==='pickuse'||a==='addto'){const wk=curMenuWeek(),m=clone(menuFor(wk)),k=b.dataset.k;m[v]=k;setMenu(wk,m);S.pick=null;S.addKey=null;S.mpMsg=R[k].name+' is now '+(roles().find(x=>x.role===v)||{label:v}).label.toLowerCase()+' for the week of '+fmtShort(wk)+'.';if(a==='addto')window.scrollTo(0,0);render();return;}
@@ -3791,11 +4167,31 @@ document.addEventListener('click',ev=>{
   if(a==='ate'){const m=plannedMeals(date)[slot];if(m.key&&R[m.key]){const arr=S.profile.eaten[m.key]=S.profile.eaten[m.key]||[];if(!arr.includes(date)){arr.push(date);arr.sort();if(arr.length>40)arr.shift();}saveProfile();}logMeal(date,slot,{status:'plan',name:m.name,key:m.key||null,kcal:m.kcal,p:m.p,c:m.c,f:m.f});return;}
   if(a==='slices'){const n=+v,sl=b.dataset.slot||'dinner';logMeal(date,sl,{status:'custom',name:(sl==='dinner'&&isPizza(date)?'Pizza Tuesday':'Pizza')+': '+n+' slices and salad',kcal:n*SLICE.kcal+80,p:n*SLICE.p+2,c:n*SLICE.c+8,f:n*SLICE.f+4});return;}
   if(a==='skipmeal'){logMeal(date,slot,{status:'skip',name:'Skipped',kcal:0,p:0,c:0,f:0});return;}
-  if(a==='custom'){S.openCustom=slot;render();const el=document.getElementById('cName');if(el)el.focus();return;}
-  if(a==='cancelcustom'){S.openCustom=null;render();return;}
-  if(a==='savecustom'){const g=id=>document.getElementById(id),k=n0(g('cK').value);if(!k){g('cK').focus();return;}logMeal(date,slot,{status:'custom',name:(g('cName').value||'Other meal').slice(0,120),kcal:k,p:n0(g('cP').value),c:n0(g('cC').value),f:n0(g('cF').value)});return;}
+  if(a==='custom'||a==='addfood'){fpOpen(a==='custom'?'meal':'extra',slot);render();const el=document.getElementById('fpQ');if(el)el.focus();return;}
+  if(a==='cancelcustom'||a==='fpcancel'){fpClose();render();return;}
+  if(a.startsWith('fp')&&S.fp){const fp=S.fp;
+    if(a==='fpsel'){fp.sel=v;fp.qty=1;fp.msg='';render();return;}
+    if(a==='fpqty'){fp.qty=+v;render();return;}
+    if(a==='fpadd'){const f=fpFood(fp.sel),q=n0(fp.qty);if(!f||!(q>0)){const e=document.getElementById('fpQty');if(e)e.focus();return;}
+      fp.items.push({id:f.id,n:f.n,s:f.s,q,k:f.k*q,p:f.p*q,c:f.c*q,f:f.f*q});fp.sel=null;fp.qty=1;fp.q='';fp.msg='';if(v==='log'){fpCommit();return;}render();return;}
+    if(a==='fpback'){stopScan();fp.mode='list';fp.sel=null;fp.draft=null;fp.msg='';render();return;}
+    if(a==='fprm'){fp.items.splice(+v,1);render();return;}
+    if(a==='fplog'){fpCommit();return;}
+    if(a==='fpscan'){stopScan();fp.mode='scan';fp.sel=null;fp.msg='';fp.scanMsg='Starting the camera...';fp.auto=true;render();return;}
+    if(a==='fpcode'){const e=document.getElementById('fpCode');stopScan();lookupCode(e?e.value:'');return;}
+    if(a==='fpnew'){fp.mode='new';fp.draft={n:fp.q||'',save:true};fp.msg='';render();return;}
+    if(a==='fpedit'){const f=fpFood(fp.sel);if(!f)return;fp.draft={id:f.id,n:f.n,b:f.b,s:f.s,k:f.k,p:f.p,c:f.c,f:f.f,bc:f.bc};fp.mode='new';fp.msg='';render();return;}
+    if(a==='fpdelfood'){if(fp.draft&&fp.draft.id)hset(['foods',fp.draft.id,'del'],true);fp.mode='list';fp.sel=null;fp.draft=null;fp.msg='Removed from your foods.';render();return;}
+    if(a==='fpsavefood'){const g=id=>document.getElementById(id),nm=g('fnN').value.trim(),kv=g('fnK').value.trim();
+      if(!nm){g('fnN').focus();return;}if(kv===''||!isFinite(+kv)){g('fnK').focus();return;}
+      const rec={n:nm.slice(0,80),b:g('fnB').value.trim().slice(0,40),s:(g('fnS').value.trim()||'1 serving').slice(0,40),k:Math.round(n0(kv)),p:r1(g('fnP').value),c:r1(g('fnC').value),f:r1(g('fnF').value),bc:normCode(g('fnBc').value)};
+      const d=fp.draft||{};let id;
+      if(d.id){id=d.id;hset(['foods',id],Object.assign({},(S.house.foods||{})[id]||{},rec));fp.msg='Saved. Both of you will see the change.';}
+      else if(g('fnSave')&&g('fnSave').checked){id=newFoodId();hset(['foods',id],Object.assign(rec,{src:d.src||'mine',by:S.profile.name,t:todayStr()}));fp.msg='';}
+      else{id='t:'+Date.now().toString(36);fp.temp[id]=Object.assign({id,src:'mine'},rec);fp.msg='';}
+      fp.mode='list';fp.sel=id;fp.qty=1;fp.draft=null;render();return;}}
+  if(a==='foodexport'){foodExport();S.updMsg='Saved the food list file. Attach it in your chat with Claude.';render();return;}
   if(a==='clearmeal'){const l=day(date);if(l.meals)delete l.meals[slot];saveDay(date);render();return;}
-  if(a==='addextra'){const g=id=>document.getElementById(id),k=n0(g('xK').value),nm=g('xName').value.trim();if(!nm&&!k){g('xName').focus();return;}const l=day(date);l.extras=l.extras||[];l.extras.push({name:(nm||'Extra').slice(0,120),kcal:k,p:n0(g('xP').value),c:n0(g('xC').value),f:n0(g('xF').value)});saveDay(date);render();return;}
   if(a==='quick'){const q=QUICK[+v],l=day(date);l.extras=l.extras||[];l.extras.push({name:q.name,kcal:q.kcal,p:q.p,c:q.c,f:q.f});saveDay(date);render();return;}
   if(a==='libtag'){S.libTag=v;render();return;}
   if(a==='delextra'){const l=day(date);l.extras.splice(+v,1);saveDay(date);render();return;}
@@ -3811,6 +4207,8 @@ document.addEventListener('click',ev=>{
   if(a==='gclear'){hset(['grocery'],{});render();return;}
 });
 document.addEventListener('input',ev=>{
+  if(ev.target.id==='fpQ'&&S.fp){S.fp.q=ev.target.value;const r=document.getElementById('fpRes');if(r)r.innerHTML=fpResults();return;}
+  if(ev.target.id==='fpQty'&&S.fp){S.fp.qty=n0(ev.target.value);const f=fpFood(S.fp.sel),m=document.getElementById('fpMac');if(f&&m)m.textContent=fpMacroText(f,S.fp.qty||0);return;}
   if(ev.target.id==='pickq'){const q=ev.target.value.trim().toLowerCase();document.querySelectorAll('.pickrow').forEach(r=>{r.style.display=!q||r.dataset.q.includes(q)?'':'none';});}
   if(ev.target.id==='libq'){const q=ev.target.value.trim().toLowerCase();document.querySelectorAll('.librow').forEach(r=>{r.style.display=!q||r.dataset.q.includes(q)?'':'none';});}});
 document.addEventListener('toggle',ev=>{const d=ev.target;if(d&&d.dataset&&d.dataset.sec){S.secOpen=S.secOpen||{};S.secOpen[d.dataset.sec]=d.open;}},true);
@@ -3830,7 +4228,7 @@ document.addEventListener('change',ev=>{
   if(el.dataset.wocheck!==undefined){const l=day(date);l.wo=l.wo||{};l.wo[el.dataset.wocheck]=el.checked;saveDay(date);return;}
   if(el.dataset.woSwap!==undefined){const l=day(date);if(el.value==='__reset')delete l.workoutOverride;else l.workoutOverride=el.value;saveDay(date);render();return;}
   if(el.dataset.freen!==undefined||el.dataset.freet!==undefined){const l=day(date);l.free=l.free||[];const i=+(el.dataset.freen!==undefined?el.dataset.freen:el.dataset.freet);if(!l.free[i])l.free[i]={n:'',t:''};if(el.dataset.freen!==undefined)l.free[i].n=el.value.slice(0,80);else l.free[i].t=el.value.slice(0,80);saveDay(date);return;}
-  if(el.dataset.rstep!==undefined){S.stepsDone[el.dataset.rstep]=el.checked;const li=el.closest('.stepitem');if(li)li.classList.toggle('done',el.checked);return;}
+  if(el.dataset.rstep!==undefined){hset(['stepsDone',el.dataset.rstep],el.checked);const li=el.closest('.stepitem');if(li)li.classList.toggle('done',el.checked);return;}
   if(el.dataset.salad!==undefined){S.salad.t[+el.dataset.salad]=el.checked;const o=document.getElementById('saladOut');if(o)o.innerHTML=saladText(date);return;}
   if(el.dataset.dress!==undefined){S.salad.d=+el.dataset.dress;const o=document.getElementById('saladOut');if(o)o.innerHTML=saladText(date);return;}
   if(el.dataset.m){const l=day(date),v=el.value.trim();l[el.dataset.m]=v===''?null:n0(v);saveDay(date);render();return;}
@@ -3848,6 +4246,7 @@ document.addEventListener('change',ev=>{
   if(el.id==='importFile'){importData(el.files[0]);return;}
   if(el.dataset.pf){const k=el.dataset.pf;if(k==='startDate'){if(el.value)S.profile.startDate=el.value;}else if(el.value)S.profile[k]=n0(el.value);saveProfile();render();return;}
   if(el.dataset.snk!==undefined){const wk=curMenuWeek();if(el.checked)hset(['snacks',wk,el.dataset.snk],true);else hdel(['snacks',wk,el.dataset.snk]);render();return;}
+  if(el.dataset.side!==undefined){const wk=curMenuWeek();if(!el.value)hdel(['sides',wk,el.dataset.side]);else hset(['sides',wk,el.dataset.side],el.value);render();return;}
   if(el.dataset.pick!==undefined){const wk=curMenuWeek(),k=el.dataset.pick;if(k!==pkey({name:S.profile.name})){render();return;}if(el.checked)hset(['picked',wk,k],new Date().toISOString());else hdel(['picked',wk,k]);render();return;}
   if(el.dataset.pl!==undefined){const wk=curMenuWeek(),[nm,d]=el.dataset.pl.split('|');if(el.value==='__plan')hdel(['lunch',wk,nm,d]);else hset(['lunch',wk,nm,d],el.value);render();return;}
   if(el.dataset.g!==undefined){if(el.checked)hset(['grocery',el.dataset.g],true);else hdel(['grocery',el.dataset.g]);el.closest('.gitem').classList.toggle('got',el.checked);return;}
@@ -3875,11 +4274,11 @@ function viewPartner(uid){
   if(sh.steps){const ks=last7.filter(d=>days[d]&&days[d].steps);if(ks.length)st.push(['Avg steps',fmtN(avg(ks.map(d=>days[d].steps))),'last 7 days']);}
   if(s.goals)st.push(['Goal',s.goals.goal1+' lb','stretch goal '+s.goals.goal2+' lb']);
   if(st.length){h+='<div class="stats">'+st.map(([a,b,c])=>'<div class="stat"><div class="lab">'+esc(a)+'</div><div class="v">'+esc(b)+'</div><div class="s">'+esc(c)+'</div></div>').join('')+'</div>';}
-  if(s.weight&&s.weight.series)h+=lineChart(s.weight.series,s.weight.mode==='full'?'Daily weigh-ins, lb':'Pounds lost or gained since starting');
+  if(s.weight&&s.weight.series)h+=lineChart(s.weight.series.map(x=>Array.isArray(x)?x:[x.d,x.w]),s.weight.mode==='full'?'Daily weigh-ins, lb':'Pounds lost or gained since starting');
   if(s.plan){const m0=monday(td),wks=[m0,addD(m0,7)].filter(w=>[0,1,2,3,4,5,6].some(i=>s.plan[addD(w,i)]));const wsel=S.pwk&&wks.includes(S.pwk)?S.pwk:wks[0];
     if(wsel){h+='<div class="section"><h2>'+nm+'\'s meals</h2><div class="row" style="margin-bottom:8px">'+wks.map(w=>'<button class="btn'+(w===wsel?' on':'')+'" data-action="pwk" data-v="'+w+'">Week of '+esc(fmtShort(w))+'</button>').join('')+'</div><div class="week">';
       for(let i=0;i<7;i++){const d=addD(wsel,i),rows=s.plan[d];if(!rows)continue;
-        h+='<div class="card'+(d===td?' today':'')+'"><div class="kicker">'+DAYN[i]+', '+fmtShort(d)+'</div>'+rows.map(([k,n,kc,st,alt])=>'<div class="prep-row" style="padding:4px 0"><div><span class="src">'+esc(SLOT_LABEL[k]||k)+'</span> '+esc(n)+(alt?'<div class="src">Ate instead: '+esc(alt)+'</div>':'')+'</div><span class="pill'+(st==='ate'?' good':'')+'">'+(st==='ate'?'Eaten':st==='skip'?'Skipped':fmtN(kc)+' kcal')+'</span></div>').join('')+'</div>';}
+        h+='<div class="card'+(d===td?' today':'')+'"><div class="kicker">'+DAYN[i]+', '+fmtShort(d)+'</div>'+rows.map(r=>Array.isArray(r)?r:[r.k,r.n,r.kc,r.st,r.alt]).map(([k,n,kc,st,alt])=>'<div class="prep-row" style="padding:4px 0"><div><span class="src">'+esc(SLOT_LABEL[k]||k)+'</span> '+esc(n)+(alt?'<div class="src">Ate instead: '+esc(alt)+'</div>':'')+'</div><span class="pill'+(st==='ate'?' good':'')+'">'+(st==='ate'?'Eaten':st==='skip'?'Skipped':fmtN(kc)+' kcal')+'</span></div>').join('')+'</div>';}
       h+='</div></div>';}}
   const ds=Object.keys(days).sort().reverse().slice(0,14);
   if(!ds.length&&!st.length&&!s.plan)return h+'<div class="note">'+nm+' has not shared anything yet, or has not logged any days.</div>';
@@ -3917,7 +4316,7 @@ function applyDay(D){
       for(const f of ['min','mph','inc','dist','hr'])if(c[f]!=null&&isFinite(+c[f])){l.cardio[f]=+c[f];n++;}
       if(c.act!=null){l.cardio.act=String(c.act).slice(0,120);n++;}
       if(Array.isArray(c.rounds)){l.cardio.rounds=c.rounds.map(Boolean);n++;}}
-    const fx=x=>({name:String(x.name||'Food').slice(0,120),kcal:Math.max(0,Math.round(n0(x.kcal))),p:Math.max(0,Math.round(n0(x.p))),c:Math.max(0,Math.round(n0(x.c))),f:Math.max(0,Math.round(n0(x.f)))});
+    const fx=x=>({src:'claude',name:String(x.name||'Food').slice(0,120),kcal:Math.max(0,Math.round(n0(x.kcal))),p:Math.max(0,Math.round(n0(x.p))),c:Math.max(0,Math.round(n0(x.c))),f:Math.max(0,Math.round(n0(x.f)))});
     if(D.meals&&typeof D.meals==='object'){l.meals=l.meals||{};for(const sl in D.meals){const x=D.meals[sl];if(!['breakfast','lunch','dinner','snack','evening','fruit','preshake'].includes(sl)||!x)continue;
       if(x.status==='skip')l.meals[sl]={status:'skip',name:'Skipped',kcal:0,p:0,c:0,f:0};else l.meals[sl]=Object.assign({status:'custom'},fx(x));n++;}}
     if(Array.isArray(D.extras)){l.extras=l.extras||[];for(const x of D.extras){if(!x)continue;const e=fx(x);if(l.extras.some(o=>o.name===e.name&&o.kcal===e.kcal))continue;l.extras.push(e);n++;}}
@@ -3959,7 +4358,7 @@ async function importData(file){
     S.profile=migrate(Object.assign({},o.profile,{name:S.profile.name}));S.days=o.days;
     await FB.setDoc(refs.profile(),clone(S.profile));for(const d of Object.keys(S.days))await FB.setDoc(refs.day(d),clone(S.days[d]));
     let hh='';if(o.household&&typeof o.household==='object'){const H=Object.assign({},HOUSE_DEFAULT,S.house||{});
-      for(const k of ['menus','hidden','made','extras','caps','estimates','snacks','grab','lunch','picked'])if(o.household[k]&&typeof o.household[k]==='object')H[k]=Object.assign({},H[k]||{},clone(o.household[k]));
+      for(const k of ['menus','hidden','made','extras','caps','estimates','snacks','grab','lunch','picked','sides','photos'])if(o.household[k]&&typeof o.household[k]==='object')H[k]=Object.assign({},H[k]||{},clone(o.household[k]));
       S.house=H;await FB.setDoc(refs.house(),clone(H));hh=', plus household menus, removed recipes, made history, and serving overrides';}
     S.impMsg='Restored '+Object.keys(S.days).length+' logged days'+hh+'.';scheduleShared();}
   catch(e){S.impMsg='That file could not be restored. Use a file downloaded from this app.';}
@@ -4258,7 +4657,7 @@ function maybeReady(){if(S.ready||!S.profile||!S.house)return;S.ready=true;S.dat
 function boot(){
   if(!CFG.firebase||!CFG.firebase.apiKey||String(CFG.firebase.apiKey).startsWith('PASTE')){S.screen=screenHTML('Setup needed','<p>config.js is missing or still has placeholder values. Follow the setup guide to add your Firebase settings and household emails.</p>');render();return;}
   const app=initializeApp(CFG.firebase),auth=getAuth(app);
-  let db;try{db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});}catch(e){db=getFirestore(app);}
+  let db;try{db=initializeFirestore(app,{ignoreUndefinedProperties:true,localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});}catch(e){try{db=initializeFirestore(app,{ignoreUndefinedProperties:true});}catch(e2){db=getFirestore(app);}}
   FB={auth,db,doc,getDoc,getDocs,setDoc,updateDoc,deleteField,collection,onSnapshot,FieldPath,signOut,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail};
   onAuthStateChanged(auth,u=>{if(!u){unsubs.forEach(f=>f());unsubs=[];S.ready=false;S.user=null;S.screen=authScreen();render();return;}afterSignIn(u);});
 }
