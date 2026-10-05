@@ -647,9 +647,9 @@ function targetsFor(date){
   const p=S.profile,w=trendWeight(date),kg=w*0.45359,cm=n0(p.heightIn)*2.54,male=p.sex!=='female';
   const bmr=10*kg+6.25*cm-5*n0(p.age)+(male?5:-161),tdee=bmr*(n0(p.activity)||1.4);
   let def=(n0(p.pace)||1)*500;const left=w-n0(p.goal1);if(left<20)def*=0.7;else if(left<40)def*=0.85;
-  const floor=male?1900:1400,kcal=Math.max(floor,Math.round((tdee-def)/50)*50+n0(p.kcalOffset));
-  const protein=Math.min(220,Math.max(100,Math.round(n0(p.goal1)/5)*5)),fat=Math.round(kcal*0.27/9),carbs=Math.max(100,Math.round((kcal-protein*4-fat*9)/4/5)*5);
-  return {kcal,protein,carbs,fat,weight:w,tdee:Math.round(tdee),deficit:Math.round(def),floor};
+  const floor=male?1900:1400,kcalA=Math.max(floor,Math.round((tdee-def)/50)*50+n0(p.kcalOffset)),T=p.tg||{},has=k=>T[k]!=null&&isFinite(+T[k])&&+T[k]>0;
+  const kcal=has('kcal')?Math.round(+T.kcal):kcalA,protein=has('protein')?Math.round(+T.protein):Math.min(220,Math.max(100,Math.round(n0(p.goal1)/5)*5)),fat=has('fat')?Math.round(+T.fat):Math.round(kcal*0.27/9),carbs=has('carbs')?Math.round(+T.carbs):Math.max(50,Math.round((kcal-protein*4-fat*9)/4/5)*5);
+  return {kcal,protein,carbs,fat,weight:w,tdee:Math.round(tdee),deficit:Math.round(def),floor,auto:{kcal:kcalA},manual:['kcal','protein','carbs','fat'].filter(has)};
 }
 function dayEaten(date){
   const l=S.days[date],z={kcal:0,p:0,c:0,f:0,meals:0,any:false};if(!l)return z;
@@ -755,7 +755,7 @@ function portion(key,slotKcal,slot,date){
   const fl=(FILLER_BY_SLOT[slot]||[]).filter(k=>!(r.side==='fruit'&&(k==='banana'||k==='apple'))&&!((sd==='potato'||sd==='mash')&&k==='fries')&&!(sd==='mac'&&k==='chips')&&(!pk||pk.includes(FILLER_ITEM[k]))),fk=fl.length?fl[(key.length+slot.length)%fl.length]:null,F=fk?FILLERS[fk]:null;
   let best=null;
   for(const n of servingGrid(key,max,isPiece(r))){
-    for(let u=0;u<=(F?2:0);u++){const tot=n*r.kcal+base+u*(F?F.kcal:0);
+    for(let u=0;u<=(F?(fk==='banana'||fk==='apple'?1:2):0);u++){const tot=n*r.kcal+base+u*(F?F.kcal:0);
       const score=Math.abs(tot-slotKcal)+(isPiece(r)&&!cap?0:60*Math.max(0,n-1))+(u?15:0);
       if(!best||score<best.score)best={n,u,score};}}
   const n=best.n,u=best.u,sum=(k)=>n*r[k]+(side?side[k]:0)+(veg?veg[k]:0)+(u&&F?u*F[k]:0);
@@ -990,11 +990,11 @@ const SNACK_SLOTS=['snack','evening','fruit','preshake'];
 const partFromSnack=(x,n)=>({id:'s:'+x.id,n:x.sh,s:n>1&&x.por2?x.por2:x.por,q:1,k:x.kcal*n,p:x.p*n,c:x.c*n,f:x.f*n});
 function partsOf(m){if(!m)return [];if(m.parts)return m.parts.map(x=>Object.assign({},x));if(m.kcal>0&&!m.key&&!m.fixed)return [{id:'combo:'+fslug(m.name),n:m.name,s:(m.items||[]).join(', ')||'1 serving',q:1,k:m.kcal,p:m.p,c:m.c,f:m.f}];return [];}
 function snackFromParts(parts){const t={kcal:0,p:0,c:0,f:0};for(const x of parts){t.kcal+=x.q*x.k;t.p+=x.q*x.p;t.c+=x.q*x.c;t.f+=x.q*x.f;}const nm=parts.map(x=>x.n);
-  return {name:nm.length?(nm.length>1?nm.slice(0,-1).join(', ')+' and '+nm[nm.length-1].toLowerCase():nm[0]):'No snack planned',items:parts.map(x=>x.q===1?x.s:fmtNum(x.q)+' x '+x.s),parts:parts.map(x=>Object.assign({},x)),kcal:Math.round(t.kcal),p:Math.round(t.p),c:Math.round(t.c),f:Math.round(t.f),edited:true,prep:''};}
+  return {name:nm.length?(nm.length>1?nm.slice(0,-1).join(', ')+' and '+nm[nm.length-1].toLowerCase():nm[0]):'No snack planned',items:parts.map(x=>qtyText(x.q,x.s)),parts:parts.map(x=>Object.assign({},x)),kcal:Math.round(t.kcal),p:Math.round(t.p),c:Math.round(t.c),f:Math.round(t.f),edited:true,prep:''};}
 function snEnsure(date,slot){const l=day(date);l.snackPlan=l.snackPlan||{};if(!Array.isArray(l.snackPlan[slot]))l.snackPlan[slot]=partsOf(plannedMeals(date)[slot]);return l.snackPlan[slot];}
 function snackEditor(date,slot,m){const parts=partsOf(m);let h='<div class="card" style="margin-top:10px;border:1px solid var(--line)"><div class="subhead" style="margin-top:0">Edit this snack</div>';
   if(!parts.length)h+='<p class="hint">Nothing in this snack right now. Add something below.</p>';
-  parts.forEach((x,i)=>{h+='<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:4px 0;flex-wrap:wrap"><span>'+esc(x.n)+' <span class="src">'+esc(x.q===1?x.s:fmtNum(x.q)+' x '+x.s)+', '+fmtN(Math.round(x.q*x.k))+' kcal</span></span><span class="row" style="gap:4px"><button class="btn ghost" data-action="snq" data-slot="'+slot+'" data-v="'+i+'|-0.5" aria-label="Less '+esc(x.n)+'">Less</button><button class="btn ghost" data-action="snq" data-slot="'+slot+'" data-v="'+i+'|0.5" aria-label="More '+esc(x.n)+'">More</button><button class="btn ghost" data-action="snrm" data-slot="'+slot+'" data-v="'+i+'">Remove</button></span></div>';});
+  parts.forEach((x,i)=>{h+='<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:4px 0;flex-wrap:wrap"><span>'+esc(x.n)+' <span class="src">'+esc(qtyText(x.q,x.s))+', '+fmtN(Math.round(x.q*x.k))+' kcal</span></span><span class="row" style="gap:4px"><button class="btn ghost" data-action="snq" data-slot="'+slot+'" data-v="'+i+'|-0.5" aria-label="Less '+esc(x.n)+'">Less</button><button class="btn ghost" data-action="snq" data-slot="'+slot+'" data-v="'+i+'|0.5" aria-label="More '+esc(x.n)+'">More</button><button class="btn ghost" data-action="snrm" data-slot="'+slot+'" data-v="'+i+'">Remove</button></span></div>';});
   if(S.fp&&S.fp.tgt==='snack'&&S.fp.slot===slot)h+=foodPicker();
   else h+='<div class="row" style="margin-top:8px"><button class="btn" data-action="snadd" data-slot="'+slot+'">Add a snack</button>'+(m.edited?'<button class="btn ghost" data-action="snreset" data-slot="'+slot+'">Back to the suggestion</button>':'')+'<button class="btn primary" data-action="sndone">Done</button></div>';
   return h+'</div>';}
@@ -1018,7 +1018,7 @@ function amountPanel(slot,m,startN){const au=amountUnit(m.key),v=S.amtVal!=null?
 function mealCard(date,slot,m,time,sug){
   const l=S.days[date]||{},log=l.meals&&l.meals[slot];
   let h='<div class="mcard'+(log?(log.status==='skip'?' skip':' done'):'')+'"><div class="kicker">'+timeTag(slot,time,sug)+' &middot; '+SLOT_LABEL[slot]+(l.swaps&&l.swaps[slot]?' &middot; swapped':'')+(m.edited?' &middot; edited':'')+'</div>'+(S.edTime===slot?timeEditor(date,slot,time,sug):'')+'<h3>'+esc(m.name)+'</h3>';
-  if((m.key||!m.fixed)&&m.items&&m.items.length)h+='<div class="src" style="margin:-2px 0 6px">'+m.items.filter(x=>x!==VEG.name).map(esc).join(' &middot; ')+'</div>';
+  if((m.key||!m.fixed)&&m.items&&m.items.length)h+='<div class="src" style="margin:-2px 0 6px">'+m.items.map(x=>x===VEG.name?'Green vegetables or a side salad':x).map(esc).join(' &middot; ')+'</div>';
   h+=macroLine(m);
   if(m.key&&R[m.key]&&!m.revised)h+='<div class="row" style="margin:4px 0 8px">'+stars(m.key)+'</div>';
   if(log){h+='<div class="logged'+(log.status==='skip'?' skip':'')+'">'+(log.status==='skip'?'Marked as skipped.':'Logged: '+esc(log.name)+(log.amt?' ('+esc(log.amt)+')':'')+', '+fmtN(log.kcal)+' kcal and '+fmtN(log.p)+' g protein.')+(log.status==='plan'&&canAmt(m)?' <button class="btn ghost" data-action="amt" data-slot="'+slot+'">Change amount</button>':'')+' <button class="btn ghost" data-action="clearmeal" data-slot="'+slot+'">Change</button></div>';
@@ -1267,11 +1267,12 @@ function lunchOptions(wk,d,name,cur,own){
   for(const t in TAGS){if(t==='grab'||t==='bfast')continue;const ks=Object.keys(R).filter(k=>R[k].cat==='main'&&R[k].tag===t&&!isHidden(k)&&!planned.includes(k));if(ks.length)o+='<optgroup label="'+esc(TAGS[t])+'">'+ks.map(k=>'<option value="'+k+'"'+(k===cur?' selected':'')+'>'+esc(R[k].name)+'</option>').join('')+'</optgroup>';}
   return o+'<option value="__pizza"'+(cur==='__pizza'?' selected':'')+'>Pizza</option><option value="__none"'+(cur==='__none'?' selected':'')+'>Eating out or buying lunch</option>';}
 function lunchCard(wk){const ppl=eaters(),prev=addD(wk,-7),hasPrev=S.house.lunch&&S.house.lunch[prev]&&Object.keys(S.house.lunch[prev]).length;
-  let h='<div class="section" style="margin-top:0"><h2>Weekday lunches by person</h2><div class="card"><p class="hint" style="margin-top:0">Each of you can take something different to work. Leave a day on Same as the plan to eat the household lunch. Grab-and-go items go on the shopping list, a different recipe adds servings to that recipe, and pizza or eating out takes your servings off. The count above updates as you pick.</p>'+(hasPrev?'<div class="row" style="margin-bottom:8px"><button class="btn" data-action="lunchcopy">Same lunches as last week</button></div>':'')+'<div class="lgrid" style="display:grid;grid-template-columns:auto repeat('+ppl.length+',minmax(0,1fr));gap:8px;align-items:center">';
+  let h='<div class="section" style="margin-top:0"><h2>Weekday lunches by person</h2><div class="card"><p class="hint" style="margin-top:0">Each of you can take something different to work. Leave a day on Same as the plan to eat the household lunch. Grab-and-go items go on the shopping list, a different recipe adds servings to that recipe, and pizza or eating out takes your servings off. The count above updates as you pick.</p>'+(hasPrev?'<div class="row" style="margin-bottom:8px"><button class="btn" data-action="lunchcopy">Same lunches as last week</button></div>':'')+'<div class="lgrid">';
   const owners=ppl.filter(ownLunch);if(owners.length)h+='<div class="note" style="margin-bottom:8px">'+owners.map(p=>esc(p.name)).join(' and ')+' packs '+(owners.length>1?'their':'her or his').replace('her or his',owners[0].name.toLowerCase()==='jen'?'her':'his')+' own weekday lunches, so none of the prepped servings are set aside for them. Each weekday starts with a packed lunch; change any day below.</div>';
-  h+='<span></span>'+ppl.map(p=>'<strong>'+esc(p.name)+'</strong>').join('');
-  for(let d=0;d<5;d++){h+='<span class="src">'+DAYN[d].slice(0,3)+' '+fmtShort(addD(wk,d))+'</span>';
-    for(const p of ppl){const cur=lunchPick(p.name,wk,d);h+='<select data-pl="'+esc(pkey(p))+'|'+d+'" aria-label="'+esc(p.name+' '+DAYN[d]+' lunch')+'" style="min-width:0;width:100%">'+lunchOptions(wk,d,p.name,cur,ownLunch(p))+'</select>';}}
+  // One block per day, each person's choice stacked underneath, so it fits a phone screen.
+  for(let d=0;d<5;d++){h+='<div class="lday" style="padding:8px 0;border-top:1px solid var(--line)"><div style="font-weight:600;margin-bottom:6px">'+DAYN[d]+' '+fmtShort(addD(wk,d))+'</div>';
+    for(const p of ppl){const cur=lunchPick(p.name,wk,d);h+='<label style="display:block;margin:0 0 6px;max-width:100%"><span class="src" style="display:block;margin-bottom:2px">'+esc(p.name)+'</span><select data-pl="'+esc(pkey(p))+'|'+d+'" aria-label="'+esc(p.name+' '+DAYN[d]+' lunch')+'" style="display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0">'+lunchOptions(wk,d,p.name,cur,ownLunch(p))+'</select></label>';}
+    h+='</div>';}
   return h+'</div></div></div>';}
 function grabPortion(key){const r=R[key],d=RD[key];return {key,n:1,grab:true,name:r.name,url:'',items:d?d.ing.filter(t=>t[0]!=null).map(t=>(t[0]+(t[1]?' '+unitLabel(t[1],t[0]):'')+' '+t[2]).trim()):[],kcal:r.kcal,p:r.p,c:r.c,f:r.f,prep:r.note};}
 
@@ -3910,6 +3911,11 @@ function viewPlan(){
   let h='<div class="daybar"><div><h2>My plan</h2><div class="sub">Your targets, schedule, training, and privacy</div></div><div class="navbtns"><button class="btn" data-action="signout">Sign out</button></div></div>';
   if(S.firstRun)h+='<div class="note good" style="margin-bottom:12px">Welcome, '+esc(p.name)+'. Check the settings on this page first; everything else in the app is built from them.</div>';
   h+='<div class="targets"><div class="stat"><div class="lab">Calories</div><div class="v">'+fmtN(t.kcal)+'</div><div class="s">per day, base</div></div><div class="stat"><div class="lab">Protein</div><div class="v">'+t.protein+' g</div><div class="s">'+t.protein*4+' kcal</div></div><div class="stat"><div class="lab">Carbs</div><div class="v">'+t.carbs+' g</div><div class="s">'+t.carbs*4+' kcal</div></div><div class="stat"><div class="lab">Fat</div><div class="v">'+t.fat+' g</div><div class="s">'+t.fat*9+' kcal</div></div></div>';
+  {const T=p.tg||{},sum=t.protein*4+t.carbs*4+t.fat*9,box=(k,lab,step)=>'<label class="f">'+lab+'<input type="number" inputmode="numeric" step="'+step+'" data-tg="'+k+'" value="'+esc(T[k]!=null?T[k]:'')+'" placeholder="Auto: '+esc(k==='kcal'?t.auto.kcal:t[k])+'"></label>';
+    h+='<div class="section"><h2>Daily targets</h2><div class="card"><p class="src" style="margin-top:0">Leave a box empty to let the app set it. Calories come from your weight, height, age, activity, and pace; fat is 27 percent of calories; carbs fill whatever is left. Anything you type here is used instead.</p><div class="form">'+box('kcal','Calories','50')+box('protein','Protein g','5')+box('carbs','Carbs g','5')+box('fat','Fat g','1')+'</div>'+
+      (t.manual.length===4&&Math.abs(sum-t.kcal)>50?'<div class="note warn" style="margin-top:8px">Your protein, carbs, and fat add up to '+fmtN(sum)+' kcal, not '+fmtN(t.kcal)+'. Adjust one of them, or clear Carbs to let it fill the gap.</div>':'')+
+      (t.manual.includes('kcal')&&n0(p.kcalOffset)?'<p class="hint">While you set calories by hand, the '+(p.kcalOffset>0?'+':'')+p.kcalOffset+' kcal adjustment is not applied.</p>':'')+
+      (t.manual.length?'<div class="row" style="margin-top:8px"><button class="btn ghost" data-action="tgreset">Use the app\u2019s numbers for all four</button></div>':'')+'</div></div>';}
   const sel=(k,opts)=>'<select data-ps="'+k+'">'+opts.map(([v,l])=>'<option value="'+v+'"'+(String(p[k])===String(v)?' selected':'')+'>'+l+'</option>').join('')+'</select>';
   h+='<div class="section"><h2>About you</h2><div class="card"><div class="form">'+
     '<label class="f">Name<input type="text" data-ps="name" value="'+esc(p.name)+'"></label><label class="f">Sex<'+sel('sex',[['male','Male'],['female','Female']]).slice(1)+'</label>'+
@@ -3991,7 +3997,7 @@ function buildReport(n){
   ln('Range: '+from+' to '+td+'. Program week '+weekNum(td)+', phase '+phaseOf(weekNum(td))+'. Start date '+p.startDate+'.');
   if((p.pendingNotes||[]).length){ln('');ln('NOTES FOR CLAUDE (act on these, then clear with clearNotes in the reply block):');for(const n of p.pendingNotes)ln('- ['+n.id+'] ('+n.date+', left on the '+(VIEWLABEL[n.view]||n.view)+' view): '+n.text);}
   ln('Schedule: weekdays wake '+SC().wake+', lunch '+SC().lunch+', workout '+SC().workout+', dinner '+SC().dinner+'; pizza Tuesday '+(SC().pizzaTue?'yes':'no')+'.');
-  ln('Base targets today: '+t.kcal+' kcal, '+t.protein+' g protein, '+t.carbs+' g carbs, '+t.fat+' g fat. Manual calorie offset: '+n0(p.kcalOffset)+'. Leg work level: '+(p.legsLevel?'light leg work':'knee protection')+'.');
+  ln('Base targets today: '+t.kcal+' kcal, '+t.protein+' g protein, '+t.carbs+' g carbs, '+t.fat+' g fat'+(t.manual.length?' (set by hand: '+t.manual.join(', ')+')':'')+'. Manual calorie offset: '+n0(p.kcalOffset)+'. Leg work level: '+(p.legsLevel?'light leg work':'knee protection')+'.');
   const ws=Object.keys(S.days).filter(d=>S.days[d].weight).sort();
   if(ws.length){const last=ws[ws.length-1];ln('Weight: start '+p.startWeight+' lb, latest '+S.days[last].weight+' lb on '+last+', 7-day average '+(winAvg(last)||0).toFixed(1)+' lb.');}else ln('Weight: no weigh-ins logged yet.');
   let sumK=0,nK=0,sumP=0,wDone=0,wPlan=0,stepsHit=0,stepsDays=0;
@@ -4020,7 +4026,7 @@ function buildReport(n){
   const made=Object.keys(p.made||{}).filter(k=>R[k]&&p.made[k].length&&p.made[k][p.made[k].length-1]>=addD(td,-28));if(made.length)ln('Made in the last 4 weeks: '+made.map(k=>R[k].name+' (last '+lastOf(p.made[k])+')').join('; ')+'.');
   const hid=Object.keys(p.hidden||{}).filter(k=>R[k]);if(hid.length)ln('Removed from my list: '+hid.map(k=>R[k].name).join('; ')+'.');
   ln('');ln('Cooking plan keys: b1 and b2 (Sunday breakfasts), m1 and m2 (Sunday mains), m3 (midweek main), mid (2 for Wednesday, 3 for Thursday). Recipe keys: '+Object.keys(R).filter(k=>!isHidden(k)).map(k=>k+'='+R[k].name).join('; ')+'.');
-  ln('To update the app, reply with a JSON block like {"trainingPlanUpdate":1,"person":"'+p.name+'","note":"...","kcalOffset":0,"legsLevel":0,"menu":{"week":"YYYY-MM-DD","m1":"recipeKey","mid":3,"cells":{"2-lunch":"recipeKey"}},"hide":[],"unhide":[],"day":{"date":"YYYY-MM-DD","weight":0,"steps":0,"water":0,"sleep":0,"energy":1,"knee":"good","workoutOverride":"TREAD","workout":{"status":"done","minutes":0,"type":"...","intensity":"","note":"..."},"cardio":{"min":0,"mph":0,"inc":0,"dist":0,"hr":0,"act":"..."}},"clearNotes":["id1","id2"]} using only the fields that should change. Set clearNotes to true to clear every note, or to a list of note ids to clear just those.');
+  ln('To update the app, reply with a JSON block like {"trainingPlanUpdate":1,"person":"'+p.name+'","note":"...","kcalOffset":0,"targets":{"protein":160,"carbs":null},"legsLevel":0,"menu":{"week":"YYYY-MM-DD","m1":"recipeKey","mid":3,"cells":{"2-lunch":"recipeKey"}},"hide":[],"unhide":[],"day":{"date":"YYYY-MM-DD","weight":0,"steps":0,"water":0,"sleep":0,"energy":1,"knee":"good","workoutOverride":"TREAD","workout":{"status":"done","minutes":0,"type":"...","intensity":"","note":"..."},"cardio":{"min":0,"mph":0,"inc":0,"dist":0,"hr":0,"act":"..."}},"clearNotes":["id1","id2"]} using only the fields that should change. Set clearNotes to true to clear every note, or to a list of note ids to clear just those.');
   return L.join('\n');
 }
 
@@ -4078,7 +4084,8 @@ function fpResults(){const fp=S.fp,all=foodSources(),q=(fp.q||'').trim();
   if(q){const L=searchFoods(all,q);return L.length?L.map(fpRow).join(''):'<p class="hint">Nothing matches "'+esc(q)+'" yet. Tap <strong>Create a food</strong> to add it once; it will come up in searches for both of you from then on.</p>';}
   const L=recentFoods(all);return '<div class="subhead" style="margin-top:6px">Recent</div>'+(L.length?L.map(fpRow).join(''):'<p class="hint">Foods you log show up here next time. Search above, scan a barcode, or create a food.</p>');}
 function fpTot(items){const t={k:0,p:0,c:0,f:0};for(const it of items)for(const k in t)t[k]+=n0(it[k]);return t;}
-function fpItemLabel(it){return it.n+' ('+(it.q===1?it.s:fmtNum(it.q)+' x '+it.s)+')';}
+function qtyText(q,s){if(q===1)return s;const m=String(s).match(/^1\s+([a-z][a-z \-]*?)(\s*\(.*\)|,.*)?$/i);if(m&&Math.abs(q-Math.round(q))<1e-9&&!/^(cup|oz|tbsp|tsp|serving)$/.test(m[1]))return q+' '+plural(m[1],q)+(m[2]||'');return fmtNum(q)+' x '+s;}
+function fpItemLabel(it){return it.n+' ('+qtyText(it.q,it.s)+')';}
 function fpFood(id){const fp=S.fp;return (fp.temp&&fp.temp[id])||foodSources().get(id)||null;}
 function fpMacroText(f,q){return fmtN(Math.round(f.k*q))+' kcal, '+fmtN(Math.round(f.p*q))+' g protein, '+fmtN(Math.round(f.c*q))+' g carbs, '+fmtN(Math.round(f.f*q))+' g fat';}
 function foodPicker(){const fp=S.fp;if(!fp)return '';const meal=fp.tgt==='meal';
@@ -4283,6 +4290,7 @@ document.addEventListener('click',ev=>{
     if(a==='fpdelfood'){if(fp.draft&&fp.draft.id)hset(['foods',fp.draft.id,'del'],true);fp.mode='list';fp.sel=null;fp.draft=null;fp.msg='Removed from your foods.';render();return;}
     if(a==='fpsavefood'){const g=id=>document.getElementById(id),nm=g('fnN').value.trim(),kv=g('fnK').value.trim();
       if(!nm){g('fnN').focus();return;}if(kv===''||!isFinite(+kv)){g('fnK').focus();return;}
+      if(+kv<10&&!(fp.lowOk===nm+'|'+kv)&&!/water|diet|zero|coffee|tea|gum|seltzer|sparkling/i.test(nm)){fp.lowOk=nm+'|'+kv;fp.draft=Object.assign({},fp.draft||{},{n:nm,b:g('fnB').value,s:g('fnS').value,k:kv,p:g('fnP').value,c:g('fnC').value,f:g('fnF').value,bc:g('fnBc').value,save:g('fnSave')?g('fnSave').checked:true});fp.msg='Calories is per serving, and '+kv+' is very low for '+nm+'. Fix the number, or tap the button again if it is right.';render();return;}
       const rec={n:nm.slice(0,80),b:g('fnB').value.trim().slice(0,40),s:(g('fnS').value.trim()||'1 serving').slice(0,40),k:Math.round(n0(kv)),p:r1(g('fnP').value),c:r1(g('fnC').value),f:r1(g('fnF').value),bc:normCode(g('fnBc').value)};
       const d=fp.draft||{};let id;
       if(d.id){id=d.id;hset(['foods',id],Object.assign({},(S.house.foods||{})[id]||{},rec));fp.msg='Saved. Both of you will see the change.';}
@@ -4301,6 +4309,7 @@ document.addEventListener('click',ev=>{
   if(a==='womode'){S.woMode=v==='gym'?'gym':'home';S.view='workout';render();return;}
   if(a==='swapwk'){day(date).workoutOverride=v;saveDay(date);render();return;}
   if(a==='unswapwk'){delete day(date).workoutOverride;saveDay(date);render();return;}
+  if(a==='tgreset'){S.profile.tg={set:true};saveProfile();render();return;}
   if(a==='offset'){S.profile.kcalOffset=v==='reset'?0:n0(S.profile.kcalOffset)+n0(v);saveProfile();render();return;}
   if(a==='legs'){S.profile.legsLevel=+v;saveProfile();render();return;}
   if(a==='gclear'){hset(['grocery'],{});render();return;}
@@ -4344,6 +4353,8 @@ document.addEventListener('change',ev=>{
   if(el.dataset.st){if(el.value||el.dataset.st==='leave'){S.profile.sched[el.dataset.st]=el.value;saveProfile();render();}return;}
   if(el.dataset.ps){const k=el.dataset.ps;S.profile[k]=['sex'].includes(k)?el.value:(k==='name'?el.value.slice(0,30):n0(el.value));saveProfile();render();return;}
   if(el.id==='importFile'){importData(el.files[0]);return;}
+  if(el.dataset.tg){const k=el.dataset.tg,v=el.value.trim(),B={kcal:[1200,5000],protein:[40,300],carbs:[20,600],fat:[20,250]}[k];S.profile.tg=S.profile.tg||{};S.profile.tg.set=true;
+    if(v===''||!isFinite(+v)||+v<=0)delete S.profile.tg[k];else S.profile.tg[k]=Math.max(B[0],Math.min(B[1],Math.round(+v)));saveProfile();render();return;}
   if(el.dataset.pf){const k=el.dataset.pf;if(k==='startDate'){if(el.value)S.profile.startDate=el.value;}else if(el.value)S.profile[k]=n0(el.value);saveProfile();render();return;}
   if(el.dataset.snk!==undefined){const wk=curMenuWeek();if(el.checked)hset(['snacks',wk,el.dataset.snk],true);else hdel(['snacks',wk,el.dataset.snk]);render();return;}
   if(el.dataset.side!==undefined){const wk=curMenuWeek();if(!el.value)hdel(['sides',wk,el.dataset.side]);else hset(['sides',wk,el.dataset.side],el.value);render();return;}
@@ -4430,6 +4441,7 @@ function applyUpdate(){
   if(u.person&&String(u.person).toLowerCase()!==String(S.profile.name).toLowerCase()){S.updMsg='This update is for '+u.person+'. Sign in as '+u.person+' to apply it.';render();return;}
   const done=[];
   if(u.note){S.profile.coachNote={text:String(u.note).slice(0,1500),date:todayStr()};done.push('a note on your Today view');}
+  if(u.targets&&typeof u.targets==='object'){S.profile.tg=S.profile.tg||{};S.profile.tg.set=true;for(const k of ['kcal','protein','carbs','fat'])if(k in u.targets){const v=u.targets[k];if(v==null||v==='auto')delete S.profile.tg[k];else if(isFinite(+v)&&+v>0)S.profile.tg[k]=Math.round(+v);}done.push('daily targets');}
   if(u.kcalOffset!=null&&isFinite(+u.kcalOffset)){S.profile.kcalOffset=Math.max(-600,Math.min(600,Math.round(+u.kcalOffset)));done.push('calorie adjustment of '+S.profile.kcalOffset);}
   if(u.legsLevel!=null){S.profile.legsLevel=+u.legsLevel?1:0;done.push('leg work level');}
   if(u.pace!=null&&[0.5,1,1.5,2].includes(+u.pace)){S.profile.pace=+u.pace;done.push('weekly pace');}
@@ -4753,7 +4765,7 @@ function applyDiary(){
   if(added.length){added.sort();S.profile.coachNote={text:'I added your journal to the app for '+added.map(fmtShort).join(', ')+'. Food numbers are estimates from what you told me. Nothing for you to type or paste.',date:todayStr()};saveProfile();}
 }
 function migrateGym(){if(!S.profile||S.profile.woSplit)return;if(S.profile.training==='own')for(const d in S.days){const l=S.days[d];if(l&&l.workout&&!l.gym&&!l.sets&&!l.cardio){l.gym=l.workout;delete l.workout;saveDay(d);}}S.profile.woSplit=true;saveProfile();}
-function maybeReady(){if(S.ready||!S.profile||!S.house)return;S.ready=true;if(String(S.profile.name).toLowerCase()==='jen'&&!S.profile.lunchSet){S.profile.lunchStyle='grab';S.profile.lunchSet=true;saveProfile();}S.date=todayStr();migrateGym();applyDiary();if(S.firstRun)S.view='plan';if(!S.firstRun){const m=moment(),q=pickQuote();S.quote={m,text:q.text,from:q.from};}render();scheduleShared();scheduleNeeds();}
+function maybeReady(){if(S.ready||!S.profile||!S.house)return;S.ready=true;if(String(S.profile.name).toLowerCase()==='karl'&&!(S.profile.tg&&S.profile.tg.set)){S.profile.tg=Object.assign({},S.profile.tg||{},{protein:160,set:true});saveProfile();}if(String(S.profile.name).toLowerCase()==='jen'&&!S.profile.lunchSet){S.profile.lunchStyle='grab';S.profile.lunchSet=true;saveProfile();}S.date=todayStr();migrateGym();applyDiary();if(S.firstRun)S.view='plan';if(!S.firstRun){const m=moment(),q=pickQuote();S.quote={m,text:q.text,from:q.from};}render();scheduleShared();scheduleNeeds();}
 function boot(){
   if(!CFG.firebase||!CFG.firebase.apiKey||String(CFG.firebase.apiKey).startsWith('PASTE')){S.screen=screenHTML('Setup needed','<p>config.js is missing or still has placeholder values. Follow the setup guide to add your Firebase settings and household emails.</p>');render();return;}
   const app=initializeApp(CFG.firebase),auth=getAuth(app);
