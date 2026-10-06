@@ -675,7 +675,7 @@ function suggestMenu(wk,seed,mid){
   const NB=BATCH_TAGS.length,t1=BATCH_TAGS[((i%NB)+NB)%NB],t2=BATCH_TAGS[(((i+2)%NB)+NB)%NB],t3=MID_TAGS[((i%MID_TAGS.length)+MID_TAGS.length)%MID_TAGS.length];
   return {b1:pick('bfast',0),b2:pick('bfast',2),m1:pick(t1,0),m2:pick(t2,1),m3:pick(t3,0),mid:mid===3?3:2,seed:seed||0};
 }
-const isHidden=k=>!!(S.house&&S.house.hidden&&S.house.hidden[k]);
+const isHidden=k=>!!(S.house&&S.house.hidden&&S.house.hidden[k])||!!(R[k]&&R[k].cat==='grab'&&!R[k].custom&&S.house&&!inCat('r:'+k,'lunch'));
 function lastOf(arr){return arr&&arr.length?arr.slice().sort()[arr.length-1]:null;}
 function daysSince(arr){const l=lastOf(arr);return l?diffD(todayStr(),l):null;}
 function agoText(arr,verb){const n=daysSince(arr);const V=verb.charAt(0).toUpperCase()+verb.slice(1);return n==null?'Never '+verb:n<=0?V+' today':V+' '+n+(n===1?' day':' days')+' ago';}
@@ -749,10 +749,10 @@ function capSelect(key){const r=R[key],c=capFor(key),auto=isPiece(r)?'Auto (no c
 function portion(key,slotKcal,slot,date){
   const r=R[key];if(!r)return null;if(r.cat==='grab')return grabPortion(key);
   const pk=date?snackPicks(monday(date)):null;
-  const sd0=sideFor(key,date),sd=sd0&&!fHidden('side:'+sd0)?sd0:null,side=sd?SIDES[sd]:null,veg=(slot==='lunch'||slot==='dinner')?VEG:null;
+  const sd0=sideFor(key,date),sd=sd0&&!fHidden('side:'+sd0)&&(!SIDES[sd0]||SIDES[sd0].custom||inCat('side:'+sd0,'side'))?sd0:null,side=sd?SIDES[sd]:null,veg=(slot==='lunch'||slot==='dinner')?VEG:null;
   const base=(side?side.kcal:0)+(veg?veg.kcal:0);
   const cap=capFor(key),max=cap||(isPiece(r)?Math.min(10,Math.max(4,Math.ceil(slotKcal*1.2/r.kcal))):MAX_SERVINGS);
-  const fl=(FILLER_BY_SLOT[slot]||[]).filter(k=>!(r.side==='fruit'&&(k==='banana'||k==='apple'))&&!((sd==='potato'||sd==='mash')&&k==='fries')&&!(sd==='mac'&&k==='chips')&&!fHidden('fill:'+k)&&(!pk||pk.includes(FILLER_ITEM[k]))),fk=fl.length?fl[(key.length+slot.length)%fl.length]:null,F=fk?FILLERS[fk]:null;
+  const fl=(FILLER_BY_SLOT[slot]||[]).filter(k=>!(r.side==='fruit'&&(k==='banana'||k==='apple'))&&!((sd==='potato'||sd==='mash')&&k==='fries')&&!(sd==='mac'&&k==='chips')&&!fHidden('fill:'+k)&&inCat('fill:'+k,'side')&&(!pk||pk.includes(FILLER_ITEM[k]))),fk=fl.length?fl[(key.length+slot.length)%fl.length]:null,F=fk?FILLERS[fk]:null;
   let best=null;
   for(const n of servingGrid(key,max,isPiece(r))){
     for(let u=0;u<=(F?(fk==='banana'||fk==='apple'?1:2):0);u++){const tot=n*r.kcal+base+u*(F?F.kcal:0);
@@ -788,6 +788,9 @@ function plannedMeals(date){
   }
   if(l.snackPlan)for(const s of SNACK_SLOTS)if(out[s]&&Array.isArray(l.snackPlan[s]))out[s]=Object.assign(snackFromParts(l.snackPlan[s]),{prep:out[s].fixed?'':(out[s].prep||'')});
   for(const s in out){const m=out[s];if(m&&!m.cparts&&Array.isArray(m.parts)&&m.parts.length>1)out[s]=Object.assign({},m,{cparts:m.parts.map((x,i)=>({pid:(x.id||'p')+'#'+i,label:x.n+' ('+qtyText(x.q,x.s)+')',kcal:x.q*x.k,p:x.q*x.p,c:x.q*x.c,f:x.q*x.f}))});
+    const ad=l.addons&&Array.isArray(l.addons[s])?l.addons[s]:[];
+    if(ad.length&&out[s]&&!out[s].fixed){const m=out[s],base=m.cparts||[{pid:'base',label:m.name,kcal:m.kcal,p:m.p,c:m.c,f:m.f}],adds=ad.map((x,i)=>({pid:'add#'+i,label:fpItemLabel(x),kcal:n0(x.k),p:n0(x.p),c:n0(x.c),f:n0(x.f),addon:true,ai:i})),all=base.concat(adds),t={kcal:0,p:0,c:0,f:0};
+      for(const x of all)for(const k in t)t[k]+=x[k];out[s]=Object.assign({},m,{cparts:all,items:m.cparts?(m.items||[]).concat(adds.map(x=>x.label)):null,kcal:Math.round(t.kcal),p:Math.round(t.p),c:Math.round(t.c),f:Math.round(t.f)});if(!out[s].items)delete out[s].items;}
     const off=l.off&&Array.isArray(l.off[s])?l.off[s]:[];if(out[s]&&out[s].cparts)out[s]=withOff(out[s],off);}
   return out;
 }
@@ -1026,8 +1029,9 @@ function mealCard(date,slot,m,time,sug){
   else if((m.key||!m.fixed)&&m.items&&m.items.length)h+='<div class="src" style="margin:-2px 0 6px">'+m.items.map(x=>x===VEG.name?'Green vegetables or a side salad':x).map(esc).join(' &middot; ')+'</div>';
   h+=macroLine(m);
   if(m.key&&R[m.key]&&!m.revised)h+='<div class="row" style="margin:4px 0 8px">'+stars(m.key)+'</div>';
-  if(log){h+='<div class="logged'+(log.status==='skip'?' skip':'')+'">'+(log.status==='skip'?'Marked as skipped.':'Logged: '+esc(log.name)+(log.amt?' ('+esc(log.amt)+')':'')+', '+fmtN(log.kcal)+' kcal and '+fmtN(log.p)+' g protein.')+(log.status==='plan'&&canAmt(m)?' <button class="btn ghost" data-action="amt" data-slot="'+slot+'">Change amount</button>':'')+' <button class="btn ghost" data-action="clearmeal" data-slot="'+slot+'">Change</button></div>';
-    if(S.amtOpen===slot&&canAmt(m))h+=amountPanel(slot,m,log.n||m.n);}
+  if(log){h+='<div class="logged'+(log.status==='skip'?' skip':'')+'">'+(log.status==='skip'?'Marked as skipped.':'Logged: '+esc(log.name)+(log.amt?' ('+esc(log.amt)+')':'')+', '+fmtN(log.kcal)+' kcal and '+fmtN(log.p)+' g protein.')+(log.status==='plan'&&canAmt(m)?' <button class="btn ghost" data-action="amt" data-slot="'+slot+'">Change amount</button>':'')+(log.status==='plan'&&!m.fixed?' <button class="btn ghost" data-action="addon" data-slot="'+slot+'">Add to this meal</button>':'')+' <button class="btn ghost" data-action="clearmeal" data-slot="'+slot+'">Change</button></div>';
+    if(S.amtOpen===slot&&canAmt(m))h+=amountPanel(slot,m,log.n||m.n);
+    if(S.fp&&S.fp.tgt==='addon'&&S.fp.slot===slot)h+=foodPicker();}
   else{
     if(m.fixed==='pizza'){
       h+='<div class="row">';for(let n=1;n<=6;n++)h+='<button class="btn'+(n===m.slices?' primary':'')+'" data-action="slices" data-slot="'+slot+'" data-v="'+n+'">'+n+' slices</button>';
@@ -1035,8 +1039,9 @@ function mealCard(date,slot,m,time,sug){
     }else if(m.fixed==='nolunch')h+='<div class="row"><button class="btn primary" data-action="golunch">Pick lunches</button><button class="btn" data-action="custom" data-slot="'+slot+'">Log what I ate</button></div>';
     else if(m.fixed==='nosnack')h+='<div class="row"><button class="btn primary" data-action="gosnacks">Pick this week\u2019s snacks</button><button class="btn" data-action="snedit" data-slot="'+slot+'">Add snacks for today</button><button class="btn" data-action="custom" data-slot="'+slot+'">Log what I ate</button><button class="btn" data-action="skipmeal" data-slot="'+slot+'">Skipped</button></div>';
     else if(m.fixed==='none')h+='<div class="row"><button class="btn primary" data-action="custom" data-slot="'+slot+'">Log what I ate</button><button class="btn" data-action="skipmeal" data-slot="'+slot+'">Skipped</button></div>';
-    else{const isSn=SNACK_SLOTS.includes(slot)&&!m.key;h+='<div class="row">'+(m.edited&&!m.parts.length?'':'<button class="btn primary" data-action="ate" data-slot="'+slot+'">Ate this</button>')+(isSn?'<button class="btn" data-action="snedit" data-slot="'+slot+'">Edit snacks</button>':'')+(canAmt(m)?'<button class="btn" data-action="amt" data-slot="'+slot+'">Different amount</button>':'')+'<button class="btn" data-action="custom" data-slot="'+slot+'">Ate something else</button><button class="btn" data-action="skipmeal" data-slot="'+slot+'">Skipped</button></div>';
-      if(S.amtOpen===slot&&canAmt(m))h+=amountPanel(slot,m,m.n);}
+    else{const isSn=SNACK_SLOTS.includes(slot)&&!m.key;h+='<div class="row">'+(m.edited&&!m.parts.length?'':'<button class="btn primary" data-action="ate" data-slot="'+slot+'">Ate this</button>')+(isSn?'<button class="btn" data-action="snedit" data-slot="'+slot+'">Edit snacks</button>':'<button class="btn" data-action="addon" data-slot="'+slot+'">Add to this meal</button>')+(canAmt(m)?'<button class="btn" data-action="amt" data-slot="'+slot+'">Different amount</button>':'')+'<button class="btn" data-action="custom" data-slot="'+slot+'">Ate something else</button><button class="btn" data-action="skipmeal" data-slot="'+slot+'">Skipped</button></div>';
+      if(S.amtOpen===slot&&canAmt(m))h+=amountPanel(slot,m,m.n);
+      if(S.fp&&S.fp.tgt==='addon'&&S.fp.slot===slot)h+=foodPicker();}
     if(S.snEdit===slot&&SNACK_SLOTS.includes(slot)&&!m.key)h+=snackEditor(date,slot,m);
     if(S.fp&&S.fp.tgt==='meal'&&S.fp.slot===slot)h+=foodPicker();
     if(!m.revised&&!m.fixed&&(slot==='breakfast'||slot==='lunch'||slot==='dinner')){
@@ -1222,7 +1227,7 @@ const SNACK_GROUPS=[['p','Protein'],['c','Crunchy, sweet, and mix-ins'],['f','Fr
 const snackGroup=x=>x.role==='x'?'c':x.role==='v'?'f':x.role;
 const FILLER_ITEM={banana:'bananas',apple:'apples',pretzels:'pretzels',chips:'chips',toast:'bread',fries:'fries'};
 function snackPicks(wk){const m=S.house&&S.house.snacks&&S.house.snacks[wk];return m?Object.keys(m).filter(k=>m[k]&&SNACK_BY_ID[k]):[];}
-function snackAvail(date){return snackPicks(monday(date)).map(k=>SNACK_BY_ID[k]).filter(x=>x&&!fHidden('s:'+x.id)&&x.role!=='s'&&(likesYogurt()||!x.yog));}
+function snackAvail(date){return snackPicks(monday(date)).map(k=>SNACK_BY_ID[k]).filter(x=>x&&!fHidden('s:'+x.id)&&(x.custom||inCat('s:'+x.id,'snack'))&&x.role!=='s'&&(likesYogurt()||!x.yog));}
 const SNACK_MEMO={};
 function snackNo(){const o=(S.profile&&S.profile.snackNo)||{};if(S.profile&&String(S.profile.name).toLowerCase()==='karl'&&!(n0(o.bjerky)>=3))return Object.assign({},o,{bjerky:3});return o;}
 function composeSnack(slot,kcal,date){
@@ -3769,7 +3774,7 @@ function mpSnacks(wk){
   let h='<p class="prose" style="margin-top:0">Check the snacks and sides you will buy this week. Only checked items go on the shopping list, and every snack the app or Claude plans for this week is built from them, for both of you.</p>';
   h+='<div class="row" style="margin-bottom:12px">'+(prev.length?'<button class="btn" data-action="snkcopy">Same as last week ('+prev.length+')</button>':'')+(pk.size?'<button class="btn ghost" data-action="snkclear">Uncheck all</button>':'')+'</div>';
   h+='<div class="note'+(pk.size?' good':'')+'" style="margin-bottom:12px">'+(pk.size?pk.size+' picked for this week.':'Nothing picked yet, so snack slots show a reminder instead of a suggestion.')+(likesYogurt()?'':' Yogurt is never suggested for you; it is here for Jen.')+'</div><div class="card grocery">';
-  for(const[g,title]of SNACK_GROUPS){h+='<h3>'+esc(title)+'</h3>';for(const x of SNACK_ITEMS.filter(x=>snackGroup(x)===g&&!fHidden('s:'+x.id))){const id='sk'+(n++),on=pk.has(x.id);
+  for(const[g,title]of SNACK_GROUPS){h+='<h3>'+esc(title)+'</h3>';for(const x of SNACK_ITEMS.filter(x=>snackGroup(x)===g&&!fHidden('s:'+x.id)&&(x.custom||inCat('s:'+x.id,'snack')))){const id='sk'+(n++),on=pk.has(x.id);
     h+='<div class="gitem'+(on?' got':'')+'"><input type="checkbox" id="'+id+'" data-snk="'+x.id+'"'+(on?' checked':'')+'><div class="gbody"><label for="'+id+'">'+esc(x.name)+'</label><div class="src">'+(x.por?'Snack portion: '+esc(x.por)+', '+x.kcal+' kcal, '+x.p+' g protein':'Used to top up meals')+'</div></div></div>';}}
   return h+'</div>';
 }
@@ -4076,7 +4081,8 @@ function foodSources(){const out=new Map(),put=f=>{if(!out.has(f.id))out.set(f.i
   for(const k in R){const r=R[k];if(r.custom)continue;put({id:'r:'+k,n:r.name,s:r.serving||'1 serving',k:r.kcal,p:r.p,c:r.c,f:r.f,src:r.cat==='grab'?'grab':'recipe'});}
   for(const x of SNACK_ITEMS)if(x.por&&!x.custom)put({id:'s:'+x.id,n:x.sh||x.name,s:x.por,k:x.kcal,p:x.p,c:x.c,f:x.f,src:'snack'});
   for(const f of historyFoods())put(f);
-  for(const[id,f]of [...out]){if(f.own)continue;if(fHidden(id)||(f.src==='grab'&&isHidden(id.slice(2)))){out.delete(id);continue;}const e=fEdit(id);if(e)out.set(id,Object.assign({},f,{n:e.n||f.n,s:(e.s!=null&&e.s!=='')?e.s:f.s,k:e.k!=null?+e.k:f.k,p:e.p!=null?+e.p:f.p,c:e.c!=null?+e.c:f.c,f:e.f!=null?+e.f:f.f}));}
+  {const FE=(S.house&&S.house.foodEdit)||{};for(const x of builtInAll())if(!out.has(x.id)&&FE[x.id]&&Array.isArray(FE[x.id].cats)&&FE[x.id].cats.includes('food')&&!fHidden(x.id))out.set(x.id,{id:x.id,n:x.n,b:'',s:x.s||'1 serving',k:n0(x.k),p:n0(x.p),c:n0(x.c),f:n0(x.f),bc:'',src:'claude'});}
+  for(const[id,f]of [...out]){if(f.own)continue;if(fHidden(id)||(f.src==='grab'&&!!(S.house&&S.house.hidden&&S.house.hidden[id.slice(2)]))||(/^(s|r|c|x):/.test(id)&&!inCat(id,'food'))){out.delete(id);continue;}const e=fEdit(id);if(e)out.set(id,Object.assign({},f,{n:e.n||f.n,s:(e.s!=null&&e.s!=='')?e.s:f.s,k:e.k!=null?+e.k:f.k,p:e.p!=null?+e.p:f.p,c:e.c!=null?+e.c:f.c,f:e.f!=null?+e.f:f.f}));}
   return out;}
 function foodUse(f){const u=(((S.house&&S.house.foodUse)||{})[f.id]||{})[myKey()]||{};const c=n0(u.c)+(f.hc||0),l=[u.l||'',f.hl||''].sort().pop();return {c,l};}
 function recentFoods(all){const me=myKey(),L=[...all.values()].map(f=>Object.assign({},f,{u:foodUse(f)})).filter(f=>f.u.c>0);
@@ -4116,7 +4122,7 @@ function foodPicker(){const fp=S.fp;if(!fp)return '';const meal=fp.tgt==='meal';
   }else if(fp.sel){const f=fpFood(fp.sel);if(!f){fp.sel=null;return foodPicker();}const q=fp.qty||1;
     h+='<div class="subhead" style="margin-top:0">'+esc(f.n)+(f.b?' <span class="src">'+esc(f.b)+'</span>':'')+'</div><div class="src">One serving is '+esc(f.s)+': '+fpMacroText(f,1)+'.</div>'+
       '<div class="row" style="margin-top:8px;align-items:center"><label class="f" style="max-width:140px">Servings<input type="number" inputmode="decimal" step="0.25" min="0.25" id="fpQty" value="'+q+'"></label>'+[0.5,1,1.5,2,3].map(n=>'<button class="btn'+(q===n?' on':'')+'" data-action="fpqty" data-v="'+n+'">'+fmtNum(n)+'</button>').join('')+'</div>'+
-      '<div class="src" id="fpMac" style="margin:6px 0">'+fpMacroText(f,q)+'</div><div class="row"><button class="btn primary" data-action="fpadd">'+(meal?'Add to this meal':fp.tgt==='snack'?'Add to this snack':'Add')+'</button>'+(!fp.items.length&&fp.tgt!=='snack'?'<button class="btn" data-action="fpadd" data-v="log">'+(meal?'Log just this':'Add to today now')+'</button>':'')+'<button class="btn ghost" data-action="fpback">Back</button>'+(f.own?'<button class="btn ghost" data-action="fpedit">Edit this food</button>':'')+'</div>';
+      '<div class="src" id="fpMac" style="margin:6px 0">'+fpMacroText(f,q)+'</div><div class="row"><button class="btn primary" data-action="fpadd">'+(meal||fp.tgt==='addon'?'Add to this meal':fp.tgt==='snack'?'Add to this snack':'Add')+'</button>'+(!fp.items.length&&fp.tgt!=='snack'&&fp.tgt!=='addon'?'<button class="btn" data-action="fpadd" data-v="log">'+(meal?'Log just this':'Add to today now')+'</button>':'')+'<button class="btn ghost" data-action="fpback">Back</button>'+(f.own?'<button class="btn ghost" data-action="fpedit">Edit this food</button>':'')+'</div>';
   }else{
     h+='<div class="row"><input type="search" id="fpQ" value="'+esc(fp.q||'')+'" placeholder="Search foods, recipes, and snacks" style="flex:1;min-width:180px" autocomplete="off"></div>'+
       '<div class="row" style="margin-top:8px"><button class="btn" data-action="fpscan">Scan a barcode</button><button class="btn" data-action="sandopen">Build a sandwich</button><button class="btn" data-action="fpnew">Create a food</button></div><div id="fpRes" style="margin-top:6px">'+fpResults()+'</div>';}
@@ -4128,6 +4134,7 @@ function bumpUse(id,date){const me=myKey(),cur=((((S.house.foodUse||{})[id])||{}
 function fpCommit(){const fp=S.fp,date=S.date;if(!fp||!fp.items.length)return;const t=fpTot(fp.items);
   const items=fp.items.map(it=>({id:it.id,n:it.n,s:it.s,q:it.q,k:r1(it.k),p:r1(it.p),c:r1(it.c),f:r1(it.f)}));
   for(const it of fp.items)if(!String(it.id).startsWith('t:'))bumpUse(it.id,date);
+  if(fp.tgt==='addon'){const slot=fp.slot,l=day(date);l.addons=l.addons||{};l.addons[slot]=(l.addons[slot]||[]).concat(items);fpClose();relogPlan(date,slot);saveDay(date);render();return;}
   if(fp.tgt==='snack'){const slot=fp.slot,P=snEnsure(date,slot);for(const it of items)P.push({id:it.id,n:it.n,s:it.s,q:it.q,k:it.k/it.q,p:it.p/it.q,c:it.c/it.q,f:it.f/it.q});fpClose();S.snEdit=slot;saveDay(date);render();return;}
   if(fp.tgt==='meal'){const slot=fp.slot;fpClose();logMeal(date,slot,{status:'custom',name:items.map(fpItemLabel).join(', ').slice(0,240),kcal:Math.round(t.k),p:Math.round(t.p),c:Math.round(t.c),f:Math.round(t.f),items});return;}
   const l=day(date);l.extras=l.extras||[];for(const it of items)l.extras.push({name:fpItemLabel(it).slice(0,120),kcal:Math.round(it.k),p:Math.round(it.p),c:Math.round(it.c),f:Math.round(it.f),fid:it.id,q:it.q});
@@ -4202,7 +4209,8 @@ function applyFoodEdits(){syncCustomOut();const num=(e,o,k)=>e&&e[k]!=null&&isFi
   ORIG.snack.forEach((o,i)=>{const x=SNACK_ITEMS[i],e=fEdit('s:'+o.id);Object.assign(x,o);if(e){if(e.n){x.sh=e.n;x.name=e.n;}if(e.s){x.por=e.s;x.por2=null;}x.kcal=num(e,{k:o.kcal},'k');x.p=num(e,{p:o.p},'p');x.c=num(e,{c:o.c},'c');x.f=num(e,{f:o.f},'f');}});
   for(const k in ORIG.grab){const o=ORIG.grab[k],e=fEdit('r:'+k);Object.assign(R[k],o);if(e){if(e.n)R[k].name=e.n;R[k].kcal=num(e,{k:o.kcal},'k');R[k].p=num(e,{p:o.p},'p');R[k].c=num(e,{c:o.c},'c');R[k].f=num(e,{f:o.f},'f');}}
   syncCustomIn();for(const k in SNACK_MEMO)delete SNACK_MEMO[k];}
-function sandItems(g){const out=[];for(const[id,n,u,k,p,c,f]of SAND[g]){const bid='b:'+id;if(fHidden(bid))continue;const e=fEdit(bid);out.push({id:bid,n:(e&&e.n)||n,u:(e&&e.s!=null&&e.s!=='')?e.s:u,k:e&&e.k!=null?+e.k:k,p:e&&e.p!=null?+e.p:p,c:e&&e.c!=null?+e.c:c,f:e&&e.f!=null?+e.f:f,base:true});}
+function sandItems(g){const out=[];for(const[id,n,u,k,p,c,f]of SAND[g]){const bid='b:'+id;if(fHidden(bid)||!inCat(bid,g))continue;const e=fEdit(bid);out.push({id:bid,n:(e&&e.n)||n,u:(e&&e.s!=null&&e.s!=='')?e.s:u,k:e&&e.k!=null?+e.k:k,p:e&&e.p!=null?+e.p:p,c:e&&e.c!=null?+e.c:c,f:e&&e.f!=null?+e.f:f,base:true});}
+  const FE=(S.house&&S.house.foodEdit)||{};for(const x of builtInAll()){const e=FE[x.id];if(e&&Array.isArray(e.cats)&&e.cats.includes(g)&&!homeCats(x.id).includes(g)&&!fHidden(x.id))out.push({id:x.id,n:x.n,u:x.s||'',k:n0(x.k),p:n0(x.p),c:n0(x.c),f:n0(x.f)});}
   const H=(S.house&&S.house.foods)||{};for(const id in H){const x=H[id];if(x&&!x.del&&foodCats(x).includes(g))out.push({id,n:x.n,u:x.s||'',k:n0(x.k),p:n0(x.p),c:n0(x.c),f:n0(x.f),own:true});}return out;}
 /* ---- Sandwich builder (a pop-up over the food search) ---- */
 function sandState(){const fp=S.fp;if(!fp.sw)fp.sw={b:'b:white',c:{},q:1,save:true,name:''};return fp.sw;}
@@ -4221,7 +4229,7 @@ function sandModal(){const fp=S.fp,sw=sandState(),{t}=sandTotals(sw),auto=sandNa
   h+='<div class="row" style="margin-top:8px;align-items:center"><span>How many</span>'+[0.5,1,2,3].map(q=>'<button class="btn'+(sw.q===q?' on':'')+'" data-action="sandn" data-v="'+q+'">'+fmtNum(q)+'</button>').join('')+'</div>';
   h+='<div class="note good" style="margin-top:8px">One sandwich: '+fmtN(Math.round(t.k))+' kcal, '+fmtN(Math.round(t.p))+' g protein, '+fmtN(Math.round(t.c))+' g carbs, '+fmtN(Math.round(t.f))+' g fat.'+(sw.q!==1?' Logging '+fmtNum(sw.q)+': '+fmtN(Math.round(t.k*sw.q))+' kcal.':'')+'</div>';
   h+='<label class="row" style="gap:6px;margin:8px 0"><input type="checkbox" id="swSave"'+(sw.save?' checked':'')+'> Save to our foods so it comes up next time</label>';
-  h+='<div class="row"><button class="btn primary" data-action="sandadd"'+(t.k>0?'':' disabled')+'>'+(fp.tgt==='meal'?'Add to this meal':fp.tgt==='snack'?'Add to this snack':'Add')+'</button><button class="btn ghost" data-action="sandclose">Cancel</button></div></div></div>';
+  h+='<div class="row"><button class="btn primary" data-action="sandadd"'+(t.k>0?'':' disabled')+'>'+(fp.tgt==='meal'||fp.tgt==='addon'?'Add to this meal':fp.tgt==='snack'?'Add to this snack':'Add')+'</button><button class="btn ghost" data-action="sandclose">Cancel</button></div></div></div>';
   return h;}
 function sandAdd(){const fp=S.fp,sw=sandState(),{t}=sandTotals(sw),el=document.getElementById('swN'),nm=((el&&el.value.trim())||sandName(sw)).slice(0,80),sv=document.getElementById('swSave');
   const rec={n:nm,b:'',s:'1 sandwich',k:Math.round(t.k),p:r1(t.p),c:r1(t.c),f:r1(t.f)};let id;
@@ -4229,30 +4237,49 @@ function sandAdd(){const fp=S.fp,sw=sandState(),{t}=sandTotals(sw),el=document.g
   if(dup)id=dup;else if(sv?sv.checked:sw.save){id=newFoodId();hset(['foods',id],Object.assign({},rec,{src:'mine',cat:'food',by:S.profile.name,t:todayStr()}));}
   else{id='t:'+Date.now().toString(36);fp.temp[id]=Object.assign({id,src:'mine'},rec);}
   const q=sw.q||1;fp.items.push({id,n:rec.n,s:rec.s,q,k:rec.k*q,p:rec.p*q,c:rec.c*q,f:rec.f*q});fp.sw=null;fp.mode='list';fp.sel=null;fp.q='';
-  if(fp.tgt==='snack'){fpCommit();return;}fp.msg='Added '+rec.n+'.'+(fp.tgt==='meal'?' Add anything else, then tap Log this meal.':'');render();}
+  if(fp.tgt==='snack'||fp.tgt==='addon'){fpCommit();return;}fp.msg='Added '+rec.n+'.'+(fp.tgt==='meal'?' Add anything else, then tap Log this meal.':'');render();}
 /* ---- Meal checklists: each part of a planned meal can be left out ---- */
+function relogPlan(date,slot){const l=day(date),lg=l.meals&&l.meals[slot];if(!lg||lg.status!=='plan')return;const m=plannedMeals(date)[slot];if(!m)return;let x={kcal:m.kcal,p:m.p,c:m.c,f:m.f};
+  if(lg.n&&canAmt(m))x=amtMeal(m,amountUnit(m.key).from(lg.n));else{delete lg.n;delete lg.amt;}Object.assign(lg,x);
+  if(m.cparts&&m.cparts.length>1)lg.items=m.cparts.filter(y=>y.on!==false).map(y=>({id:y.pid,n:y.label,s:'',q:1,k:r1(y.kcal),p:r1(y.p),c:r1(y.c),f:r1(y.f)}));}
 function withOff(m,off){if(!m||!m.cparts||m.cparts.length<2)return m;const o=Object.assign({},m),t={kcal:0,p:0,c:0,f:0};
   o.cparts=m.cparts.map(x=>Object.assign({},x,{on:!off.includes(x.pid)}));if(!off.length)return o;
   for(const x of o.cparts)if(x.on){t.kcal+=x.kcal;t.p+=x.p;t.c+=x.c;t.f+=x.f;}
   for(const k in t)o[k]=Math.round(t[k]);const its=m.items||[];o.items=its.length===o.cparts.length?its.filter((x,i)=>o.cparts[i].on):o.cparts.filter(x=>x.on).map(x=>x.label);o.off=off.slice();if(off.includes('main'))o.n=0;return o;}
-function partsList(date,slot,m){return '<div class="mparts" style="margin:2px 0 8px">'+m.cparts.map(x=>{const on=x.on!==false;return '<label style="display:flex;gap:8px;align-items:flex-start;margin:3px 0;cursor:pointer"><input type="checkbox" data-part="'+slot+'|'+esc(x.pid)+'"'+(on?' checked':'')+' style="margin-top:3px"><span'+(on?'':' style="text-decoration:line-through;opacity:.6"')+'>'+esc(x.label)+' <span class="src">'+fmtN(Math.round(x.kcal))+' kcal</span></span></label>';}).join('')+'</div>';}
+function partsList(date,slot,m){return '<div class="mparts" style="margin:2px 0 8px">'+m.cparts.map(x=>{const on=x.on!==false;return '<label style="display:flex;gap:8px;align-items:flex-start;margin:3px 0;cursor:pointer"><input type="checkbox" data-part="'+slot+'|'+esc(x.pid)+'"'+(on?' checked':'')+' style="margin-top:3px"><span'+(on?'':' style="text-decoration:line-through;opacity:.6"')+'>'+esc(x.label)+' <span class="src">'+fmtN(Math.round(x.kcal))+' kcal'+(x.addon?', added':'')+'</span></span>'+(x.addon?'<button class="btn ghost" data-action="addonrm" data-slot="'+slot+'" data-v="'+x.ai+'" aria-label="Remove '+esc(x.label)+'" style="margin-left:auto;padding:0 8px;min-height:0">Remove</button>':'')+'</label>';}).join('')+'</div>';}
 /* ---- Meals, My foods tab ---- */
 function myFoodRows(){const rows=[],H=(S.house&&S.house.foods)||{},E=id=>fEdit(id);
   const add=(sec,id,n,s,k,p,c,f,o)=>{const e=E(id),own=o&&o.own;rows.push(Object.assign({sec,id,n:own?n:((e&&e.n)||n),s:own?s:((e&&e.s!=null&&e.s!=='')?e.s:s),k:own?k:(e&&e.k!=null?+e.k:k),p:own?p:(e&&e.p!=null?+e.p:p),c:own?c:(e&&e.c!=null?+e.c:c),f:own?f:(e&&e.f!=null?+e.f:f),edited:!own&&!!e,hidden:own?!!(H[id]&&H[id].del):(sec==='lunch'?isHidden(id.slice(2)):fHidden(id))},o||{}));};
   for(const id in H){const x=H[id];if(!x)continue;const cs=foodCats(x),secs=[...new Set(cs.map(c=>c==='food'?'mine':['bread','meat','cheese','top'].includes(c)?'sand':c))];
     for(const sec of secs)add(sec,id,x.n,x.s||'',n0(x.k),n0(x.p),n0(x.c),n0(x.f),{own:true,b:x.b||'',bc:x.bc||'',cats:cs,cat:cs.find(c=>['bread','meat','cheese','top'].includes(c))||'',scan:x.src==='scan',by:x.by||''});}
-  for(const g of ['bread','meat','cheese','top'])for(const[id,n,u,k,p,c,f]of SAND[g])add('sand','b:'+id,n,u,k,p,c,f,{cat:g});
-  for(const f of FOODS)add('claude',f.id,f.n,f.s,f.k,f.p,f.c,f.f);
-  for(const f of historyFoods())add('hist',f.id,f.n,f.s,f.k,f.p,f.c,f.f);
-  for(const k in ORIG.sides){const o=ORIG.sides[k];add('side','side:'+k,o.name,'',o.kcal,o.p,o.c,o.f);}
-  for(const k in ORIG.fill){const o=ORIG.fill[k];add('side','fill:'+k,o.name,'',o.kcal,o.p,o.c,o.f);}
-  for(const k of Object.keys(ORIG.grab)){const o=ORIG.grab[k];add('lunch','r:'+k,o.name,'1 lunch',o.kcal,o.p,o.c,o.f);}
-  for(const o of ORIG.snack)add('snack','s:'+o.id,o.sh||o.name,o.por,o.kcal,o.p,o.c,o.f);
+  // A built-in item is listed under its home section plus every other section it was ticked into.
+  const SEC={snack:'snack',lunch:'lunch',side:'side',bread:'sand',meat:'sand',cheese:'sand',top:'sand'};
+  const bi=(home,id,n,s,k,p,c,f,o)=>{const cs=builtInCats(id),secs=new Set([home]);for(const c of cs)if(SEC[c])secs.add(SEC[c]);for(const sec of secs)add(sec,id,n,s,k,p,c,f,Object.assign({cats:cs,cat:cs.find(c=>SEC[c]==='sand')||''},o||{}));};
+  for(const g of ['bread','meat','cheese','top'])for(const[id,n,u,k,p,c,f]of SAND[g])bi('sand','b:'+id,n,u,k,p,c,f);
+  for(const f of FOODS)bi('claude',f.id,f.n,f.s,f.k,f.p,f.c,f.f);
+  for(const f of historyFoods())bi('hist',f.id,f.n,f.s,f.k,f.p,f.c,f.f);
+  for(const k in ORIG.sides){const o=ORIG.sides[k];bi('side','side:'+k,o.name,'',o.kcal,o.p,o.c,o.f);}
+  for(const k in ORIG.fill){const o=ORIG.fill[k];bi('side','fill:'+k,o.name,'',o.kcal,o.p,o.c,o.f);}
+  for(const k of Object.keys(ORIG.grab)){const o=ORIG.grab[k];bi('lunch','r:'+k,o.name,'1 lunch',o.kcal,o.p,o.c,o.f);}
+  for(const o of ORIG.snack)bi('snack','s:'+o.id,o.sh||o.name,o.por,o.kcal,o.p,o.c,o.f);
   return rows;}
 const MF_SECS=[['mine','Foods you created or scanned'],['sand','Sandwich builder'],['lunch','Packed lunches'],['side','Meal sides'],['snack','Snack items'],['claude','Added by Claude'],['hist','From your past logs']];
 const CAT_LAB={food:'Food search (Ate something else)',snack:'Snack items',lunch:'Packed lunches',side:'Meal sides',bread:'Sandwich bread',meat:'Sandwich meat',cheese:'Sandwich cheese',top:'Sandwich topping'};
 const CAT_SHORT={food:'Food',snack:'Snack',lunch:'Packed lunch',side:'Side',bread:'Bread',meat:'Meat',cheese:'Cheese',top:'Topping'};
 const foodCats=x=>Array.isArray(x&&x.cats)&&x.cats.length?x.cats:[(x&&x.cat)||'food'];
+// Where a built-in item lives before any change: snack items and packed lunches are also searchable.
+function homeCats(id){const p=String(id).split(':')[0];if(p==='s')return ['snack','food'];if(p==='r')return ['lunch','food'];if(p==='side'||p==='fill')return ['side'];if(p==='b'){const k=id.slice(2);for(const g of ['bread','meat','cheese','top'])if(SAND[g].some(r=>r[0]===k))return [g];}return ['food'];}
+function builtInCats(id){const e=fEdit(id);return e&&Array.isArray(e.cats)&&e.cats.length?e.cats:homeCats(id);}
+function inCat(id,c){return builtInCats(id).includes(c);}
+// Every built-in item with edits applied: what a ticked extra place is built from.
+function builtInAll(){const out=[],E=fEdit,v=(id,n,s,k,p,c,f)=>{const e=E(id);out.push({id,n:(e&&e.n)||n,s:(e&&e.s!=null&&e.s!=='')?e.s:s,k:e&&e.k!=null?+e.k:k,p:e&&e.p!=null?+e.p:p,c:e&&e.c!=null?+e.c:c,f:e&&e.f!=null?+e.f:f});};
+  for(const g of ['bread','meat','cheese','top'])for(const[id,n,u,k,p,c,f]of SAND[g])v('b:'+id,n,u,k,p,c,f);
+  for(const f of FOODS)v(f.id,f.n,f.s,f.k,f.p,f.c,f.f);
+  for(const k in ORIG.sides){const o=ORIG.sides[k];v('side:'+k,o.name,'',o.kcal,o.p,o.c,o.f);}
+  for(const k in ORIG.fill){const o=ORIG.fill[k];v('fill:'+k,o.name,'',o.kcal,o.p,o.c,o.f);}
+  for(const k in ORIG.grab){const o=ORIG.grab[k];v('r:'+k,o.name,'1 lunch',o.kcal,o.p,o.c,o.f);}
+  for(const o of ORIG.snack)v('s:'+o.id,o.sh||o.name,o.por,o.kcal,o.p,o.c,o.f);
+  return out;}
 function catBoxes(attr,cats){return '<fieldset style="border:0;padding:0;margin:6px 0 0;grid-column:1/-1"><legend class="src" style="padding:0;margin-bottom:4px">Use it in (pick any)</legend><div class="row" style="gap:6px 14px;flex-wrap:wrap">'+Object.entries(CAT_LAB).map(([k,v])=>'<label style="display:inline-flex;gap:6px;align-items:center"><input type="checkbox" '+attr+k+'"'+(cats.includes(k)?' checked':'')+'> '+esc(v)+'</label>').join('')+'</div></fieldset>';}
 // Your foods that are also snack items, packed lunches, or meal sides join those built-in lists.
 const CUST={snack:[],grab:[],side:[]};
@@ -4263,10 +4290,15 @@ function syncCustomIn(){const H=(S.house&&S.house.foods)||{};
   for(const id in H){const x=H[id];if(!x||x.del)continue;const cs=foodCats(x),k='u'+id,m={kcal:n0(x.k),p:n0(x.p),c:n0(x.c),f:n0(x.f)};
     if(cs.includes('snack')){const it=Object.assign({id:k,role:m.p*4>=0.25*Math.max(1,m.kcal)?'p':'c',name:x.n,sh:x.n,por:x.s?x.s+' '+x.n:x.n,a:A.own,custom:true,fid:id},m);SNACK_ITEMS.push(it);SNACK_BY_ID[k]=it;CUST.snack.push(k);}
     if(cs.includes('lunch')){R[k]=Object.assign({cat:'grab',tag:'grab',name:x.n,url:'',serving:'1 lunch',yield:null,step:1,note:'One of your own packed lunches'+(x.s?' ('+x.s+')':'')+'.',custom:true,fid:id},m);(POOLS.grab=POOLS.grab||[]).push(k);CUST.grab.push(k);}
-    if(cs.includes('side')){SIDES[k]=Object.assign({name:x.s?x.s+' '+x.n:x.n,custom:true},m);SIDE_OPTS.splice(Math.max(0,SIDE_OPTS.length-1),0,[k,x.n]);CUST.side.push(k);}}}
+    if(cs.includes('side')){SIDES[k]=Object.assign({name:x.s?x.s+' '+x.n:x.n,custom:true},m);SIDE_OPTS.splice(Math.max(0,SIDE_OPTS.length-1),0,[k,x.n]);CUST.side.push(k);}}
+  const FE=(S.house&&S.house.foodEdit)||{};
+  for(const x of builtInAll()){const e=FE[x.id];if(!e||!Array.isArray(e.cats)||fHidden(x.id))continue;const home=homeCats(x.id),k='v_'+fslug(x.id),m={kcal:n0(x.k),p:n0(x.p),c:n0(x.c),f:n0(x.f)};
+    if(e.cats.includes('snack')&&!home.includes('snack')){const it=Object.assign({id:k,role:m.p*4>=0.25*Math.max(1,m.kcal)?'p':'c',name:x.n,sh:x.n,por:x.s?x.s+' '+x.n:x.n,a:A.own,custom:true,bid:x.id},m);SNACK_ITEMS.push(it);SNACK_BY_ID[k]=it;CUST.snack.push(k);}
+    if(e.cats.includes('lunch')&&!home.includes('lunch')){R[k]=Object.assign({cat:'grab',tag:'grab',name:x.n,url:'',serving:'1 lunch',yield:null,step:1,note:x.s?'Serving: '+x.s+'.':'',custom:true,bid:x.id},m);(POOLS.grab=POOLS.grab||[]).push(k);CUST.grab.push(k);}
+    if(e.cats.includes('side')&&!home.includes('side')){SIDES[k]=Object.assign({name:x.s?x.s+' '+x.n:x.n,custom:true},m);SIDE_OPTS.splice(Math.max(0,SIDE_OPTS.length-1),0,[k,x.n]);CUST.side.push(k);}}}
 function mfRow(x,seen){const ed=S.mfEdit===x.id&&!(seen&&seen.has(x.id));if(ed&&seen)seen.add(x.id);
-  if(ed)return '<div class="card" style="margin:6px 0;border:1px solid var(--line)"><div class="form"><label class="f wide">Name<input type="text" id="mfN" value="'+esc(x.n)+'"></label><label class="f">Serving<input type="text" id="mfS" value="'+esc(x.s||'')+'"></label><label class="f">Calories<input type="number" inputmode="decimal" id="mfK" value="'+esc(x.k)+'"></label><label class="f">Protein g<input type="number" inputmode="decimal" id="mfP" value="'+esc(x.p)+'"></label><label class="f">Carbs g<input type="number" inputmode="decimal" id="mfC" value="'+esc(x.c)+'"></label><label class="f">Fat g<input type="number" inputmode="decimal" id="mfF" value="'+esc(x.f)+'"></label>'+(x.own?'<label class="f">Barcode<input type="text" inputmode="numeric" id="mfBc" value="'+esc(x.bc||'')+'"></label>'+catBoxes('data-mfcat="',x.cats||['food']):'')+'</div><div class="row" style="margin-top:8px"><button class="btn primary" data-action="mfsave" data-v="'+esc(x.id)+'">Save</button><button class="btn ghost" data-action="mfcancel">Cancel</button>'+(x.edited?'<button class="btn ghost" data-action="mfrestore" data-v="'+esc(x.id)+'">Restore the original numbers</button>':'')+'</div></div>';
-  return '<div class="row" style="justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding:6px 0;flex-wrap:wrap;gap:6px"><div style="flex:1 1 220px;min-width:0"><strong>'+esc(x.n)+'</strong>'+(x.b?' <span class="src">'+esc(x.b)+'</span>':'')+(x.edited?' <span class="pill">Edited</span>':'')+(x.scan?' <span class="pill">Scanned</span>':'')+(x.own?(x.cats||[]).map(c=>' <span class="pill">'+esc(CAT_SHORT[c]||c)+'</span>').join(''):x.sec==='sand'&&x.cat?' <span class="pill">'+esc(CAT_SHORT[x.cat]||x.cat)+'</span>':'')+'<div class="src">'+(x.s?esc(x.s)+', ':'')+fmtN(Math.round(x.k))+' kcal, '+fmtN(r1(x.p))+' g protein, '+fmtN(r1(x.c))+' g carbs, '+fmtN(r1(x.f))+' g fat</div></div><div class="row" style="gap:6px"><button class="btn ghost" data-action="mfedit" data-v="'+esc(x.id)+'">Edit</button><button class="btn ghost" data-action="mfhide" data-v="'+esc(x.id)+'">Remove</button></div></div>';}
+  if(ed)return '<div class="card" style="margin:6px 0;border:1px solid var(--line)"><div class="form"><label class="f wide">Name<input type="text" id="mfN" value="'+esc(x.n)+'"></label><label class="f">Serving<input type="text" id="mfS" value="'+esc(x.s||'')+'"></label><label class="f">Calories<input type="number" inputmode="decimal" id="mfK" value="'+esc(x.k)+'"></label><label class="f">Protein g<input type="number" inputmode="decimal" id="mfP" value="'+esc(x.p)+'"></label><label class="f">Carbs g<input type="number" inputmode="decimal" id="mfC" value="'+esc(x.c)+'"></label><label class="f">Fat g<input type="number" inputmode="decimal" id="mfF" value="'+esc(x.f)+'"></label>'+(x.own?'<label class="f">Barcode<input type="text" inputmode="numeric" id="mfBc" value="'+esc(x.bc||'')+'"></label>'+catBoxes('data-mfcat="',x.cats||['food']):catBoxes('data-mfcat="',x.cats||homeCats(x.id)))+'</div><div class="row" style="margin-top:8px"><button class="btn primary" data-action="mfsave" data-v="'+esc(x.id)+'">Save</button><button class="btn ghost" data-action="mfcancel">Cancel</button>'+(x.edited?'<button class="btn ghost" data-action="mfrestore" data-v="'+esc(x.id)+'">Restore the original numbers</button>':'')+'</div></div>';
+  return '<div class="row" style="justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding:6px 0;flex-wrap:wrap;gap:6px"><div style="flex:1 1 220px;min-width:0"><strong>'+esc(x.n)+'</strong>'+(x.b?' <span class="src">'+esc(x.b)+'</span>':'')+(x.edited?' <span class="pill">Edited</span>':'')+(x.scan?' <span class="pill">Scanned</span>':'')+(x.cats||[]).map(c=>' <span class="pill">'+esc(CAT_SHORT[c]||c)+'</span>').join('')+'<div class="src">'+(x.s?esc(x.s)+', ':'')+fmtN(Math.round(x.k))+' kcal, '+fmtN(r1(x.p))+' g protein, '+fmtN(r1(x.c))+' g carbs, '+fmtN(r1(x.f))+' g fat</div></div><div class="row" style="gap:6px"><button class="btn ghost" data-action="mfedit" data-v="'+esc(x.id)+'">Edit</button><button class="btn ghost" data-action="mfhide" data-v="'+esc(x.id)+'">Remove</button></div></div>';}
 function mpFoods(){const rows=myFoodRows(),q=(S.mfQ||'').trim().toLowerCase(),A0=S.mfAdd||(S.mfAdd=[{},{},{}]);
   let h='<div class="section" style="margin-top:0"><h2>My foods</h2><div class="card"><p class="src" style="margin-top:0">Everything the app knows besides the recipe library: the foods you have created or scanned, the sandwich builder, packed lunches, meal sides, snack items, and what Claude added. Editing changes the numbers everywhere for both of you. Remove takes an item out of every list; it can be restored at the bottom of this page.</p>';
   h+='<div class="subhead">Add foods</div><p class="hint" style="margin-top:0">Fill in as many rows as you like and save them all at once. Rows without a name or calories are skipped.</p>';
@@ -4364,6 +4396,9 @@ document.addEventListener('click',ev=>{
   if(a==='midday'){const wk=curMenuWeek(),m=clone(menuFor(wk));m.mid=+v;setMenu(wk,m);render();return;}
   if(a==='nextpick'){const wk=curMenuWeek(),m=clone(menuFor(wk)),cur=m[v],pool=ranked(R[cur]?R[cur].tag:'pasta');m[v]=pool[(pool.indexOf(cur)+1)%pool.length];setMenu(wk,m);render();return;}
   if(a==='ate'){const m=plannedMeals(date)[slot];if(m.key&&R[m.key]){const arr=S.profile.eaten[m.key]=S.profile.eaten[m.key]||[];if(!arr.includes(date)){arr.push(date);arr.sort();if(arr.length>40)arr.shift();}saveProfile();}logMeal(date,slot,Object.assign({status:'plan',name:m.name,key:m.key||null,kcal:m.kcal,p:m.p,c:m.c,f:m.f},canAmt(m)?{n:m.n,amt:m.amt||amountText(m.key,m.n)}:{},m.cparts&&m.cparts.length>1?{items:m.cparts.filter(x=>x.on!==false).map(x=>({id:x.pid,n:x.label,s:'',q:1,k:r1(x.kcal),p:r1(x.p),c:r1(x.c),f:r1(x.f)}))}:m.parts&&m.parts.length?{items:m.parts.map(x=>({id:x.id,n:x.n,s:x.s,q:x.q,k:r1(x.q*x.k),p:r1(x.q*x.p),c:r1(x.q*x.c),f:r1(x.q*x.f)}))}:{}));S.snEdit=null;return;}
+  if(a==='addon'){fpOpen('addon',slot);S.amtOpen=null;render();const el=document.getElementById('fpQ');if(el)el.focus();return;}
+  if(a==='addonrm'){const l=day(date),A0=l.addons&&l.addons[slot];if(A0){A0.splice(+v,1);if(!A0.length){delete l.addons[slot];if(!Object.keys(l.addons).length)delete l.addons;}
+      if(l.off&&l.off[slot]){l.off[slot]=l.off[slot].filter(x=>!/^add#/.test(x));if(!l.off[slot].length)delete l.off[slot];}relogPlan(date,slot);saveDay(date);}render();return;}
   if(a==='sandopen'&&S.fp){S.fp.mode='sand';S.fp.sw=null;sandState();render();return;}
   if(a==='sandclose'&&S.fp){S.fp.mode='list';S.fp.sw=null;render();return;}
   if(a==='sandb'&&S.fp&&S.fp.sw){S.fp.sw.b=v;render();return;}
@@ -4374,7 +4409,7 @@ document.addEventListener('click',ev=>{
   if(a==='mfcancel'){S.mfEdit=null;render();return;}
   if(a==='mfsave'){const x=mfFind(v),g=id=>document.getElementById(id);if(!x)return;const nm=g('mfN').value.trim();if(!nm){g('mfN').focus();return;}
     const rec={n:nm.slice(0,80),s:g('mfS').value.trim().slice(0,40),k:Math.round(n0(g('mfK').value)),p:r1(g('mfP').value),c:r1(g('mfC').value),f:r1(g('mfF').value)};
-    if(x.own){const old=(S.house.foods||{})[v]||{},cats=[...document.querySelectorAll('[data-mfcat]')].filter(e=>e.checked).map(e=>e.dataset.mfcat);if(!cats.length){S.mfMsg='Pick at least one place to use '+rec.n+', or Remove it instead.';render();return;}const o2=Object.assign({},old,rec,{bc:normCode(g('mfBc').value),cats});delete o2.cat;hset(['foods',v],o2);applyFoodEdits();}else{hset(['foodEdit',v],rec);applyFoodEdits();}
+    if(x.own){const old=(S.house.foods||{})[v]||{},cats=[...document.querySelectorAll('[data-mfcat]')].filter(e=>e.checked).map(e=>e.dataset.mfcat);if(!cats.length){S.mfMsg='Pick at least one place to use '+rec.n+', or Remove it instead.';render();return;}const o2=Object.assign({},old,rec,{bc:normCode(g('mfBc').value),cats});delete o2.cat;hset(['foods',v],o2);applyFoodEdits();}else{const cats=[...document.querySelectorAll('[data-mfcat]')].filter(e=>e.checked).map(e=>e.dataset.mfcat);if(!cats.length){S.mfMsg='Pick at least one place to use '+rec.n+', or Remove it instead.';render();return;}const hc=homeCats(v),same=cats.length===hc.length&&hc.every(c=>cats.includes(c));if(!same)rec.cats=cats;hset(['foodEdit',v],rec);applyFoodEdits();}
     S.mfEdit=null;S.mfMsg='Saved '+rec.n+'.';render();return;}
   if(a==='mfrestore'){hset(['foodEdit',v],null);delete S.house.foodEdit[v];applyFoodEdits();S.mfEdit=null;render();return;}
   if(a==='mfhide'){const x=mfFind(v);if(!x)return;if(x.own){hset(['foods',v,'del'],true);applyFoodEdits();}else if(x.sec==='lunch')hset(['hidden',v.slice(2)],true);else hset(['foodHide',v],true);if(S.mfEdit===v)S.mfEdit=null;applyFoodEdits();S.mfMsg='Removed '+x.n+'. You can restore it at the bottom of this page.';render();return;}
@@ -4408,7 +4443,7 @@ document.addEventListener('click',ev=>{
     if(a==='fpsel'){fp.sel=v;fp.qty=1;fp.msg='';render();return;}
     if(a==='fpqty'){fp.qty=+v;render();return;}
     if(a==='fpadd'){const f=fpFood(fp.sel),q=n0(fp.qty);if(!f||!(q>0)){const e=document.getElementById('fpQty');if(e)e.focus();return;}
-      fp.items.push({id:f.id,n:f.n,s:f.s,q,k:f.k*q,p:f.p*q,c:f.c*q,f:f.f*q});fp.sel=null;fp.qty=1;fp.q='';fp.msg='';if(v==='log'||fp.tgt==='snack'){fpCommit();return;}render();return;}
+      fp.items.push({id:f.id,n:f.n,s:f.s,q,k:f.k*q,p:f.p*q,c:f.c*q,f:f.f*q});fp.sel=null;fp.qty=1;fp.q='';fp.msg='';if(v==='log'||fp.tgt==='snack'||fp.tgt==='addon'){fpCommit();return;}render();return;}
     if(a==='fpback'){stopScan();fp.mode='list';fp.sel=null;fp.draft=null;fp.msg='';render();return;}
     if(a==='fprm'){fp.items.splice(+v,1);render();return;}
     if(a==='fplog'){fpCommit();return;}
@@ -4487,8 +4522,7 @@ document.addEventListener('change',ev=>{
   if(el.id==='importFile'){importData(el.files[0]);return;}
   if(el.dataset.part){const[slot,pid]=el.dataset.part.split('|'),date=S.date,l=day(date);l.off=l.off||{};const cur=new Set(l.off[slot]||[]);if(el.checked)cur.delete(pid);else cur.add(pid);
     if(cur.size)l.off[slot]=[...cur];else{delete l.off[slot];if(!Object.keys(l.off).length)delete l.off;}
-    const lg=l.meals&&l.meals[slot];if(lg&&lg.status==='plan'){const m=plannedMeals(date)[slot];let x={kcal:m.kcal,p:m.p,c:m.c,f:m.f};if(lg.n&&canAmt(m)){x=amtMeal(m,amountUnit(m.key).from(lg.n));}else{delete lg.n;delete lg.amt;}Object.assign(lg,x);if(m.cparts)lg.items=m.cparts.filter(y=>y.on!==false).map(y=>({id:y.pid,n:y.label,s:'',q:1,k:r1(y.kcal),p:r1(y.p),c:r1(y.c),f:r1(y.f)}));}
-    saveDay(date);render();return;}
+    relogPlan(date,slot);saveDay(date);render();return;}
   if(el.dataset.mfa){const[i,k]=el.dataset.mfa.split('|'),r=(S.mfAdd[+i]=S.mfAdd[+i]||{});if(k.startsWith('cat:')){const c=k.slice(4),set=new Set(r.cats||['food']);if(el.checked)set.add(c);else set.delete(c);r.cats=[...set];}else r[k]=el.value;return;}
   if(el.dataset.tg){const k=el.dataset.tg,v=el.value.trim(),B={kcal:[1200,5000],protein:[40,300],carbs:[20,600],fat:[20,250]}[k];S.profile.tg=S.profile.tg||{};S.profile.tg.set=true;
     if(v===''||!isFinite(+v)||+v<=0)delete S.profile.tg[k];else S.profile.tg[k]=Math.max(B[0],Math.min(B[1],Math.round(+v)));saveProfile();render();return;}
