@@ -4357,8 +4357,8 @@ const MONTHLY=[
   {id:'mcheck',icon:'\u2705',name:'Perfect check-ins',desc:'Fill in the full check-in every day',all:d=>dayStats(d).ci},
   {id:'mactive',icon:'\u23F1\uFE0F',name:'Hour of power',desc:'Active for an hour or more every day',all:d=>dayStats(d).active>=60},
   {id:'mmeals',icon:'\uD83C\uDF7D\uFE0F',name:'Nothing missed',desc:'Log every meal, every day',all:d=>dayStats(d).meals},
-  {id:'msteps',icon:'\uD83D\uDC5F',name:'Hundred-mile month',desc:'100 miles of steps',sum:d=>dayStats(d).steps/STEPS_PER_MILE,goal:100,unit:'miles'},
-  {id:'mwork',icon:'\uD83D\uDCAA',name:'Twenty-workout month',desc:'Finish 20 workouts',sum:d=>dayStats(d).wo?1:0,goal:20,unit:'workouts'},
+  {id:'msteps',icon:'\uD83D\uDC5F',name:'100-mile month',desc:'100 miles of steps',sum:d=>dayStats(d).steps/STEPS_PER_MILE,goal:100,unit:'miles'},
+  {id:'mwork',icon:'\uD83D\uDCAA',name:'20-workout month',desc:'Finish 20 workouts',sum:d=>dayStats(d).wo?1:0,goal:20,unit:'workouts'},
   {id:'mbudget',icon:'\uD83C\uDFAF',name:'On budget',desc:'20 days fully logged and under budget',sum:d=>dayStats(d).budget?1:0,goal:20,unit:'days'},
   {id:'mprotein',icon:'\uD83E\uDD69',name:'Protein month',desc:'Hit the protein goal on 20 days',sum:d=>dayStats(d).prot?1:0,goal:20,unit:'days'},
   {id:'msleep',icon:'\uD83D\uDE34',name:'Well rested',desc:'7+ hours of sleep on 25 nights',sum:d=>dayStats(d).sleep>=7?1:0,goal:25,unit:'nights'},
@@ -4374,7 +4374,7 @@ const LIFETIME=[
   {id:'lwater',icon:'\uD83D\uDCA7',name:'Water',unit:'gallons',tiers:[100,500,1000,2500],val:T=>T.water/128},
   {id:'llost',icon:'\uD83D\uDCC9',name:'Pounds lost',unit:'lb',tiers:[5,10,25,50,75,100],val:T=>T.lost},
   {id:'lstreak',icon:'\uD83D\uDD25',name:'Longest streak',unit:'days',tiers:[7,30,100,365],val:T=>T.bestStreak},
-  {id:'lmonth',icon:'\uD83C\uDFC6',name:'Monthly achievements earned',unit:'',tiers:[5,10,25,50,100],val:T=>T.monthly}];
+  {id:'lmonth',icon:'\uD83C\uDFC6',name:'Monthly trophies',unit:'',tiers:[5,10,25,50,100],val:T=>T.monthly}];
 function firstDay(){const ks=Object.keys(S.days).filter(d=>S.days[d]).sort();const s=S.profile&&S.profile.startDate;return [ks[0],s].filter(Boolean).sort()[0]||todayStr();}
 function streakNow(st,end){let d=end,n=0,pending=false;const first=firstDay();const t0=st.test(d);if(t0===false||t0===null){if(t0===false)pending=true;d=addD(d,-1);}else{n=1;d=addD(d,-1);}
   for(let i=0;i<2000&&d>=first;i++,d=addD(d,-1)){const t=st.test(d);if(t===null)continue;if(!t)break;n++;}return {n,pending:pending&&n>0};}
@@ -4415,8 +4415,31 @@ function winsCard(date){const w=winsFor(date);if(!w.length)return '';const hd=CH
 function streakChips(){const A=achCompute(),L=A.streaks.filter(x=>x.n>=2).sort((a,b)=>b.n-a.n).slice(0,4);if(!L.length)return '';
   return '<div class="row" style="gap:6px;flex-wrap:wrap;margin-bottom:10px">'+L.map(x=>'<span class="pill" title="Best: '+x.best+' days" style="font-size:.95em">'+x.st.icon+' '+x.n+'-day '+esc(x.st.label)+' streak'+(x.pending?' (keep it going today)':'')+'</span>').join('')+'<button class="btn ghost" data-action="view" data-v="ach">All achievements</button></div>';}
 function bar(v,max){const p=Math.max(0,Math.min(100,max?v/max*100:0));return '<div class="bar" style="margin:4px 0 2px"><i style="width:'+p.toFixed(1)+'%"></i></div>';}
+/* ---- Trophy shelf: every trophy earned, newest first, standing on shelves, plus the best streaks ---- */
+const METAL=[['Bronze','#B0723A'],['Silver','#9AA3AD'],['Gold','#D4A017'],['Platinum','#6FB7C9']];
+function trophyList(){const A=achCompute(),P=(S.profile&&S.profile.ach)||{},out=[];
+  for(const x of A.earned){let metal,sub;
+    if(x.ym){metal=METAL[2];sub=MONTHN[+x.ym.slice(5)-1].slice(0,3)+' '+x.ym.slice(0,4);}
+    else if(x.a.tiers){const i=x.a.tiers.indexOf(x.tier);metal=METAL[Math.min(3,Math.floor(i*4/x.a.tiers.length))];sub=fmtN(x.tier)+(x.a.unit?' '+x.a.unit:'');}
+    else{metal=METAL[3];sub=fmtN(x.tier)+' lb';}
+    out.push({id:x.id,icon:x.a.icon,name:x.a.name,sub,metal,when:P[x.id]||''});}
+  return out.sort((a,b)=>a.when<b.when?1:a.when>b.when?-1:abc(a.name,b.name));}
+function trophyShelf(){const T=trophyList(),A=achCompute(),top=A.streaks.filter(x=>x.best>0).sort((a,b)=>b.best-a.best||b.n-a.n).slice(0,3);
+  let h='<div class="section" style="margin-top:0"><h2>Trophy shelf</h2><div class="card">';
+  h+='<div class="subhead" style="margin-top:0">Top streaks</div>';
+  if(top.length){h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:14px">'+top.map((x,i)=>'<div style="border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center;background:var(--soft)"><div style="font-size:1.6em;line-height:1.2">'+(i===0?'\uD83D\uDD25':x.st.icon)+'</div><div style="font-size:1.7em;font-weight:700;line-height:1.1">'+x.best+'</div><div class="src">day'+(x.best===1?'':'s')+' in a row</div><div style="font-weight:600;margin-top:2px">'+esc(x.st.name)+'</div><div class="src">'+(x.n>0?'Now at '+x.n+(x.n===x.best?', your best':''):'Not running right now')+'</div></div>').join('')+'</div>';}
+  else h+='<p class="hint">Your best streaks will stand here once you string a few days together.</p>';
+  h+='<div class="subhead">Trophies <span class="src">'+(T.length?T.length+' earned, newest first':'none yet')+'</span></div>';
+  const tile=(t,empty)=>'<div title="'+esc(empty?'':t.name+', '+t.sub+', '+t.metal[0]+(t.when?', earned '+fmtShort(t.when):''))+'" style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;text-align:center;padding:0 4px 9px;height:128px;box-sizing:border-box;overflow:hidden">'+
+    (empty?'<div style="width:52px;height:52px;border-radius:50%;border:2px dashed var(--line);opacity:.7"></div><div class="src" style="font-size:.75em;margin-top:6px">Your next trophy</div>':
+    '<div style="width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.7em;background:var(--panel);border:4px solid '+t.metal[1]+';box-shadow:0 2px 4px rgba(0,0,0,.18)">'+t.icon+'</div><div style="font-size:.78em;font-weight:600;line-height:1.15;margin-top:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">'+esc(t.name)+'</div><div class="src" style="font-size:.72em;line-height:1.2">'+esc(t.sub)+'</div>')+'</div>';
+  // Each 128px row of trophies stands on a board painted the full width of the shelf, so a half-full row still has a whole board.
+  const fill=T.length?1:4,board='repeating-linear-gradient(to bottom,transparent 0,transparent 121px,#8A5A35 121px,#8A5A35 126px,#6B4428 126px,#6B4428 128px,transparent 128px,transparent 142px)';
+  h+='<div class="shelf" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));grid-auto-rows:128px;column-gap:0;row-gap:14px;padding:8px 8px 6px;border-radius:10px;background:'+board+' content-box,var(--soft)">'+T.map(t=>tile(t,false)).join('')+Array.from({length:fill},()=>tile(null,true)).join('')+'</div>';
+  h+='<div class="row" style="gap:10px;flex-wrap:wrap;margin-top:10px">'+METAL.map(m=>'<span class="src"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;border:3px solid '+m[1]+';vertical-align:middle"></span> '+m[0]+'</span>').join('')+'<span class="src">Monthly trophies are gold; long-term ones climb from bronze to platinum by tier.</span></div>';
+  return h+'</div></div>';}
 function viewAch(){const A=achCompute(),M=A.months[A.cur]||monthEval(A.cur),mname=MONTHN[+A.cur.slice(5)-1];
-  let h='<div class="section" style="margin-top:0"><h2>Streaks</h2><div class="card"><p class="src" style="margin-top:0">Days in a row. Today counts as soon as it is done; until then a streak stays alive from yesterday. Workout streaks only count days with a planned workout.</p>';
+  let h=trophyShelf()+'<div class="section"><h2>Streaks</h2><div class="card"><p class="src" style="margin-top:0">Days in a row. Today counts as soon as it is done; until then a streak stays alive from yesterday. Workout streaks only count days with a planned workout.</p>';
   for(const x of A.streaks)h+='<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:6px 0"><span>'+x.st.icon+' '+esc(x.st.name)+'</span><span><strong>'+x.n+'</strong> <span class="src">now'+(x.pending?', today still open':'')+' &middot; best '+x.best+'</span></span></div>';
   h+='</div></div><div class="section"><h2>'+esc(mname)+' achievements</h2><div class="card">';
   for(const a of MONTHLY){const o=M[a.id];let prog;
