@@ -546,7 +546,28 @@ const PZ_TYPES={
 };
 const POPS={
   mtndew:{n:'Mountain Dew',k:170,p:0,c:46,f:0},
-  mtnlight:{n:'Mountain Lightning',k:190,p:0,c:50,f:0}
+  mtndewdiet:{n:'Diet Mountain Dew',k:0,p:0,c:0,f:0},
+  mtndewzero:{n:'Mtn Dew Zero Sugar',k:0,p:0,c:0,f:0},
+  mtndewcode:{n:'Mtn Dew Code Red (estimate)',k:170,p:0,c:46,f:0},
+  starry:{n:'Starry (estimate)',k:150,p:0,c:39,f:0},
+  mugroot:{n:'Mug Root Beer (estimate)',k:170,p:0,c:46,f:0},
+  mtnlight:{n:'Mountain Lightning',k:190,p:0,c:50,f:0},
+  pepsi:{n:'Pepsi',k:150,p:0,c:41,f:0},
+  pepsidiet:{n:'Diet Pepsi',k:0,p:0,c:0,f:0},
+  pepsizero:{n:'Pepsi Zero Sugar',k:0,p:0,c:0,f:0},
+  coke:{n:'Coca-Cola',k:140,p:0,c:39,f:0},
+  cokediet:{n:'Diet Coke',k:0,p:0,c:0,f:0},
+  cokezero:{n:'Coke Zero Sugar',k:0,p:0,c:0,f:0},
+  cokecherry:{n:'Cherry Coke (estimate)',k:150,p:0,c:42,f:0},
+  sprite:{n:'Sprite',k:140,p:0,c:38,f:0},
+  spritezero:{n:'Sprite Zero',k:0,p:0,c:0,f:0},
+  fanta:{n:'Fanta Orange (estimate)',k:160,p:0,c:44,f:0},
+  drpepper:{n:'Dr Pepper',k:150,p:0,c:40,f:0},
+  drpepperdiet:{n:'Diet Dr Pepper',k:0,p:0,c:0,f:0},
+  drpepperzero:{n:'Dr Pepper Zero Sugar',k:0,p:0,c:0,f:0},
+  drpeppercherry:{n:'Cherry Dr Pepper (estimate)',k:160,p:0,c:41,f:0},
+  sevenup:{n:'7Up',k:140,p:0,c:39,f:0},
+  sevenupdiet:{n:'Diet 7Up',k:0,p:0,c:0,f:0}
 };
 const allPzPlaces=()=>Object.assign({},PZ_PLACES,(S.house&&S.house.pzPlaces)||{});
 const allPzTypes=()=>Object.assign({},PZ_TYPES,(S.house&&S.house.pzTypes)||{});
@@ -1071,20 +1092,23 @@ function pzEnsureSel(slot){
     const types=pzTypesFor(place);
     const type=TY[last.type]&&TY[last.type].place===place?last.type:(types[0]?types[0].id:'');
     const popId=PO[last.popId]?last.popId:Object.keys(PO)[0];
-    sel=S.pzSel[slot]={place,type,pop:true,popId};
+    sel=S.pzSel[slot]={place,type,parts:[],pop:true,popId};
   }else{
     if(!PL[sel.place])sel.place=Object.keys(PL)[0];
     const types=pzTypesFor(sel.place);
     if(!TY[sel.type]||TY[sel.type].place!==sel.place)sel.type=types[0]?types[0].id:'';
     if(!PO[sel.popId])sel.popId=Object.keys(PO)[0];
+    sel.parts=sel.parts||[];
   }
   return sel;
 }
-function pzCompute(sel){
-  const TY=allPzTypes(),PL=allPzPlaces(),PO=allPops(),t=TY[sel.type],pl=PL[sel.place],n=Math.max(1,sel.pieces||1);
-  if(!t)return {kcal:0,p:0,c:0,f:0,name:'Pizza'};
-  let k=t.k*n,p=t.p*n,c=t.c*n,f=t.f*n,name=(pl?pl.n+' ':'')+t.n+': '+n+' piece'+(n>1?'s':'');
-  if(sel.pop){const pop=PO[sel.popId];if(pop){k+=pop.k;p+=pop.p;c+=pop.c;f+=pop.f;name+=' and a can of '+pop.n;}}
+function pzPartText(pt){const TY=allPzTypes(),PL=allPzPlaces(),t=TY[pt.type],pl=PL[pt.place];if(!t)return null;
+  return {kcal:t.k*pt.pieces,p:t.p*pt.pieces,c:t.c*pt.pieces,f:t.f*pt.pieces,label:(pl?pl.n+' ':'')+t.n+': '+pt.pieces+' piece'+(pt.pieces>1?'s':'')};}
+function pzTotal(sel){
+  const rows=(sel.parts||[]).map(pzPartText).filter(Boolean);
+  let k=0,p=0,c=0,f=0;const names=rows.map(x=>{k+=x.kcal;p+=x.p;c+=x.c;f+=x.f;return x.label;});
+  if(sel.pop){const pop=allPops()[sel.popId];if(pop){k+=pop.k;p+=pop.p;c+=pop.c;f+=pop.f;names.push('a can of '+pop.n);}}
+  const name=names.length>1?names.slice(0,-1).join(', ')+' and '+names[names.length-1]:(names[0]||'Pizza');
   return {kcal:Math.round(k),p:Math.round(p),c:Math.round(c),f:Math.round(f),name};
 }
 function pzAddForm(){
@@ -1100,10 +1124,15 @@ function pizzaPicker(date,slot,m){
   h+='<label class="f">Where from?<select data-pzfield="place" data-pzslot="'+slot+'">'+Object.keys(PL).sort((x,y)=>abc(PL[x].n,PL[y].n)).map(id=>'<option value="'+id+'"'+(id===sel.place?' selected':'')+'>'+esc(PL[id].n)+'</option>').join('')+'<option value="__new">Add a new place\u2026</option></select></label>';
   h+='<label class="f">What kind?<select data-pzfield="type" data-pzslot="'+slot+'">'+types.map(t=>'<option value="'+t.id+'"'+(t.id===sel.type?' selected':'')+'>'+esc(t.n)+'</option>').join('')+'<option value="__new">Add a new kind\u2026</option></select></label>';
   h+='</div>';
-  h+='<div class="row" style="margin-top:8px;align-items:center;gap:6px;flex-wrap:wrap"><label class="row" style="gap:6px;align-items:center"><input type="checkbox" data-pzfield="pop" data-pzslot="'+slot+'"'+(sel.pop?' checked':'')+'> Can of pop</label>'+(sel.pop?'<select data-pzfield="popid" data-pzslot="'+slot+'">'+Object.keys(PO).sort((x,y)=>abc(PO[x].n,PO[y].n)).map(id=>'<option value="'+id+'"'+(id===sel.popId?' selected':'')+'>'+esc(PO[id].n)+'</option>').join('')+'<option value="__new">Add a new pop\u2026</option></select>':'')+'</div>';
   h+=pzAddForm();
-  if(!types.length||!TY[sel.type])h+='<p class="hint" style="margin:8px 0 0">Add a kind of pizza for '+esc(PL[sel.place]?PL[sel.place].n:'this place')+' before logging it.</p>';
-  else{h+='<div class="row" style="margin-top:8px">';for(let n=1;n<=8;n++)h+='<button class="btn'+(n===m.slices?' primary':'')+'" data-action="pzlog" data-slot="'+slot+'" data-v="'+n+'">'+n+' piece'+(n>1?'s':'')+'</button>';h+='</div>';}
+  if(!types.length||!TY[sel.type])h+='<p class="hint" style="margin:8px 0 0">Add a kind of pizza for '+esc(PL[sel.place]?PL[sel.place].n:'this place')+' first.</p>';
+  else{h+='<div class="row" style="margin-top:8px">';for(let n=1;n<=8;n++)h+='<button class="btn" data-action="pzadd" data-slot="'+slot+'" data-v="'+n+'">'+n+' piece'+(n>1?'s':'')+'</button>';h+='</div>';}
+  const rows=(sel.parts||[]).map((pt,i)=>({pt,i,x:pzPartText(pt)})).filter(r=>r.x);
+  if(rows.length){h+='<div class="card" style="margin-top:10px;border:1px solid var(--line)">';
+    for(const r of rows)h+='<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:4px 0"><span>'+esc(r.x.label)+' <span class="src">'+fmtN(r.x.kcal)+' kcal</span></span><button class="btn ghost" data-action="pzrm" data-slot="'+slot+'" data-v="'+r.i+'">Remove</button></div>';
+    h+='</div>';}
+  h+='<div class="row" style="margin-top:10px;align-items:center;gap:6px;flex-wrap:wrap"><label class="row" style="gap:6px;align-items:center"><input type="checkbox" data-pzfield="pop" data-pzslot="'+slot+'"'+(sel.pop?' checked':'')+'> Can of pop</label>'+(sel.pop?'<select data-pzfield="popid" data-pzslot="'+slot+'">'+Object.keys(PO).sort((x,y)=>abc(PO[x].n,PO[y].n)).map(id=>'<option value="'+id+'"'+(id===sel.popId?' selected':'')+'>'+esc(PO[id].n)+'</option>').join('')+'<option value="__new">Add a new pop\u2026</option></select>':'')+'</div>';
+  if(rows.length){const t=pzTotal(sel);h+='<div class="row" style="margin-top:8px;align-items:center;justify-content:space-between"><span class="src">So far: '+fmtN(t.kcal)+' kcal, '+fmtN(t.p)+' g protein</span><button class="btn primary" data-action="pzlogall" data-slot="'+slot+'">Log it</button></div>';}
   h+='<div class="row" style="margin-top:8px"><button class="btn" data-action="custom" data-slot="'+slot+'">Ate something else</button></div>';
   return h;
 }
@@ -4694,7 +4723,12 @@ document.addEventListener('click',ev=>{
   if(a==='amtlog'){const m=plannedMeals(date)[slot],el=document.getElementById('amtV'),au=m&&canAmt(m)?amountUnit(m.key):null;if(!au)return;const val=n0(el?el.value:S.amtVal);if(!(val>=au.min-1e-9)){if(el)el.focus();return;}
     const arr=S.profile.eaten[m.key]=S.profile.eaten[m.key]||[];if(!arr.includes(date)){arr.push(date);arr.sort();if(arr.length>40)arr.shift();saveProfile();}
     S.amtOpen=null;S.amtVal=null;logMeal(date,slot,Object.assign({status:'plan',name:m.name,key:m.key},amtMeal(m,val)));return;}
-  if(a==='pzlog'){const sel=pzEnsureSel(slot);sel.pieces=+v;const r=pzCompute(sel);hset(['pzLast'],{place:sel.place,type:sel.type,popId:sel.popId});logMeal(date,slot,{status:'custom',name:r.name,kcal:r.kcal,p:r.p,c:r.c,f:r.f,pz:{place:sel.place,type:sel.type,pieces:+v,pop:!!sel.pop,popId:sel.pop?sel.popId:null}});return;}
+  if(a==='pzadd'){const sel=pzEnsureSel(slot);sel.parts=sel.parts||[];sel.parts.push({place:sel.place,type:sel.type,pieces:+v});hset(['pzLast'],{place:sel.place,type:sel.type,popId:sel.popId});render();return;}
+  if(a==='pzrm'){const sel=pzEnsureSel(slot);sel.parts.splice(+v,1);render();return;}
+  if(a==='pzlogall'){const sel=pzEnsureSel(slot);if(!(sel.parts&&sel.parts.length))return;const r=pzTotal(sel);
+    hset(['pzLast'],{place:sel.place,type:sel.type,popId:sel.popId});
+    logMeal(date,slot,{status:'custom',name:r.name,kcal:r.kcal,p:r.p,c:r.c,f:r.f,pz:{parts:sel.parts.slice(),pop:!!sel.pop,popId:sel.pop?sel.popId:null}});
+    delete S.pzSel[slot];return;}
   if(a==='pzaddcancel'){S.pzAdd=null;render();return;}
   if(a==='pzaddsave'){const g2=id=>document.getElementById(id),nm=(g2('pzNewN')&&g2('pzNewN').value||'').trim();if(!nm){render();return;}
     const sel=pzEnsureSel(slot),k=Math.max(0,n0(g2('pzNewK')&&g2('pzNewK').value)),p=Math.max(0,n0(g2('pzNewP')&&g2('pzNewP').value)),c=Math.max(0,n0(g2('pzNewC')&&g2('pzNewC').value)),f=Math.max(0,n0(g2('pzNewF')&&g2('pzNewF').value));
