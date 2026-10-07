@@ -688,11 +688,18 @@ function recipeMeta(k){return esc(agoText(S.house.made[k],'made'))+'. '+esc(agoT
 function ranked(pool){let p=(POOLS[pool]||[]).filter(k=>!isHidden(k));if(!p.length)p=Object.keys(R).filter(k=>R[k].cat==='main'&&!isHidden(k));
   const sc=k=>{const r=rating(k)||3,ds=daysSince(S.house.made[k]);let s=r*10;if(ds!=null&&ds<10)s-=25;if(r&&r<=2)s-=20;return s;};
   return p.slice().sort((a,b)=>sc(b)-sc(a));}
+/* One-time repair (Oct 7, 2026): the week of Oct 5 menu was overwritten by an old copy on a device before the houseLive guard existed.
+   Puts back the picks from Karl's Oct 5 report, once, only from server-confirmed data, only during that week; the day grid (cells) is left alone.
+   Safe to delete after Oct 11, 2026. */
+function repairWeek1005(){const wk='2026-10-05',H=S.house;if(!H||H.fix1005||S.houseLive===false||todayStr()>'2026-10-11')return;
+  const want={b1:'waffleegg',b2:'griddle',m1:'teriyakicass',m2:'tuscan',m3:'ebpork',mid:2},m=(H.menus&&H.menus[wk])||{};
+  if(['b1','b2','m1','m2','m3','mid'].some(k=>m[k]!==want[k])&&Object.values(want).every(v=>typeof v==='number'||R[v])){const nm=Object.assign({},m,want);H.menus=H.menus||{};H.menus[wk]=nm;hset(['menus',wk],nm);}
+  hset(['fix1005'],true);}
 function menuFor(wk){let m=S.house.menus&&S.house.menus[wk];
   const near=wk<=addD(monday(todayStr()),7)&&wk>=addD(monday(todayStr()),-7);
-  if(!m||!m.m1){const sg=suggestMenu(wk,m?n0(m.seed):0,m&&m.mid);if(m&&m.cells)sg.cells=m.cells;if(near){S.house.menus[wk]=sg;hset(['menus',wk],sg);}return sg;}
+  if(!m||!m.m1){const sg=suggestMenu(wk,m?n0(m.seed):0,m&&m.mid);if(m&&m.cells)sg.cells=m.cells;if(near&&S.houseLive!==false){S.house.menus[wk]=sg;hset(['menus',wk],sg);}return sg;}
   let fix=false;for(const k of ['b1','b2','m1','m2','m3'])if(!R[m[k]]||isHidden(m[k])){const sg=suggestMenu(wk,n0(m.seed)+7,m.mid);m[k]=sg[k];fix=true;}
-  if(fix)hset(['menus',wk],m);return m;}
+  if(fix&&S.houseLive!==false)hset(['menus',wk],m);return m;}
 function gridRoles(m){const mid=m.mid===3?3:2,pz=SC().pizzaTue,G={};
   for(let d=0;d<7;d++)G[d+'-breakfast']=d%2===0?'b1':'b2';
   const W=mid===2?{'0-lunch':'m1','0-dinner':'m2','1-lunch':'m2','1-dinner':'m1','2-lunch':'m1','2-dinner':'m3','3-lunch':'m3','3-dinner':'m2','4-lunch':'m3','4-dinner':'m1','5-lunch':'m3','5-dinner':'m2','6-lunch':'m1','6-dinner':'m3'}
@@ -1051,7 +1058,12 @@ function mealCard(date,slot,m,time,sug){
     if(S.fp&&S.fp.tgt==='meal'&&S.fp.slot===slot)h+=foodPicker();
     if(!m.revised&&!m.fixed&&(slot==='breakfast'||slot==='lunch'||slot==='dinner')){
       const wkm=menuFor(monday(date)),picks=[...new Set([wkm.b1,wkm.b2,wkm.m1,wkm.m2,wkm.m3].concat(Object.values(wkm.cells||{})))].filter(k=>R[k]&&!isHidden(k)&&(slot==='breakfast'?R[k].cat==='breakfast':R[k].cat==='main')).sort(byName);
-      h+='<details class="swap"><summary>Swap for another prepped meal this week</summary><div style="margin-top:8px"><select data-swap="'+slot+'" aria-label="Choose a replacement meal"><option value="">Keep the planned meal</option>'+picks.map(k=>'<option value="'+k+'"'+(l.swaps&&l.swaps[slot]===k?' selected':'')+'>'+esc(R[k].name)+'</option>').join('')+'</select></div></details>';}
+      // Anything marked made this week can be swapped in too, even if it is not on the week's menu.
+      const w0=monday(date),w6=addD(w0,6),okCat=k=>R[k]&&!isHidden(k)&&(slot==='breakfast'?R[k].cat==='breakfast':R[k].cat==='main'),cur=l.swaps&&l.swaps[slot];
+      const made=Object.keys(S.house.made||{}).filter(k=>okCat(k)&&!picks.includes(k)&&(S.house.made[k]||[]).some(d=>d>=w0&&d<=w6)).sort(byName);
+      if(cur&&okCat(cur)&&!picks.includes(cur)&&!made.includes(cur))made.push(cur);
+      const opt=k=>'<option value="'+k+'"'+(cur===k?' selected':'')+'>'+esc(R[k].name)+'</option>';
+      h+='<details class="swap"><summary>Swap for another prepped meal this week</summary><div style="margin-top:8px"><select data-swap="'+slot+'" aria-label="Choose a replacement meal"><option value="">Keep the planned meal</option>'+(made.length?'<optgroup label="On this week\u2019s menu">'+picks.map(opt).join('')+'</optgroup><optgroup label="Made this week">'+made.map(opt).join('')+'</optgroup>':picks.map(opt).join(''))+'</select></div></details>';}
   }
   return h+'</div>';
 }
@@ -4072,7 +4084,7 @@ const FOODS=[
   {id:'c:icecream',n:'Ice cream',s:'1 scoop, about 1/2 cup',k:140,p:3,c:17,f:7,who:['karl']},
   {id:'c:chipssalsa',n:'Tortilla chips with salsa',s:'about 10 chips and 2 tbsp salsa',k:150,p:2,c:20,f:7,who:['karl']}
 ];
-const FOOD_TAG={claude:'Our list',mine:'Ours',scan:'Scanned',recipe:'Recipe',grab:'Packed lunch',snack:'Snack',history:'Logged before'};
+const FOOD_TAG={side:'Side',claude:'Our list',mine:'Ours',scan:'Scanned',recipe:'Recipe',grab:'Packed lunch',snack:'Snack',history:'Logged before'};
 const myKey=()=>String(S.profile.name).toLowerCase();
 const fslug=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60);
 const r1=x=>Math.round(n0(x)*10)/10;
@@ -4089,6 +4101,8 @@ function foodSources(){const out=new Map(),put=f=>{if(!out.has(f.id))out.set(f.i
   for(const k in R){const r=R[k];if(r.custom)continue;put({id:'r:'+k,n:r.name,s:r.serving||'1 serving',k:r.kcal,p:r.p,c:r.c,f:r.f,src:r.cat==='grab'?'grab':'recipe'});}
   for(const x of SNACK_ITEMS)if(x.por&&!x.custom)put({id:'s:'+x.id,n:x.sh||x.name,s:x.por,k:x.kcal,p:x.p,c:x.c,f:x.f,src:'snack'});
   for(const f of historyFoods())put(f);
+  for(const k in SIDES){const x=SIDES[k];if(x.custom||fHidden('side:'+k)||!inCat('side:'+k,'side'))continue;put({id:'side:'+k,n:x.name.charAt(0).toUpperCase()+x.name.slice(1),b:'',s:'as a side',k:x.kcal,p:x.p,c:x.c,f:x.f,src:'side'});}
+  for(const k in FILLERS){const x=FILLERS[k];if(fHidden('fill:'+k)||!inCat('fill:'+k,'side'))continue;put({id:'fill:'+k,n:x.name.charAt(0).toUpperCase()+x.name.slice(1),b:'',s:'as a side',k:x.kcal,p:x.p,c:x.c,f:x.f,src:'side'});}
   {const FE=(S.house&&S.house.foodEdit)||{};for(const x of builtInAll())if(!out.has(x.id)&&FE[x.id]&&Array.isArray(FE[x.id].cats)&&FE[x.id].cats.includes('food')&&!fHidden(x.id))out.set(x.id,{id:x.id,n:x.n,b:'',s:x.s||'1 serving',k:n0(x.k),p:n0(x.p),c:n0(x.c),f:n0(x.f),bc:'',src:'claude'});}
   for(const[id,f]of [...out]){if(f.own)continue;if(fHidden(id)||(f.src==='grab'&&!!(S.house&&S.house.hidden&&S.house.hidden[id.slice(2)]))||(/^(s|r|c|x):/.test(id)&&!inCat(id,'food'))){out.delete(id);continue;}const e=fEdit(id);if(e)out.set(id,Object.assign({},f,{n:e.n||f.n,s:(e.s!=null&&e.s!=='')?e.s:f.s,k:e.k!=null?+e.k:f.k,p:e.p!=null?+e.p:f.p,c:e.c!=null?+e.c:f.c,f:e.f!=null?+e.f:f.f}));}
   return out;}
@@ -4102,10 +4116,31 @@ function searchFoods(all,q){const t=q.toLowerCase().split(/\s+/).filter(Boolean)
     L.push([f,(u.c?40+Math.min(u.c,30):0)+(f.n.toLowerCase().startsWith(t[0])?15:0)+(W[f.src]||0)]);}
   return L.sort((a,b)=>b[1]-a[1]).slice(0,30).map(x=>x[0]);}
 function fpRow(f){return '<div class="prep-row fprow" role="button" tabindex="0" data-action="fpsel" data-v="'+esc(f.id)+'" style="cursor:pointer;padding:8px 0"><div><strong>'+esc(f.n)+'</strong>'+(f.b?' <span class="src">'+esc(f.b)+'</span>':'')+'<div class="src">'+esc(f.s)+', '+fmtN(f.k)+' kcal, '+fmtN(f.p)+' g protein</div></div><span class="pill">'+esc(FOOD_TAG[f.src]||'')+'</span></div>';}
-function fpResults(){const fp=S.fp,all=foodSources(),q=(fp.q||'').trim();
+const FP_CATS=[['recent','Recent','What you logged lately'],['prep','Prepped meals','Breakfast, lunch and dinner'],['grab','Packed lunches',''],['snack','Snacks',''],['side','Meal sides',''],['mine','Your foods','Created or scanned'],['other','Other foods','From Claude and past logs']];
+const FP_SUB={'prep:breakfast':'Breakfast','prep:main':'Lunch and dinner'};
+function catFoods(cat,all){const L=[...all.values()],H=(S.house&&S.house.foods)||{},has=(f,c)=>f.own?foodCats(H[f.id]).includes(c):/^(c|x|b|side|fill):/.test(f.id)&&builtInCats(f.id).includes(c);let out;
+  if(cat==='recent')return recentFoods(all);
+  if(cat==='prep:breakfast'||cat==='prep:main'){const want=cat.slice(5);out=L.filter(f=>f.src==='recipe'&&R[f.id.slice(2)]&&R[f.id.slice(2)].cat===want&&!isHidden(f.id.slice(2)));}
+  else if(cat==='grab')out=L.filter(f=>f.src==='grab'&&!isHidden(f.id.slice(2)));
+  else if(cat==='snack')out=L.filter(f=>f.src==='snack'||has(f,'snack'));
+  else if(cat==='side')out=L.filter(f=>f.src==='side'||has(f,'side'));
+  else if(cat==='mine')out=L.filter(f=>f.own);
+  else if(cat==='other')out=L.filter(f=>f.src==='claude'||f.src==='history');
+  else out=[];
+  return out.sort((a,b)=>abc(a.n,b.n));}
+function fpCats(all){const n=c=>c==='prep'?catFoods('prep:breakfast',all).length+catFoods('prep:main',all).length:catFoods(c,all).length;
+  return '<div class="subhead" style="margin-top:6px">Choose a category</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px">'+FP_CATS.map(([id,t,sub])=>{const c=n(id);return '<button class="btn" data-action="fpcat" data-v="'+id+'" style="display:flex;flex-direction:column;align-items:flex-start;text-align:left;height:auto;padding:10px 12px"'+(c?'':' disabled')+'><strong>'+esc(t)+'</strong><span class="src">'+(sub?esc(sub)+', ':'')+c+' item'+(c===1?'':'s')+'</span></button>';}).join('')+'</div>';}
+function fpResults(){const fp0=S.fp;if(fp0&&!(fp0.q||'').trim()){const all=foodSources(),c=fp0.cat;
+    if(!c)return fpCats(all);
+    if(c==='prep'){const nb=catFoods('prep:breakfast',all).length,nm=catFoods('prep:main',all).length;return '<div class="row" style="margin:6px 0;align-items:center"><button class="btn ghost" data-action="fpcat" data-v="">&larr; Categories</button><strong>Prepped meals</strong></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px"><button class="btn" data-action="fpcat" data-v="prep:breakfast" style="display:flex;flex-direction:column;align-items:flex-start;height:auto;padding:10px 12px"><strong>Breakfast</strong><span class="src">'+nb+' recipes</span></button><button class="btn" data-action="fpcat" data-v="prep:main" style="display:flex;flex-direction:column;align-items:flex-start;height:auto;padding:10px 12px"><strong>Lunch and dinner</strong><span class="src">'+nm+' recipes</span></button></div>';}
+    const L=catFoods(c,all),title=FP_SUB[c]?'Prepped meals: '+FP_SUB[c]:(FP_CATS.find(x=>x[0]===c)||['',''])[1];
+    return '<div class="row" style="margin:6px 0;align-items:center;flex-wrap:wrap"><button class="btn ghost" data-action="fpcat" data-v="'+(c.startsWith('prep:')?'prep':'')+'">&larr; '+(c.startsWith('prep:')?'Prepped meals':'Categories')+'</button><strong>'+esc(title)+'</strong> <span class="src">'+L.length+'</span></div>'+
+      (L.length?L.map(fpRow).join(''):'<p class="hint">'+(c==='recent'?'Foods you log show up here next time.':'Nothing here yet.')+'</p>');}
+  return fpResultsSearch();}
+function fpResultsSearch(){const fp=S.fp,all=foodSources(),q=(fp.q||'').trim();
   const sw=/sand|sub\b|hoag|wrap|hero|grinder/i.test(q)?'<div class="note" style="margin:6px 0;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span>Making a sandwich? Build it from the bread, meat, and cheese you used.</span><button class="btn primary" data-action="sandopen">Build a sandwich</button></div>':'';
   if(q){const L=searchFoods(all,q);return sw+(L.length?L.map(fpRow).join(''):'<p class="hint">Nothing matches "'+esc(q)+'" yet. Tap <strong>Create a food</strong> to add it once; it will come up in searches for both of you from then on.</p>');}
-  const L=recentFoods(all);return '<div class="subhead" style="margin-top:6px">Recent</div>'+(L.length?L.map(fpRow).join(''):'<p class="hint">Foods you log show up here next time. Search above, scan a barcode, or create a food.</p>');}
+  return '';}
 function fpTot(items){const t={k:0,p:0,c:0,f:0};for(const it of items)for(const k in t)t[k]+=n0(it[k]);return t;}
 function qtyText(q,s){if(q===1)return s;const m=String(s).match(/^1\s+([a-z][a-z \-]*?)(\s*\(.*\)|,.*)?$/i);if(m&&Math.abs(q-Math.round(q))<1e-9&&!/^(cup|oz|tbsp|tsp|serving)$/.test(m[1]))return q+' '+plural(m[1],q)+(m[2]||'');return fmtNum(q)+' x '+s;}
 function fpItemLabel(it){return it.n+' ('+qtyText(it.q,it.s)+')';}
@@ -4550,6 +4585,7 @@ document.addEventListener('click',ev=>{
   if(a==='addon'){fpOpen('addon',slot);S.amtOpen=null;render();const el=document.getElementById('fpQ');if(el)el.focus();return;}
   if(a==='addonrm'){const l=day(date),A0=l.addons&&l.addons[slot];if(A0){A0.splice(+v,1);if(!A0.length){delete l.addons[slot];if(!Object.keys(l.addons).length)delete l.addons;}
       if(l.off&&l.off[slot]){l.off[slot]=l.off[slot].filter(x=>!/^add#/.test(x));if(!l.off[slot].length)delete l.off[slot];}relogPlan(date,slot);saveDay(date);}render();return;}
+  if(a==='fpcat'&&S.fp){S.fp.cat=v||null;const r=document.getElementById('fpRes');if(r)r.innerHTML=fpResults();else render();return;}
   if(a==='sandopen'&&S.fp){S.fp.mode='sand';S.fp.sw=null;sandState();render();return;}
   if(a==='sandclose'&&S.fp){S.fp.mode='list';S.fp.sw=null;render();return;}
   if(a==='sandb'&&S.fp&&S.fp.sw){S.fp.sw.b=v;render();return;}
@@ -4830,7 +4866,10 @@ async function afterSignIn(u){
     S.days={};dd.forEach(x=>{S.days[x.id]=x.data();});
     if(!p.exists()){S.profile=defaultProfile(mem.name,mem.preset);await FB.setDoc(refs.profile(),clone(S.profile));S.firstRun=true;}else S.profile=migrate(p.data());
     await FB.setDoc(refs.house(),{created:true},{merge:true});
-    unsubs.push(FB.onSnapshot(refs.house(),snap=>{S.house=Object.assign(clone(HOUSE_DEFAULT),snap.data()||{});applyFoodEdits();achDirty();if(S.ready){softRender();sharedSoon();}else maybeReady();},e=>console.warn(e)));
+    // houseLive: this copy of the household came from the server, not just this device's saved copy.
+    // Automatic menu suggestions are only saved once it is live, so an old copy on a device can never overwrite the real week.
+    const onHouse=snap=>{const live=!(snap.metadata&&snap.metadata.fromCache);if(S.house&&!live&&S.houseLive)return;S.houseLive=live;S.house=Object.assign(clone(HOUSE_DEFAULT),snap.data()||{});if(live)repairWeek1005();applyFoodEdits();achDirty();if(S.ready){softRender();sharedSoon();}else maybeReady();};
+    unsubs.push(FB.db&&FB.db.type==='firestore'?FB.onSnapshot(refs.house(),{includeMetadataChanges:true},onHouse,e=>console.warn(e)):FB.onSnapshot(refs.house(),onHouse,e=>console.warn(e)));
     unsubs.push(FB.onSnapshot(FB.collection(FB.db,'shared'),qs=>{const o={};qs.forEach(d=>{o[d.id]=d.data();});S.shared=o;if(S.ready)softRender();},e=>console.warn(e)));
   }catch(e){S.screen=screenHTML('Could not load your data','<p>'+esc(e.message||String(e))+'</p><p class="hint">Check that your email is listed in the Firestore rules in the Firebase console, and that the rules were published.</p><button class="btn" data-auth="out">Sign out</button>');render();}
 }
