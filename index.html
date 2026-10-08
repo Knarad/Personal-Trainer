@@ -4968,10 +4968,10 @@ function applyDay(D){
 }
 function applyUpdate(){
   const el=document.getElementById('updBox'),txt=el?el.value:'',i=txt.indexOf('{'),j=txt.lastIndexOf('}');
-  if(i<0||j<i){S.updMsg='No update block found. Paste Claude\'s whole reply.';render();return;}
-  let u;try{u=JSON.parse(txt.slice(i,j+1));}catch(e){S.updMsg='The update block could not be read. Ask Claude to resend it.';render();return;}
-  if(!u||!u.trainingPlanUpdate){S.updMsg='That does not look like a training plan update.';render();return;}
-  if(u.person&&String(u.person).toLowerCase()!==String(S.profile.name).toLowerCase()){S.updMsg='This update is for '+u.person+'. Sign in as '+u.person+' to apply it.';render();return;}
+  if(i<0||j<i){S.updMsg='No update block found. Paste Claude\'s whole reply.';toast(S.updMsg);render();return;}
+  let u;try{u=JSON.parse(txt.slice(i,j+1));}catch(e){S.updMsg='The update block could not be read. Ask Claude to resend it.';toast(S.updMsg);render();return;}
+  if(!u||!u.trainingPlanUpdate){S.updMsg='That does not look like a training plan update.';toast(S.updMsg);render();return;}
+  if(u.person&&String(u.person).toLowerCase()!==String(S.profile.name).toLowerCase()){S.updMsg='This update is for '+u.person+'. Sign in as '+u.person+' to apply it.';toast(S.updMsg);render();return;}
   const done=[];
   if(u.note){S.profile.coachNote={text:String(u.note).slice(0,1500),date:todayStr()};done.push('a note on your Today view');}
   if(u.targets&&typeof u.targets==='object'){S.profile.tg=S.profile.tg||{};S.profile.tg.set=true;for(const k of ['kcal','protein','carbs','fat'])if(k in u.targets){const v=u.targets[k];if(v==null||v==='auto')delete S.profile.tg[k];else if(isFinite(+v)&&+v>0)S.profile.tg[k]=Math.round(+v);}done.push('daily targets');}
@@ -4991,7 +4991,7 @@ function applyUpdate(){
     if(u.clearNotes===true)S.profile.pendingNotes=[];
     else if(Array.isArray(u.clearNotes)){const ids=u.clearNotes.map(String);S.profile.pendingNotes=(S.profile.pendingNotes||[]).filter(n=>!ids.includes(String(n.id)));}
     const cleared=before-(S.profile.pendingNotes||[]).length;if(cleared>0)done.push(cleared+' note'+(cleared===1?'':'s')+' cleared');}
-  saveProfile();S.updMsg=done.length?'Applied: '+done.join('; ')+'.':'Nothing in that update needed changing.';if(el)el.value='';render();
+  saveProfile();S.updMsg=done.length?'Applied: '+done.join('; ')+'.':'Nothing in that update needed changing.';toast(S.updMsg);if(el)el.value='';render();
 }
 function exportData(){
   const blob=new Blob([JSON.stringify({exportedAt:new Date().toISOString(),profile:S.profile,days:S.days,household:S.house},null,1)],{type:'application/json'});
