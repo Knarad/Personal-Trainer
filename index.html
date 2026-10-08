@@ -988,6 +988,7 @@ function render(){
 
 function viewToday(){
   const date=S.date,l=S.days[date]||{},t=adjustedTarget(date),e=dayEaten(date),pm=plannedMeals(date),wk=weekNum(date),ph=phaseOf(wk),before=date<S.profile.startDate;
+  const xk=l.xmeals||{};for(const id in xk)pm[id]={fixed:'extra',name:xk[id].name||'New meal',items:[],kcal:0,p:0,c:0,f:0,prep:''};
   const rem=t.kcal-e.kcal,rp=t.protein-e.p,rc=t.carbs-e.c,rf=t.fat-e.f;
   let h='<div class="daybar"><div><h2>'+DAYN[dow(date)]+', '+fmtDate(date)+'</h2><div class="sub">'+(before?'Before your program start date':'Week '+wk+', phase '+ph+(date===todayStr()?'':' (not today)'))+'</div></div>'+
     '<div class="navbtns"><button class="btn" data-action="date" data-v="-1" aria-label="Previous day">Prev</button>'+(date!==todayStr()?'<button class="btn" data-action="date" data-v="0">Today</button>':'')+'<button class="btn" data-action="date" data-v="1" aria-label="Next day">Next</button></div></div>';
@@ -1004,8 +1005,11 @@ function viewToday(){
     if(r2&&r2.status)h+='<div class="woline"><span><span class="kicker">Also</span> '+esc(om==='gym'?((r2.type)||'Gym workout'):workoutFor(workoutKey(date,'home'),wk).title)+' <span class="pill'+(r2.status==='done'?' good':'')+'">'+(WST[r2.status]||r2.status)+'</span></span><button class="btn" data-action="womode" data-v="'+om+'">Open</button></div>';
     else h+='<div class="src" style="margin:-4px 0 8px"><button class="btn ghost" data-action="womode" data-v="'+om+'">'+(om==='gym'?'Log a gym workout too':'Log a home session too')+'</button></div>';}
   // Meals
-  const tl=scheduleFor(date).filter(it=>pm[it.k]||(it.k==='workout'&&!before)).map(it=>({k:it.k,sug:it.t,t:(l.times&&l.times[it.k])||it.t})).sort((a,b)=>a.t<b.t?-1:a.t>b.t?1:0);
+  const tl=scheduleFor(date).filter(it=>pm[it.k]||(it.k==='workout'&&!before)).map(it=>({k:it.k,sug:it.t,t:(l.times&&l.times[it.k])||it.t}));
+  for(const id in xk)tl.push({k:id,sug:null,t:(l.times&&l.times[id])||xk[id].time||'12:00'});
+  tl.sort((a,b)=>a.t<b.t?-1:a.t>b.t?1:0);
   for(const it of tl)h+=it.k==='workout'?woSlot(date,it.t,it.sug):mealCard(date,it.k,pm[it.k],it.t,it.sug);
+  h+=S.addXmeal?'<div class="row" style="margin:6px 0 10px;align-items:center"><input type="time" id="xmT" value="'+esc(pad(new Date().getHours())+':'+pad(new Date().getMinutes()))+'" aria-label="Meal time" style="max-width:140px"><button class="btn primary" data-action="addxmeal">Add</button><button class="btn ghost" data-action="addxmealcancel">Cancel</button></div>':'<div class="row" style="margin:6px 0 10px"><button class="btn" data-action="openxmeal">Add meal to today</button></div>';
   // Fold-out sections
   const sec=(id,title,inner,force)=>'<details class="fold" data-sec="'+id+'"'+((S.secOpen&&S.secOpen[id])||force?' open':'')+'><summary>'+title+'</summary><div class="card">'+inner+'</div></details>';
   let ci='<div class="checkin">'+
@@ -1138,12 +1142,12 @@ function pizzaPicker(date,slot,m){
 }
 function mealCard(date,slot,m,time,sug){
   const l=S.days[date]||{},log=l.meals&&l.meals[slot];
-  let h='<div class="mcard'+(log?(log.status==='skip'?' skip':' done'):'')+'"><div class="kicker">'+timeTag(slot,time,sug)+' &middot; '+SLOT_LABEL[slot]+(l.swaps&&l.swaps[slot]?' &middot; swapped':'')+(m.edited?' &middot; edited':'')+'</div>'+(S.edTime===slot?timeEditor(date,slot,time,sug):'')+'<h3>'+esc(m.name)+'</h3>';
+  let h='<div class="mcard'+(log?(log.status==='skip'?' skip':' done'):'')+'"><div class="kicker">'+timeTag(slot,time,sug)+' &middot; '+(SLOT_LABEL[slot]||'Added meal')+(l.swaps&&l.swaps[slot]?' &middot; swapped':'')+(m.edited?' &middot; edited':'')+'</div>'+(S.edTime===slot?timeEditor(date,slot,time,sug):'')+'<h3>'+esc(m.name)+'</h3>';
   if(m.cparts&&m.cparts.length>1)h+=partsList(date,slot,m);
   else if((m.key||!m.fixed)&&m.items&&m.items.length)h+='<div class="src" style="margin:-2px 0 6px">'+m.items.map(x=>x===VEG.name?'Green vegetables or a side salad':x).map(esc).join(' &middot; ')+'</div>';
   h+=macroLine(m);
   if(m.key&&R[m.key]&&!m.revised)h+='<div class="row" style="margin:4px 0 8px">'+stars(m.key)+'</div>';
-  if(log){h+='<div class="logged'+(log.status==='skip'?' skip':'')+'">'+(log.status==='skip'?'Marked as skipped.':'Logged: '+esc(log.name)+(log.amt?' ('+esc(log.amt)+')':'')+', '+fmtN(log.kcal)+' kcal and '+fmtN(log.p)+' g protein.')+(log.status==='plan'&&canAmt(m)?' <button class="btn ghost" data-action="amt" data-slot="'+slot+'">Change amount</button>':'')+(log.status==='plan'&&!m.fixed?' <button class="btn ghost" data-action="addon" data-slot="'+slot+'">Add to this meal</button>':'')+' <button class="btn ghost" data-action="clearmeal" data-slot="'+slot+'">Change</button></div>';
+  if(log){h+='<div class="logged'+(log.status==='skip'?' skip':'')+'">'+(log.status==='skip'?'Marked as skipped.':'Logged: '+esc(log.name)+(log.amt?' ('+esc(log.amt)+')':'')+', '+fmtN(log.kcal)+' kcal and '+fmtN(log.p)+' g protein.')+(log.status==='plan'&&canAmt(m)?' <button class="btn ghost" data-action="amt" data-slot="'+slot+'">Change amount</button>':'')+(log.status==='plan'&&!m.fixed?' <button class="btn ghost" data-action="addon" data-slot="'+slot+'">Add to this meal</button>':'')+' <button class="btn ghost" data-action="clearmeal" data-slot="'+slot+'">Change</button>'+(m.fixed==='extra'?' <button class="btn ghost" data-action="delxmeal" data-slot="'+slot+'">Remove this meal</button>':'')+'</div>';
     if(S.amtOpen===slot&&canAmt(m))h+=amountPanel(slot,m,log.n||m.n);
     if(S.fp&&S.fp.tgt==='addon'&&S.fp.slot===slot)h+=foodPicker();}
   else{
@@ -1152,6 +1156,7 @@ function mealCard(date,slot,m,time,sug){
     }else if(m.fixed==='nolunch')h+='<div class="row"><button class="btn primary" data-action="golunch">Pick lunches</button><button class="btn" data-action="custom" data-slot="'+slot+'">Log what I ate</button></div>';
     else if(m.fixed==='nosnack')h+='<div class="row"><button class="btn primary" data-action="gosnacks">Pick this week\u2019s snacks</button><button class="btn" data-action="snedit" data-slot="'+slot+'">Add snacks for today</button><button class="btn" data-action="custom" data-slot="'+slot+'">Log what I ate</button><button class="btn" data-action="skipmeal" data-slot="'+slot+'">Skipped</button></div>';
     else if(m.fixed==='none')h+='<div class="row"><button class="btn primary" data-action="custom" data-slot="'+slot+'">Log what I ate</button><button class="btn" data-action="skipmeal" data-slot="'+slot+'">Skipped</button></div>';
+    else if(m.fixed==='extra')h+='<div class="row"><button class="btn primary" data-action="custom" data-slot="'+slot+'">Log what I ate</button><button class="btn" data-action="skipmeal" data-slot="'+slot+'">Skipped</button><button class="btn ghost" data-action="delxmeal" data-slot="'+slot+'">Remove this meal</button></div>';
     else{const isSn=SNACK_SLOTS.includes(slot)&&!m.key;h+='<div class="row">'+(m.edited&&!m.parts.length?'':'<button class="btn primary" data-action="ate" data-slot="'+slot+'">Ate this</button>')+(isSn?'<button class="btn" data-action="snedit" data-slot="'+slot+'">Edit snacks</button>':'<button class="btn" data-action="addon" data-slot="'+slot+'">Add to this meal</button>')+(canAmt(m)?'<button class="btn" data-action="amt" data-slot="'+slot+'">Different amount</button>':'')+'<button class="btn" data-action="custom" data-slot="'+slot+'">Ate something else</button><button class="btn" data-action="skipmeal" data-slot="'+slot+'">Skipped</button></div>';
       if(S.amtOpen===slot&&canAmt(m))h+=amountPanel(slot,m,m.n);
       if(S.fp&&S.fp.tgt==='addon'&&S.fp.slot===slot)h+=foodPicker();}
@@ -4717,6 +4722,13 @@ document.addEventListener('click',ev=>{
   if(a==='savetime'){const el=document.getElementById('tmV'),t=el&&el.value;if(!/^\d{2}:\d{2}$/.test(t||'')){if(el)el.focus();return;}setTime(date,slot,t);return;}
   if(a==='nowtime'){const n=new Date();setTime(date,slot,pad(n.getHours())+':'+pad(n.getMinutes()));return;}
   if(a==='resettime'){setTime(date,slot,null);return;}
+  if(a==='openxmeal'){S.addXmeal=true;render();const el=document.getElementById('xmT');if(el)el.focus();return;}
+  if(a==='addxmealcancel'){S.addXmeal=false;render();return;}
+  if(a==='addxmeal'){const el=document.getElementById('xmT'),t=el&&el.value;if(!/^\d{2}:\d{2}$/.test(t||'')){if(el)el.focus();return;}
+    const l=day(date),id='x'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+    l.xmeals=l.xmeals||{};l.xmeals[id]={time:t};l.times=l.times||{};l.times[id]=t;
+    S.addXmeal=false;saveDay(date);render();return;}
+  if(a==='delxmeal'){const l=day(date);if(l.xmeals)delete l.xmeals[slot];if(l.times)delete l.times[slot];if(l.meals)delete l.meals[slot];saveDay(date);render();return;}
   if(a==='amt'){S.amtOpen=slot;S.amtVal=null;fpClose();render();return;}
   if(a==='amtq'){S.amtVal=+v;render();return;}
   if(a==='amtcancel'){S.amtOpen=null;S.amtVal=null;render();return;}
