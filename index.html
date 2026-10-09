@@ -1003,6 +1003,8 @@ function viewToday(){
   if(!before){h+=winsCard(date);if(date===todayStr())h+=streakChips();}
   {const wk=planWeek(),oth=eaters().filter(p=>!p.me&&pickedAt(wk,p.name));if(oth.length&&!pickedAt(wk,S.profile.name))h+='<div class="note" style="margin-bottom:10px">'+oth.map(p=>esc(p.name)).join(' and ')+' finished picking meals for the week of '+esc(fmtShort(wk))+'. <button class="btn ghost" data-action="view" data-v="menu">Finish yours</button></div>';}
   const cn=S.profile.coachNote;if(cn&&cn.text)h+='<div class="note good"><strong>From Claude'+(cn.date?', '+esc(fmtShort(cn.date)):'')+':</strong> '+esc(cn.text)+' <button class="btn ghost" data-action="dismissnote">Dismiss</button></div>';
+  const hn=S.house&&S.house.notes&&S.house.notes[String(S.profile.name).toLowerCase()];
+  if(hn&&hn.text)h+='<div class="note good"><strong>From Claude'+(hn.date?', '+esc(fmtShort(hn.date)):'')+':</strong> '+esc(hn.text)+' <button class="btn ghost" data-action="dismisshnote">Dismiss</button></div>';
   // Workout, one line
   if(!before){const pm0=primaryMode(),om=pm0==='gym'?'home':'gym',w=workoutFor(workoutKey(date,pm0),wk),r1=l[RK(pm0)],st=r1&&r1.status,r2=l[RK(om)];
     h+='<div class="woline"><span><span class="kicker">Workout</span> '+esc(pm0==='gym'?((r1&&r1.type)||'Gym'):w.title)+(st?' <span class="pill'+(st==='done'?' good':'')+'">'+(WST[st]||st)+'</span>':'')+'</span><button class="btn" data-action="womode" data-v="'+pm0+'">Open</button></div>';
@@ -4199,8 +4201,22 @@ function buildReport(n){
   const rated=Object.keys(p.ratings||{}).filter(k=>R[k]);if(rated.length)ln('Ratings: '+rated.map(k=>R[k].name+' '+p.ratings[k]+'/5').join('; ')+'.');
   const made=Object.keys(p.made||{}).filter(k=>R[k]&&p.made[k].length&&p.made[k][p.made[k].length-1]>=addD(td,-28));if(made.length)ln('Made in the last 4 weeks: '+made.map(k=>R[k].name+' (last '+lastOf(p.made[k])+')').join('; ')+'.');
   const hid=Object.keys(p.hidden||{}).filter(k=>R[k]);if(hid.length)ln('Removed from my list: '+hid.map(k=>R[k].name).join('; ')+'.');
+  {const others=Object.keys(S.shared||{}).filter(u=>u!==S.uid);
+    for(const u of others){const sd=S.shared[u];if(!sd||!sd.name)continue;
+      ln('');ln('=== '+sd.name+'\u2019s week, shared from '+sd.name+'\u2019s own account (actuals only, not the planned-vs-swapped detail my own section has, and only what '+sd.name+' has chosen to share) ===');
+      if(sd.weight)ln(sd.name+'\u2019s weight: '+(sd.weight.mode==='full'?'latest '+sd.weight.latest+' lb, 7-day average '+sd.weight.avg7+' lb, '+(sd.weight.change>=0?'+':'')+sd.weight.change+' lb since start.':(sd.weight.change>=0?'+':'')+sd.weight.change+' lb since start (exact weight not shared).'));
+      const days=sd.days||{},ds=Object.keys(days).filter(d=>d>=from&&d<=td).sort();
+      if(!ds.length)ln('No shared day data for '+sd.name+' in this range.');
+      for(const d of ds){const x=days[d],bits=[];
+        if(x.kcal!=null)bits.push(x.kcal+' kcal'+(x.target?' (target '+x.target+')':'')+(x.p!=null?', '+x.p+' g protein'+(x.ptarget?' (target '+x.ptarget+')':''):''));
+        if(x.steps!=null)bits.push(x.steps+' steps'+(x.stepGoal?' of '+x.stepGoal:''));
+        if(x.sleep!=null)bits.push(x.sleep+' h sleep'+(x.energy?', energy '+x.energy:''));
+        if(x.workout)bits.push('workout: '+x.workout.title+' ('+x.workout.status+(x.workout.minutes?', '+x.workout.minutes+' min':'')+')');
+        if(x.gym)bits.push('gym: '+x.gym.title+' ('+x.gym.status+(x.gym.minutes?', '+x.gym.minutes+' min':'')+')');
+        if(x.skate)bits.push('skating logged');
+        ln(fmtShort(d)+': '+(bits.length?bits.join('; ')+'.':'no shared details.')+(x.meals&&x.meals.length?' Ate: '+x.meals.join(', ')+'.':''));}}}
   ln('');ln('Cooking plan keys: b1 and b2 (Sunday breakfasts), m1 and m2 (Sunday mains), m3 (midweek main), mid (2 for Wednesday, 3 for Thursday). Recipe keys: '+Object.keys(R).filter(k=>!isHidden(k)).map(k=>k+'='+R[k].name).join('; ')+'.');
-  ln('To update the app, reply with a JSON block like {"trainingPlanUpdate":1,"person":"'+p.name+'","note":"...","kcalOffset":0,"targets":{"protein":160,"carbs":null},"legsLevel":0,"menu":{"week":"YYYY-MM-DD","m1":"recipeKey","mid":3,"cells":{"2-lunch":"recipeKey"}},"hide":[],"unhide":[],"day":{"date":"YYYY-MM-DD","weight":0,"steps":0,"water":0,"sleep":0,"energy":1,"knee":"good","workoutOverride":"TREAD","workout":{"status":"done","minutes":0,"type":"...","intensity":"","note":"..."},"cardio":{"min":0,"mph":0,"inc":0,"dist":0,"hr":0,"act":"..."}},"clearNotes":["id1","id2"]} using only the fields that should change. Set clearNotes to true to clear every note, or to a list of note ids to clear just those.');
+  ln('To update the app, reply with a JSON block like {"trainingPlanUpdate":1,"person":"'+p.name+'","note":"...","partnerNote":"a note that lands on the other household member\'s Today view next time they open the app, no account switch needed","kcalOffset":0,"targets":{"protein":160,"carbs":null},"legsLevel":0,"menu":{"week":"YYYY-MM-DD","m1":"recipeKey","mid":3,"cells":{"2-lunch":"recipeKey"}},"hide":[],"unhide":[],"day":{"date":"YYYY-MM-DD","weight":0,"steps":0,"water":0,"sleep":0,"energy":1,"knee":"good","workoutOverride":"TREAD","workout":{"status":"done","minutes":0,"type":"...","intensity":"","note":"..."},"cardio":{"min":0,"mph":0,"inc":0,"dist":0,"hr":0,"act":"..."}},"clearNotes":["id1","id2"]} using only the fields that should change. Set clearNotes to true to clear every note, or to a list of note ids to clear just those.');
   return L.join('\n');
 }
 
@@ -4707,6 +4723,7 @@ document.addEventListener('click',ev=>{
   if(a==='copyreport'){const el=document.getElementById('reportBox');if(!el)return;el.select();const done=()=>{S.copied=true;const m=document.getElementById('copymsg');if(m)m.textContent='Copied. Paste it into your chat with Claude.';};try{navigator.clipboard.writeText(el.value).then(done,()=>{document.execCommand('copy');done();});}catch(e){try{document.execCommand('copy');done();}catch(e2){}}return;}
   if(a==='salad'){addSalad(date);return;}
   if(a==='dismissnote'){S.profile.coachNote=null;saveProfile();render();return;}
+  if(a==='dismisshnote'){hdel(['notes',String(S.profile.name).toLowerCase()]);render();return;}
   if(a==='addnote'){const el=document.getElementById('noteInput'),v2=el?el.value.trim():'';if(!v2){render();return;}
     S.profile.pendingNotes=S.profile.pendingNotes||[];S.profile.pendingNotes.push({id:Date.now()+'-'+Math.round(Math.random()*9999),text:v2.slice(0,500),view:S.view,date:todayStr()});
     saveProfile();render();return;}
@@ -4974,6 +4991,8 @@ function applyUpdate(){
   if(u.person&&String(u.person).toLowerCase()!==String(S.profile.name).toLowerCase()){S.updMsg='This update is for '+u.person+'. Sign in as '+u.person+' to apply it.';toast(S.updMsg);render();return;}
   const done=[];
   if(u.note){S.profile.coachNote={text:String(u.note).slice(0,1500),date:todayStr()};done.push('a note on your Today view');}
+  if(u.partnerNote){const other=MEMBERS.find(m=>m.name.toLowerCase()!==String(S.profile.name).toLowerCase());
+    if(other){hset(['notes',other.name.toLowerCase()],{text:String(u.partnerNote).slice(0,1500),date:todayStr(),from:S.profile.name});done.push('a note on '+other.name+'\u2019s Today view, next time '+other.name+' opens the app');}}
   if(u.targets&&typeof u.targets==='object'){S.profile.tg=S.profile.tg||{};S.profile.tg.set=true;for(const k of ['kcal','protein','carbs','fat'])if(k in u.targets){const v=u.targets[k];if(v==null||v==='auto')delete S.profile.tg[k];else if(isFinite(+v)&&+v>0)S.profile.tg[k]=Math.round(+v);}done.push('daily targets');}
   if(u.kcalOffset!=null&&isFinite(+u.kcalOffset)){S.profile.kcalOffset=Math.max(-600,Math.min(600,Math.round(+u.kcalOffset)));done.push('calorie adjustment of '+S.profile.kcalOffset);}
   if(u.legsLevel!=null){S.profile.legsLevel=+u.legsLevel?1:0;done.push('leg work level');}
