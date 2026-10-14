@@ -1087,7 +1087,7 @@ function amountPanel(slot,m,startN){const au=amountUnit(m.key),v=S.amtVal!=null?
   else{const opts=[];for(let i=au.min;i<=au.from(m.n)*2+1e-9;i+=au.step)opts.push(i);h+='<div class="row" style="margin-top:8px">'+opts.map(i=>'<button class="btn'+(Math.abs(i-v)<1e-9?' on':'')+'" data-action="amtq" data-v="'+i+'">'+fmtNum(i)+'</button>').join('')+'</div>';}
   const x=amtMeal(m,v);
   h+='<div class="row" style="margin-top:8px;align-items:center"><label class="f" style="max-width:150px">'+esc(au.lab)+'<input type="number" inputmode="decimal" id="amtV" step="'+au.step+'" min="'+au.min+'" value="'+v+'"></label><span class="src" id="amtMac">'+esc(x.amt)+': '+fmtN(x.kcal)+' kcal, '+fmtN(x.p)+' g protein</span></div>'+
-    '<div class="row" style="margin-top:8px"><button class="btn primary" data-action="amtlog" data-slot="'+slot+'">Log it</button><button class="btn ghost" data-action="amtcancel">Cancel</button></div></div>';
+    '<div class="row" style="margin-top:8px"><button class="btn primary" data-action="amtlog" data-slot="'+slot+'">Done</button><button class="btn ghost" data-action="amtcancel">Cancel</button></div></div>';
   return h;}
 function pzEnsureSel(slot){
   S.pzSel=S.pzSel||{};
@@ -1138,10 +1138,23 @@ function pizzaPicker(date,slot,m){
     for(const r of rows)h+='<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:4px 0"><span>'+esc(r.x.label)+' <span class="src">'+fmtN(r.x.kcal)+' kcal</span></span><button class="btn ghost" data-action="pzrm" data-slot="'+slot+'" data-v="'+r.i+'">Remove</button></div>';
     h+='</div>';}
   h+='<div class="row" style="margin-top:10px;align-items:center;gap:6px;flex-wrap:wrap"><label class="row" style="gap:6px;align-items:center"><input type="checkbox" data-pzfield="pop" data-pzslot="'+slot+'"'+(sel.pop?' checked':'')+'> Can of pop</label>'+(sel.pop?'<select data-pzfield="popid" data-pzslot="'+slot+'">'+Object.keys(PO).sort((x,y)=>abc(PO[x].n,PO[y].n)).map(id=>'<option value="'+id+'"'+(id===sel.popId?' selected':'')+'>'+esc(PO[id].n)+'</option>').join('')+'<option value="__new">Add a new pop\u2026</option></select>':'')+'</div>';
-  if(rows.length){const t=pzTotal(sel);h+='<div class="row" style="margin-top:8px;align-items:center;justify-content:space-between"><span class="src">So far: '+fmtN(t.kcal)+' kcal, '+fmtN(t.p)+' g protein</span><button class="btn primary" data-action="pzlogall" data-slot="'+slot+'">Log it</button></div>';}
+  if(rows.length){const t=pzTotal(sel);h+='<div class="row" style="margin-top:8px;align-items:center;justify-content:space-between"><span class="src">So far: '+fmtN(t.kcal)+' kcal, '+fmtN(t.p)+' g protein</span><button class="btn primary" data-action="pzlogall" data-slot="'+slot+'">Done</button></div>';}
   h+='<div class="row" style="margin-top:8px"><button class="btn" data-action="custom" data-slot="'+slot+'">Ate something else</button></div>';
   return h;
 }
+/* ===== Done, then Log it =====
+   Pickers (Ate something else, Different amount, pizza night) end with Done, which parks the choice on the
+   meal card as day.staged[slot]. Nothing counts toward the day's totals until Log it is tapped on the card.
+   Saved with the day so it survives closing the app. */
+function markEaten(key,date){const arr=S.profile.eaten[key]=S.profile.eaten[key]||[];if(!arr.includes(date)){arr.push(date);arr.sort();if(arr.length>40)arr.shift();saveProfile();}}
+function stageMeal(date,slot,st){const l=day(date);l.staged=l.staged||{};l.staged[slot]=st;saveDay(date);render();}
+function stagedOpen(slot){return (S.fp&&S.fp.tgt==='meal'&&S.fp.slot===slot)||S.amtOpen===slot;}
+function stagedBox(date,slot,st){const r=st.rec||{};
+  let h='<div class="card staged" style="margin-top:6px;border:1px solid var(--line);border-left:4px solid var(--red)"><div class="subhead" style="margin-top:0">Ready to log</div>';
+  if(st.from==='fp'&&st.items&&st.items.length)h+=st.items.map(it=>'<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:4px 0"><span>'+esc(fpItemLabel(it))+'</span><span class="src">'+fmtN(Math.round(it.k))+' kcal, '+fmtN(Math.round(it.p))+' g protein</span></div>').join('');
+  else h+='<div style="margin:2px 0 4px">'+esc(r.name||'')+(r.amt?' <span class="src">('+esc(r.amt)+')</span>':'')+'</div>';
+  h+=macroLine(r)+'<div class="row" style="margin-top:8px"><button class="btn primary" data-action="stagelog" data-slot="'+slot+'">Log it</button><button class="btn" data-action="stagechange" data-slot="'+slot+'">Change</button><button class="btn ghost" data-action="stagecancel" data-slot="'+slot+'">Cancel</button></div></div>';
+  return h;}
 function mealCard(date,slot,m,time,sug){
   const l=S.days[date]||{},log=l.meals&&l.meals[slot];
   let h='<div class="mcard'+(log?(log.status==='skip'?' skip':' done'):'')+'"><div class="kicker">'+timeTag(slot,time,sug)+' &middot; '+(SLOT_LABEL[slot]||'Added meal')+(l.swaps&&l.swaps[slot]?' &middot; swapped':'')+(m.edited?' &middot; edited':'')+'</div>'+(S.edTime===slot?timeEditor(date,slot,time,sug):'')+'<h3>'+esc(m.name)+'</h3>';
@@ -1152,6 +1165,7 @@ function mealCard(date,slot,m,time,sug){
   if(log){h+='<div class="logged'+(log.status==='skip'?' skip':'')+'">'+(log.status==='skip'?'Marked as skipped.':'Logged: '+esc(log.name)+(log.amt?' ('+esc(log.amt)+')':'')+', '+fmtN(log.kcal)+' kcal and '+fmtN(log.p)+' g protein.')+(log.status==='plan'&&canAmt(m)?' <button class="btn ghost" data-action="amt" data-slot="'+slot+'">Change amount</button>':'')+(log.status==='plan'&&!m.fixed?' <button class="btn ghost" data-action="addon" data-slot="'+slot+'">Add to this meal</button>':'')+' <button class="btn ghost" data-action="clearmeal" data-slot="'+slot+'">Change</button>'+(m.fixed==='extra'?' <button class="btn ghost" data-action="delxmeal" data-slot="'+slot+'">Remove this meal</button>':'')+'</div>';
     if(S.amtOpen===slot&&canAmt(m))h+=amountPanel(slot,m,log.n||m.n);
     if(S.fp&&S.fp.tgt==='addon'&&S.fp.slot===slot)h+=foodPicker();}
+  else if(l.staged&&l.staged[slot]&&!stagedOpen(slot)){h+=stagedBox(date,slot,l.staged[slot]);}
   else{
     if(m.fixed==='pizza'){
       h+=pizzaPicker(date,slot,m);
@@ -4305,7 +4319,7 @@ function foodPicker(){const fp=S.fp;if(!fp)return '';const meal=fp.tgt==='meal';
   if(fp.msg)h+='<div class="note good" style="margin-bottom:8px">'+esc(fp.msg)+'</div>';
   if(fp.items.length){const t=fpTot(fp.items);h+='<div class="subhead" style="margin-top:0">'+(meal?'In this meal':'Adding to today')+'</div>';
     fp.items.forEach((it,i)=>{h+='<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:4px 0"><span>'+esc(fpItemLabel(it))+' <span class="kicker">'+fmtN(Math.round(it.k))+' kcal</span></span><button class="btn ghost" data-action="fprm" data-v="'+i+'">Remove</button></div>';});
-    h+='<div class="row" style="margin:8px 0;justify-content:space-between"><span class="src">Total '+fmtN(Math.round(t.k))+' kcal, '+fmtN(Math.round(t.p))+' g protein</span><button class="btn primary" data-action="fplog">'+(meal?'Log this meal':'Add to today')+'</button></div>';}
+    h+='<div class="row" style="margin:8px 0;justify-content:space-between"><span class="src">Total '+fmtN(Math.round(t.k))+' kcal, '+fmtN(Math.round(t.p))+' g protein</span><button class="btn primary" data-action="fplog">'+(meal?'Done':'Add to today')+'</button></div>';}
   if(fp.mode==='scan'){
     h+='<div class="subhead" style="margin-top:0">Scan a barcode</div><video id="fpVid" playsinline muted autoplay style="width:100%;max-height:280px;background:#000;border-radius:10px;object-fit:cover"></video><div class="src" id="fpScanMsg" style="margin:6px 0">'+esc(fp.scanMsg||'Starting the camera...')+'</div>'+
       '<div class="row"><input type="text" id="fpCode" inputmode="numeric" placeholder="Or type the barcode number" style="flex:1;min-width:160px"><button class="btn" data-action="fpcode">Look up</button></div><div class="row" style="margin-top:8px"><button class="btn" data-action="fpscan">Restart camera</button><button class="btn ghost" data-action="fpback">Back to search</button></div>';
@@ -4319,7 +4333,7 @@ function foodPicker(){const fp=S.fp;if(!fp)return '';const meal=fp.tgt==='meal';
   }else if(fp.sel){const f=fpFood(fp.sel);if(!f){fp.sel=null;return foodPicker();}const q=fp.qty||1;
     h+='<div class="subhead" style="margin-top:0">'+esc(f.n)+(f.b?' <span class="src">'+esc(f.b)+'</span>':'')+'</div><div class="src">One serving is '+esc(f.s)+': '+fpMacroText(f,1)+'.</div>'+
       '<div class="row" style="margin-top:8px;align-items:center"><label class="f" style="max-width:140px">Servings<input type="number" inputmode="decimal" step="0.25" min="0.25" id="fpQty" value="'+q+'"></label>'+[0.5,1,1.5,2,3].map(n=>'<button class="btn'+(q===n?' on':'')+'" data-action="fpqty" data-v="'+n+'">'+fmtNum(n)+'</button>').join('')+'</div>'+
-      '<div class="src" id="fpMac" style="margin:6px 0">'+fpMacroText(f,q)+'</div><div class="row"><button class="btn primary" data-action="fpadd">'+(meal||fp.tgt==='addon'?'Add to this meal':fp.tgt==='snack'?'Add to this snack':'Add')+'</button>'+(!fp.items.length&&fp.tgt!=='snack'&&fp.tgt!=='addon'?'<button class="btn" data-action="fpadd" data-v="log">'+(meal?'Log just this':'Add to today now')+'</button>':'')+'<button class="btn ghost" data-action="fpback">Back</button>'+(f.own?'<button class="btn ghost" data-action="fpedit">Edit this food</button>':'')+'</div>';
+      '<div class="src" id="fpMac" style="margin:6px 0">'+fpMacroText(f,q)+'</div><div class="row"><button class="btn primary" data-action="fpadd">'+(meal||fp.tgt==='addon'?'Add to this meal':fp.tgt==='snack'?'Add to this snack':'Add')+'</button>'+(!fp.items.length&&fp.tgt!=='snack'&&fp.tgt!=='addon'?'<button class="btn" data-action="fpadd" data-v="log">'+(meal?'Done with just this':'Add to today now')+'</button>':'')+'<button class="btn ghost" data-action="fpback">Back</button>'+(f.own?'<button class="btn ghost" data-action="fpedit">Edit this food</button>':'')+'</div>';
   }else{
     h+='<div class="row"><input type="search" id="fpQ" value="'+esc(fp.q||'')+'" placeholder="Search foods, recipes, and snacks" style="flex:1;min-width:180px" autocomplete="off"></div>'+
       '<div class="row" style="margin-top:8px"><button class="btn" data-action="fpscan">Scan a barcode</button><button class="btn" data-action="sandopen">Build a sandwich</button><button class="btn" data-action="fpnew">Create a food</button></div><div id="fpRes" style="margin-top:6px">'+fpResults()+'</div>';}
@@ -4330,6 +4344,7 @@ function newFoodId(){return 'h'+Date.now().toString(36)+Math.random().toString(3
 function bumpUse(id,date){const me=myKey(),cur=((((S.house.foodUse||{})[id])||{})[me])||{c:0};hset(['foodUse',id,me],{c:n0(cur.c)+1,l:date});}
 function fpCommit(){const fp=S.fp,date=S.date;if(!fp||!fp.items.length)return;const t=fpTot(fp.items);
   const items=fp.items.map(it=>({id:it.id,n:it.n,s:it.s,q:it.q,k:r1(it.k),p:r1(it.p),c:r1(it.c),f:r1(it.f)}));
+  if(fp.tgt==='meal'){const slot=fp.slot;fpClose();stageMeal(date,slot,{from:'fp',items,rec:{status:'custom',name:items.map(fpItemLabel).join(', ').slice(0,240),kcal:Math.round(t.k),p:Math.round(t.p),c:Math.round(t.c),f:Math.round(t.f),items}});return;}
   for(const it of fp.items)if(!String(it.id).startsWith('t:'))bumpUse(it.id,date);
   if(fp.tgt==='addon'){const slot=fp.slot,l=day(date);l.addons=l.addons||{};l.addons[slot]=(l.addons[slot]||[]).concat(items);fpClose();relogPlan(date,slot);saveDay(date);render();return;}
   if(fp.tgt==='snack'){const slot=fp.slot,P=snEnsure(date,slot);for(const it of items)P.push({id:it.id,n:it.n,s:it.s,q:it.q,k:it.k/it.q,p:it.p/it.q,c:it.c/it.q,f:it.f/it.q});fpClose();S.snEdit=slot;saveDay(date);render();return;}
@@ -4655,7 +4670,7 @@ function achSync(){if(!S.ready||!S.profile||S.viewing)return;const A=achCompute(
   if(first){P.achInit=true;ch=true;}else{for(const x of fresh.slice(0,3))toast('\uD83C\uDFC6 Achievement unlocked: '+earnedText(x));const msgs=winsFor(today).filter(x=>nw.includes(x[0]));for(const x of msgs.slice(0,2))toast('\u2714 '+x[1]);}
   if(ch){ACHV++;debounce('profile',()=>wrote(FB.setDoc(refs.profile(),clone(S.profile))),500);}}
 /* =============== Events =============== */
-function logMeal(date,slot,rec){const l=day(date);l.meals=l.meals||{};if(l.times&&l.times[slot])rec.at=l.times[slot];l.meals[slot]=rec;S.openCustom=null;saveDay(date);render();}
+function logMeal(date,slot,rec){const l=day(date);l.meals=l.meals||{};if(l.staged&&l.staged[slot])delete l.staged[slot];if(l.times&&l.times[slot])rec.at=l.times[slot];l.meals[slot]=rec;S.openCustom=null;saveDay(date);render();}
 function planWeek(){return dow(todayStr())>=3?addD(monday(todayStr()),7):monday(todayStr());} // Thursday on, planning is for next week
 function curMenuWeek(){return S.menuWeek||planWeek();}
 function setMenu(wk,m){hset(['menus',wk],m);}
@@ -4787,14 +4802,25 @@ document.addEventListener('click',ev=>{
   if(a==='amtq'){S.amtVal=+v;render();return;}
   if(a==='amtcancel'){S.amtOpen=null;S.amtVal=null;render();return;}
   if(a==='amtlog'){const m=plannedMeals(date)[slot],el=document.getElementById('amtV'),au=m&&canAmt(m)?amountUnit(m.key):null;if(!au)return;const val=n0(el?el.value:S.amtVal);if(!(val>=au.min-1e-9)){if(el)el.focus();return;}
-    const arr=S.profile.eaten[m.key]=S.profile.eaten[m.key]||[];if(!arr.includes(date)){arr.push(date);arr.sort();if(arr.length>40)arr.shift();saveProfile();}
-    S.amtOpen=null;S.amtVal=null;logMeal(date,slot,Object.assign({status:'plan',name:m.name,key:m.key},amtMeal(m,val)));return;}
+    const rec=Object.assign({status:'plan',name:m.name,key:m.key},amtMeal(m,val)),logged=S.days[date]&&S.days[date].meals&&S.days[date].meals[slot];
+    S.amtOpen=null;S.amtVal=null;
+    if(!logged){stageMeal(date,slot,{from:'amt',amtVal:val,rec});return;}
+    markEaten(m.key,date);logMeal(date,slot,rec);return;}
+  if(a==='stagelog'){const l=day(date),st=l.staged&&l.staged[slot];if(!st)return;
+    if(st.from==='fp')for(const it of (st.items||[]))if(!String(it.id).startsWith('t:'))bumpUse(it.id,date);
+    if(st.from==='amt'&&st.rec&&st.rec.key)markEaten(st.rec.key,date);
+    if(st.from==='pz'){if(st.pz)hset(['pzLast'],{place:st.pz.place,type:st.pz.type,popId:st.pz.popId});if(S.pzSel)delete S.pzSel[slot];}
+    logMeal(date,slot,clone(st.rec));toast('Logged: '+(st.rec.name||'meal')+'.');return;}
+  if(a==='stagecancel'){const l=day(date);if(l.staged){delete l.staged[slot];saveDay(date);}if(S.pzSel)delete S.pzSel[slot];render();return;}
+  if(a==='stagechange'){const l=day(date),st=l.staged&&l.staged[slot];if(!st)return;
+    if(st.from==='fp'){fpOpen('meal',slot);S.fp.items=clone(st.items||[]);render();return;}
+    if(st.from==='amt'){S.amtOpen=slot;S.amtVal=st.amtVal;fpClose();render();return;}
+    if(st.from==='pz'){S.pzSel=S.pzSel||{};S.pzSel[slot]=clone(st.pz);delete l.staged[slot];saveDay(date);render();return;}
+    return;}
   if(a==='pzadd'){const sel=pzEnsureSel(slot);sel.parts=sel.parts||[];sel.parts.push({place:sel.place,type:sel.type,pieces:+v});hset(['pzLast'],{place:sel.place,type:sel.type,popId:sel.popId});render();return;}
   if(a==='pzrm'){const sel=pzEnsureSel(slot);sel.parts.splice(+v,1);render();return;}
   if(a==='pzlogall'){const sel=pzEnsureSel(slot);if(!(sel.parts&&sel.parts.length))return;const r=pzTotal(sel);
-    hset(['pzLast'],{place:sel.place,type:sel.type,popId:sel.popId});
-    logMeal(date,slot,{status:'custom',name:r.name,kcal:r.kcal,p:r.p,c:r.c,f:r.f,pz:{parts:sel.parts.slice(),pop:!!sel.pop,popId:sel.pop?sel.popId:null}});
-    delete S.pzSel[slot];return;}
+    stageMeal(date,slot,{from:'pz',pz:clone(sel),rec:{status:'custom',name:r.name,kcal:r.kcal,p:r.p,c:r.c,f:r.f,pz:{parts:sel.parts.slice(),pop:!!sel.pop,popId:sel.pop?sel.popId:null}}});return;}
   if(a==='pzaddcancel'){S.pzAdd=null;render();return;}
   if(a==='pzaddopen'){S.pzAdd={kind:v,slot,place:pzEnsureSel(slot).place};render();const el=document.getElementById('pzNewN');if(el)el.focus();return;}
   if(a==='pzaddsave'){const g2=id=>document.getElementById(id),nm=(g2('pzNewN')&&g2('pzNewN').value||'').trim();if(!nm){render();return;}
