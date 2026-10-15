@@ -44,6 +44,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .brand h1{font-size:26px;letter-spacing:.2px}
 .brand h1 span{color:var(--red)}
 .sync{font-size:12px;color:var(--headmuted)}
+.status{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right;flex-shrink:0}
+.ver{font-size:11px;color:var(--headmuted);opacity:.85}
 nav{display:flex;gap:2px;overflow-x:auto;margin-top:6px;scrollbar-width:none}
 nav::-webkit-scrollbar{display:none}
 nav button{background:none;border:0;color:var(--headmuted);font:600 15px 'Barlow',sans-serif;padding:8px 12px 10px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
@@ -940,6 +942,8 @@ let lastBasis='';
 function scheduleNeeds(){debounce('basis',()=>{if(!S.house||!S.profile)return;const o={name:S.profile.name,kcal:targetsFor(todayStr()).kcal,lunch:['grab','own'].includes(S.profile.lunchStyle)?'own':'menu'},j=JSON.stringify(o);if(j===lastBasis)return;lastBasis=j;S.house.basis=S.house.basis||{};S.house.basis[S.uid]=o;wrote(FB.updateDoc(refs.house(),new FB.FieldPath('basis',S.uid),o));},1500);}
 function sharedSoon(){if(S._shPend)return;S._shPend=true;setTimeout(()=>{S._shPend=false;if(S.profile)wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2500);}
 function scheduleShared(){debounce('shared',()=>{if(!S.profile)return;wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2000);}
+/* App version shown in the header and stamped on every Claude report. Bump it with every index.html delivered. */
+const APP_VERSION='1.0';
 function setSync(s){S.sync=s;const el=document.getElementById('sync');if(el)el.textContent=syncText();}
 function syncText(){return !navigator.onLine?'Offline; changes will sync':S.sync==='error'?'Last save failed':'Synced';}
 function nameOf(uid){if(uid===S.uid)return S.profile.name;const x=S.shared[uid];return (x&&x.name)||'Partner';}
@@ -987,7 +991,7 @@ function render(){
   const PP=[['today','Today'],['week','This week'],['progress','Progress'],['ach','Achievements'],['plan','My plan']],inPP=PP.some(t=>t[0]===S.view);if(inPP)S.lastPP=S.view;
   const tabs=[[S.lastPP||'today','Plan and Progress',inPP],['workout','Workout',S.view==='workout'],['menu','Meals',S.view==='menu']];
   const viewingOther=S.viewing&&S.viewing!==S.uid;
-  let h='<header class="top"><div class="top-in"><div class="brand"><h1>'+esc(viewingOther?nameOf(S.viewing):S.profile.name)+'\'s <span>Training Plan</span></h1><span class="sync" id="sync">'+syncText()+'</span></div>';
+  let h='<header class="top"><div class="top-in"><div class="brand"><h1>'+esc(viewingOther?nameOf(S.viewing):S.profile.name)+'\'s <span>Training Plan</span></h1><span class="status"><span class="sync" id="sync">'+syncText()+'</span><span class="ver">Version '+APP_VERSION+'</span></span></div>';
   const others=Object.keys(S.shared).filter(u=>u!==S.uid);
   if(others.length||MEMBERS.length>1){h+='<div class="who" role="group" aria-label="Choose whose plan to view"><button class="whob'+(!viewingOther?' on':'')+'" data-action="viewas" data-v="">'+esc(S.profile.name)+'</button>';
     for(const u of others)h+='<button class="whob'+(S.viewing===u?' on':'')+'" data-action="viewas" data-v="'+u+'">'+esc(nameOf(u))+'</button>';
@@ -4195,7 +4199,7 @@ function addSalad(date){const t=saladTotals(),parts=SALAD_TOP.filter((x,i)=>S.sa
 function buildReport(n){
   const td=S.date>todayStr()?todayStr():S.date,p=S.profile,t=targetsFor(td);let from=addD(td,-(n-1));if(from<p.startDate)from=p.startDate<=td?p.startDate:td;
   const L=[];const ln=x=>L.push(x);
-  ln(p.name+'\'s Training Plan update, generated '+new Date().toLocaleString());
+  ln(p.name+'\'s Training Plan update, generated '+new Date().toLocaleString()+', app version '+APP_VERSION);
   ln('Person: '+p.name+'. Sex '+p.sex+', age '+p.age+', height '+p.heightIn+' in. Main training: '+(p.training==='own'?'own gym program':'home plan')+'; home sessions and gym workouts are logged separately and can both happen on one day. Pace goal '+p.pace+' lb per week, activity factor '+p.activity+'.');
   for(const wk of [monday(td),addD(monday(td),7)]){const sp=snackPicks(wk);if(wk!==monday(td)&&!sp.length&&!(S.house.lunch&&S.house.lunch[wk]))continue;const lp=[0,1,2,3,4].map(d=>{const v=lunchPick(p.name,wk,d);return v?DAYN[d].slice(0,3)+' '+(v==='__pizza'?'pizza':v==='__none'?'eating out':R[v].name):'';}).filter(Boolean);ln('Snacks picked for the week of '+wk+': '+(sp.length?sp.map(k=>SNACK_BY_ID[k].name).join(', '):'none yet')+'. Plan snacks only from these.'+(lp.length?' Own weekday lunches: '+lp.join('; ')+'.':''));}
   ln('Range: '+from+' to '+td+'. Program week '+weekNum(td)+', phase '+phaseOf(weekNum(td))+'. Start date '+p.startDate+'.');
