@@ -632,7 +632,9 @@ function pizzaSlices(date){return Math.max(2,Math.min(4,Math.round((targetsFor(d
 function cellOverride(date,slot){const m=S.house&&S.house.menus&&S.house.menus[monday(date)];const o=m&&m.cells&&m.cells[dow(date)+'-'+slot];if(!o)return null;if(o==='__pizza'||o==='__none')return o;return R[o]&&!isHidden(o)?o:null;}
 function pizzaCell(date,slot){return (slot==='dinner'&&isPizza(date))||((slot==='lunch'||slot==='dinner')&&cellOverride(date,slot)==='__pizza');}
 function slicesFor(date,slot,target){return Math.max(2,Math.min(4,Math.round((target-80)/SLICE.kcal)));}
-function isPizza(date){if(dow(date)!==1||!SC().pizzaTue)return false;const o=cellOverride(date,'dinner');return !o||o==='__pizza';}
+/* Pizza Tuesday at the in-laws keeps its name but can sit on any night: house.menus[week].pzDay (0 = Monday), Tuesday unless moved. */
+function pizzaDayOf(wk){const m=S.house&&S.house.menus&&S.house.menus[wk],v=m&&m.pzDay;return Number.isInteger(v)&&v>=0&&v<=6?v:1;}
+function isPizza(date){if(!SC().pizzaTue||dow(date)!==pizzaDayOf(monday(date)))return false;const o=cellOverride(date,'dinner');return !o||o==='__pizza';}
 function shares(date){const w=isPizza(date)?{breakfast:.19,lunch:.26,snack:.065,fruit:.045,preshake:.05,dinner:.39}:{breakfast:.19,lunch:.27,snack:.13,fruit:.045,dinner:.30,evening:.065,preshake:.05};
   const sl=slotsFor(date),tot=sl.reduce((a,k)=>a+(w[k]||0),0),o={};for(const k of sl)o[k]=(w[k]||0)/tot;return o;}
 const KARL_SCHED={wake:'05:15',breakfast:'06:30',leave:'07:10',lunch:'10:00',snack:'13:30',fruit:'15:00',workout:'17:00',dinner:'18:15',evening:'20:15',bed:'21:00',lightsOut:'21:45',
@@ -772,7 +774,7 @@ function gridRoles(m){const mid=m.mid===3?3:2,pz=SC().pizzaTue,G={};
   for(let d=0;d<7;d++)G[d+'-breakfast']=d%2===0?'b1':'b2';
   const W=mid===2?{'0-lunch':'m1','0-dinner':'m2','1-lunch':'m2','1-dinner':'m1','2-lunch':'m1','2-dinner':'m3','3-lunch':'m3','3-dinner':'m2','4-lunch':'m3','4-dinner':'m1','5-lunch':'m3','5-dinner':'m2','6-lunch':'m1','6-dinner':'m3'}
     :{'0-lunch':'m1','0-dinner':'m2','1-lunch':'m2','1-dinner':'m1','2-lunch':'m1','2-dinner':'m2','3-lunch':'m1','3-dinner':'m3','4-lunch':'m3','4-dinner':'m1','5-lunch':'m3','5-dinner':'m2','6-lunch':'m3','6-dinner':'m3'};
-  Object.assign(G,W);if(pz)G['1-dinner']='__pizza';return G;}
+  Object.assign(G,W);if(pz){const pd=Number.isInteger(m&&m.pzDay)&&m.pzDay>=0&&m.pzDay<=6?m.pzDay:1;G[pd+'-dinner']='__pizza';}return G;}
 function roleDefault(m,d,slot){const r=gridRoles(m)[d+'-'+slot];return r==='__pizza'?'__pizza':m[r];}
 function recipeForSlot(date,slot){
   const o=cellOverride(date,slot);if(o)return o==='__pizza'||o==='__none'?null:o;
@@ -943,7 +945,7 @@ function scheduleNeeds(){debounce('basis',()=>{if(!S.house||!S.profile)return;co
 function sharedSoon(){if(S._shPend)return;S._shPend=true;setTimeout(()=>{S._shPend=false;if(S.profile)wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2500);}
 function scheduleShared(){debounce('shared',()=>{if(!S.profile)return;wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2000);}
 /* App version shown in the header and stamped on every Claude report. Bump it with every index.html delivered. */
-const APP_VERSION='1.0';
+const APP_VERSION='1.2';
 function setSync(s){S.sync=s;const el=document.getElementById('sync');if(el)el.textContent=syncText();}
 function syncText(){return !navigator.onLine?'Offline; changes will sync':S.sync==='error'?'Last save failed':'Synced';}
 function nameOf(uid){if(uid===S.uid)return S.profile.name;const x=S.shared[uid];return (x&&x.name)||'Partner';}
@@ -1139,21 +1141,34 @@ function pzTotal(sel){
   const name=names.length>1?names.slice(0,-1).join(', ')+' and '+names[names.length-1]:(names[0]||'Pizza');
   return {kcal:Math.round(k),p:Math.round(p),c:Math.round(c),f:Math.round(f),name};
 }
-function pzAddForm(){
-  const a=S.pzAdd;if(!a)return '';
+function pzAddForm(slot){
+  const a=S.pzAdd;if(!a||(slot&&a.slot!==slot))return '';
   const macroFields='<label class="f">Calories<input type="number" inputmode="decimal" id="pzNewK" placeholder="0"></label><label class="f">Protein g<input type="number" inputmode="decimal" id="pzNewP" value="0"></label><label class="f">Carbs g<input type="number" inputmode="decimal" id="pzNewC" value="0"></label><label class="f">Fat g<input type="number" inputmode="decimal" id="pzNewF" value="0"></label>';
   if(a.kind==='place')return '<div class="card" style="margin-top:8px;border:1px solid var(--line)"><div class="subhead" style="margin-top:0">Add a pizza place</div><div class="form"><label class="f wide">Name<input type="text" id="pzNewN" placeholder="e.g. Napoli\u2019s"></label></div><div class="row" style="margin-top:8px"><button class="btn primary" data-action="pzaddsave" data-v="place" data-slot="'+a.slot+'">Save</button><button class="btn ghost" data-action="pzaddcancel">Cancel</button></div></div>';
   if(a.kind==='type')return '<div class="card" style="margin-top:8px;border:1px solid var(--line)"><div class="subhead" style="margin-top:0">Add a kind of pizza'+(allPzPlaces()[a.place]?' from '+esc(allPzPlaces()[a.place].n):'')+'</div><div class="form"><label class="f wide">Name<input type="text" id="pzNewN" placeholder="e.g. Backyard BBQ"></label>'+macroFields+'</div><p class="hint" style="margin:4px 0 0">Numbers are per piece, so the math stays right no matter how many you log.</p><div class="row" style="margin-top:8px"><button class="btn primary" data-action="pzaddsave" data-v="type" data-slot="'+a.slot+'">Save</button><button class="btn ghost" data-action="pzaddcancel">Cancel</button></div></div>';
   return '<div class="card" style="margin-top:8px;border:1px solid var(--line)"><div class="subhead" style="margin-top:0">Add a pop</div><div class="form"><label class="f wide">Name<input type="text" id="pzNewN" placeholder="e.g. Mountain Dew"></label>'+macroFields+'</div><p class="hint" style="margin:4px 0 0">Numbers are per can.</p><div class="row" style="margin-top:8px"><button class="btn primary" data-action="pzaddsave" data-v="pop" data-slot="'+a.slot+'">Save</button><button class="btn ghost" data-action="pzaddcancel">Cancel</button></div></div>';
 }
-function pizzaPicker(date,slot,m){
-  const sel=pzEnsureSel(slot),PL=allPzPlaces(),TY=allPzTypes(),PO=allPops(),types=pzTypesFor(sel.place);
+function pzPlaceKind(slot){
+  const sel=pzEnsureSel(slot),PL=allPzPlaces(),types=pzTypesFor(sel.place);
   let h='<div class="row" style="gap:8px;flex-wrap:wrap;align-items:flex-end">';
   h+='<label class="f">Where from?<select data-pzfield="place" data-pzslot="'+slot+'">'+Object.keys(PL).sort((x,y)=>abc(PL[x].n,PL[y].n)).map(id=>'<option value="'+id+'"'+(id===sel.place?' selected':'')+'>'+esc(PL[id].n)+'</option>').join('')+'<option value="__new">Add a new place\u2026</option></select></label>';
   if(types.length)h+='<label class="f">What kind?<select data-pzfield="type" data-pzslot="'+slot+'">'+types.map(t=>'<option value="'+t.id+'"'+(t.id===sel.type?' selected':'')+'>'+esc(t.n)+'</option>').join('')+'<option value="__new">Add a new kind\u2026</option></select></label>';
   else h+='<div class="f"><span class="src" style="display:block;margin-bottom:2px">What kind?</span><button class="btn" data-action="pzaddopen" data-v="type" data-slot="'+slot+'">+ Add a kind of pizza for '+esc(PL[sel.place]?PL[sel.place].n:'this place')+'</button></div>';
-  h+='</div>';
-  h+=pzAddForm();
+  return h+'</div>'+pzAddForm(slot);
+}
+/* Pizza as a category inside Ate something else and every other food picker: place, kind, pieces, and an optional can of pop.
+   Each tap adds a line to the picker's list, so two kinds from one order become two lines. Uses the same place, kind,
+   and pop database as pizza night, so anything added here shows up there too. */
+function fpPizza(){
+  const sel=pzEnsureSel('fp'),TY=allPzTypes(),PO=allPops(),t=TY[sel.type];
+  let h='<div class="row" style="margin:0 0 6px;align-items:center"><button class="btn ghost" data-action="fpback">&larr; Back</button><strong>Pizza</strong></div><p class="src" style="margin-top:0">Pick where it came from and what kind, then tap how many pieces. Had more than one kind? Change the kind and tap again.</p>'+pzPlaceKind('fp');
+  if(t&&t.place===sel.place){h+='<div class="row" style="margin-top:8px">';for(let n=1;n<=8;n++)h+='<button class="btn" data-action="fppz" data-v="'+n+'">'+n+' piece'+(n>1?'s':'')+'</button>';h+='</div><div class="src" style="margin-top:4px">'+fmtN(t.k)+' kcal and '+fmtN(t.p)+' g protein per piece.</div>';}
+  h+='<div class="row" style="margin-top:10px;align-items:center;gap:6px;flex-wrap:wrap"><span class="src">Pop with it?</span><select data-pzfield="popid" data-pzslot="fp">'+Object.keys(PO).sort((x,y)=>abc(PO[x].n,PO[y].n)).map(id=>'<option value="'+id+'"'+(id===sel.popId?' selected':'')+'>'+esc(PO[id].n)+'</option>').join('')+'<option value="__new">Add a new pop\u2026</option></select><button class="btn" data-action="fppop">Add a can</button></div>';
+  return h;
+}
+function pizzaPicker(date,slot,m){
+  const sel=pzEnsureSel(slot),PL=allPzPlaces(),TY=allPzTypes(),PO=allPops(),types=pzTypesFor(sel.place);
+  let h=pzPlaceKind(slot);
   if(types.length&&TY[sel.type]){h+='<div class="row" style="margin-top:8px">';for(let n=1;n<=8;n++)h+='<button class="btn" data-action="pzadd" data-slot="'+slot+'" data-v="'+n+'">'+n+' piece'+(n>1?'s':'')+'</button>';h+='</div>';}
   const rows=(sel.parts||[]).map((pt,i)=>({pt,i,x:pzPartText(pt)})).filter(r=>r.x);
   if(rows.length){h+='<div class="card" style="margin-top:10px;border:1px solid var(--line)">';
@@ -4007,7 +4022,7 @@ function mpPlan(wk){
     if(S.pick===r.role)c+=pickerHTML(r.role,r.cat,r.key);return c+'</div>';};
   h+='<div class="section" style="margin-top:0"><h2>Sunday cook</h2>'+rp.filter(r=>r.session==='sun').map(card).join('')+'</div>';
   h+='<div class="section"><h2>Midweek cook</h2><div class="row" style="margin-bottom:10px"><span class="src">Cook on</span><button class="btn'+(md===2?' on':'')+'" data-action="midday" data-v="2">Wednesday</button><button class="btn'+(md===3?' on':'')+'" data-action="midday" data-v="3">Thursday</button></div><p class="hint" style="margin:-4px 0 10px">Slow cooker recipes make an easy midweek cook. Tap Choose on this card and they are listed first.</p>'+rp.filter(r=>r.session==='mid').map(card).join('')+'</div>';
-  if(SC().pizzaTue)h+='<div class="slot fixed"><div class="when">Tuesday dinner</div><h3>Pizza night</h3><div class="src">Nothing to prep. Each person\'s plan builds Tuesday around their own slice count.</div></div>';
+  if(SC().pizzaTue)h+='<div class="slot fixed"><div class="when">'+DAYN[pizzaDayOf(wk)]+' dinner</div><h3>Pizza Tuesday at the in-laws</h3><div class="src">Nothing to prep. Each person\'s plan builds Tuesday around their own slice count.</div></div>';
   const extra=prepTotals(wk).filter(x=>![m.b1,m.b2,m.m1,m.m2,m.m3].includes(x.key));
   if(extra.length)h+='<div class="note" style="margin-top:10px">You also added '+extra.map(x=>esc(R[x.key].name)+' ('+esc(x.roles[0])+')').join(', ')+' in The week. It is included in the cooking list.</div>';
   h+='<div class="row" style="margin:14px 0"><button class="btn primary" data-action="mpstep" data-v="prep">Next: Cooking day</button></div>';
@@ -4036,7 +4051,7 @@ function cellOptions(wk,d,slot,cur,def){
 }
 function mpGlance(wk){
   const ppl=eaters(),td=todayStr(),m=menuFor(wk),cells=weekCells(wk);
-  let h='<p class="prose" style="margin-top:0">Every meal for the week, filled from your Sunday and midweek cooking. Change any single meal with its dropdown: pick something already planned, anything from the library, pizza, or eating out. The servings count below updates as you change days, and so do the prep and shopping lists for both of you.</p>'+tallyCard(wk)+lunchCard(wk)+'<div class="glance2">';
+  let h='<p class="prose" style="margin-top:0">Every meal for the week, filled from your Sunday and midweek cooking. Change any single meal with its dropdown: pick something already planned, anything from the library, pizza, or eating out. The servings count below updates as you change days, and so do the prep and shopping lists for both of you.</p>'+(SC().pizzaTue?'<div class="card" style="margin-bottom:10px"><label class="f" style="max-width:320px">Pizza Tuesday at the in-laws this week is on<select data-pzday="'+wk+'">'+DAYN.map((n,i)=>'<option value="'+i+'"'+(i===pizzaDayOf(wk)?' selected':'')+'>'+n+'</option>').join('')+'</select></label><p class="src" style="margin:4px 0 0">Moving it puts that night\'s planned dinner back on the menu where pizza was, and resizes both of your days around it.</p></div>':'')+tallyCard(wk)+lunchCard(wk)+'<div class="glance2">';
   for(let d=0;d<7;d++){const date=addD(wk,d);
     h+='<div class="gday'+(date===td?' today':'')+'"><div class="gdh"><strong>'+DAYN[d]+'</strong> <span class="src">'+fmtShort(date)+'</span></div>';
     for(const slot of ['breakfast','lunch','dinner']){const c=cells.find(x=>x.d===d&&x.slot===slot),def=roleDefault(m,d,slot),cur=c.pizza?'__pizza':c.none?'__none':c.key;
@@ -4206,7 +4221,7 @@ function buildReport(n){
   if((p.pendingNotes||[]).length){ln('');ln('NOTES FOR CLAUDE (act on these, then clear with clearNotes in the reply block):');for(const n of p.pendingNotes)ln('- ['+n.id+'] ('+n.date+', left on the '+(VIEWLABEL[n.view]||n.view)+' view): '+n.text);}
   {const H=(S.house&&S.house.foods)||{},need=Object.keys(H).filter(id=>H[id]&&!H[id].del&&H[id].fullRecipe&&H[id].url);
     if(need.length){ln('');ln('RECIPES TO ADD IN FULL, from Meals, My foods (fetch ingredients, steps, and a photo from the link, add the recipe properly, then turn off its "add this in properly" checkbox so it stops showing here):');for(const id of need)ln('- '+H[id].n+': '+H[id].url);}}
-  ln('Schedule: weekdays wake '+SC().wake+', lunch '+SC().lunch+', workout '+SC().workout+', dinner '+SC().dinner+'; pizza Tuesday '+(SC().pizzaTue?'yes':'no')+'.');
+  ln('Schedule: weekdays wake '+SC().wake+', lunch '+SC().lunch+', workout '+SC().workout+', dinner '+SC().dinner+'; Pizza Tuesday at the in-laws '+(SC().pizzaTue?'on '+DAYN[pizzaDayOf(monday(td))]+' this week':'off')+'.');
   ln('Base targets today: '+t.kcal+' kcal, '+t.protein+' g protein, '+t.carbs+' g carbs, '+t.fat+' g fat'+(t.manual.length?' (set by hand: '+t.manual.join(', ')+')':'')+'. Manual calorie offset: '+n0(p.kcalOffset)+'. Leg work level: '+(p.legsLevel?'light leg work':'knee protection')+'.');
   const ws=Object.keys(S.days).filter(d=>S.days[d].weight).sort();
   if(ws.length){const last=ws[ws.length-1];ln('Weight: start '+p.startWeight+' lb, latest '+S.days[last].weight+' lb on '+last+', 7-day average '+(winAvg(last)||0).toFixed(1)+' lb.');}else ln('Weight: no weigh-ins logged yet.');
@@ -4253,7 +4268,7 @@ function buildReport(n){
         if(x.skate)bits.push('skating logged');
         ln(fmtShort(d)+': '+(bits.length?bits.join('; ')+'.':'no shared details.')+(x.meals&&x.meals.length?' Ate: '+x.meals.join(', ')+'.':''));}}}
   ln('');ln('Cooking plan keys: b1 and b2 (Sunday breakfasts), m1 and m2 (Sunday mains), m3 (midweek main), mid (2 for Wednesday, 3 for Thursday). Recipe keys: '+Object.keys(R).filter(k=>!isHidden(k)).map(k=>k+'='+R[k].name).join('; ')+'.');
-  ln('To update the app, reply with a JSON block like {"trainingPlanUpdate":1,"person":"'+p.name+'","note":"...","partnerNote":"a note that lands on the other household member\'s Today view next time they open the app, no account switch needed","kcalOffset":0,"targets":{"protein":160,"carbs":null},"legsLevel":0,"menu":{"week":"YYYY-MM-DD","m1":"recipeKey","mid":3,"cells":{"2-lunch":"recipeKey"}},"hide":[],"unhide":[],"day":{"date":"YYYY-MM-DD","weight":0,"steps":0,"water":0,"sleep":0,"energy":1,"knee":"good","workoutOverride":"TREAD","workout":{"status":"done","minutes":0,"type":"...","intensity":"","note":"..."},"cardio":{"min":0,"mph":0,"inc":0,"dist":0,"hr":0,"act":"..."}},"clearNotes":["id1","id2"]} using only the fields that should change. Set clearNotes to true to clear every note, or to a list of note ids to clear just those.');
+  ln('To update the app, reply with a JSON block like {"trainingPlanUpdate":1,"person":"'+p.name+'","note":"...","partnerNote":"a note that lands on the other household member\'s Today view next time they open the app, no account switch needed","kcalOffset":0,"targets":{"protein":160,"carbs":null},"legsLevel":0,"menu":{"week":"YYYY-MM-DD","m1":"recipeKey","mid":3,"pizzaDay":1,"cells":{"2-lunch":"recipeKey"}},"hide":[],"unhide":[],"day":{"date":"YYYY-MM-DD","weight":0,"steps":0,"water":0,"sleep":0,"energy":1,"knee":"good","workoutOverride":"TREAD","workout":{"status":"done","minutes":0,"type":"...","intensity":"","note":"..."},"cardio":{"min":0,"mph":0,"inc":0,"dist":0,"hr":0,"act":"..."}},"clearNotes":["id1","id2"]} using only the fields that should change. Set clearNotes to true to clear every note, or to a list of note ids to clear just those.');
   return L.join('\n');
 }
 
@@ -4324,7 +4339,8 @@ function catFoods(cat,all){const L=[...all.values()],H=(S.house&&S.house.foods)|
   else out=[];
   return out.sort((a,b)=>abc(a.n,b.n));}
 function fpCats(all){const n=c=>c==='prep'?catFoods('prep:breakfast',all).length+catFoods('prep:main',all).length:catFoods(c,all).length;
-  return '<div class="subhead" style="margin-top:6px">Choose a category</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px">'+FP_CATS.map(([id,t,sub])=>{const c=n(id);return '<button class="btn" data-action="fpcat" data-v="'+id+'" style="display:flex;flex-direction:column;align-items:flex-start;text-align:left;height:auto;padding:10px 12px"'+(c?'':' disabled')+'><strong>'+esc(t)+'</strong><span class="src">'+(sub?esc(sub)+', ':'')+c+' item'+(c===1?'':'s')+'</span></button>';}).join('')+'</div>';}
+  const npl=Object.keys(allPzPlaces()).length,nty=Object.keys(allPzTypes()).length;
+  return '<div class="subhead" style="margin-top:6px">Choose a category</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px">'+(()=>{const pz='<button class="btn" data-action="fppizza" style="display:flex;flex-direction:column;align-items:flex-start;text-align:left;height:auto;padding:10px 12px"><strong>Pizza</strong><span class="src">'+npl+' place'+(npl===1?'':'s')+', '+nty+' kind'+(nty===1?'':'s')+'</span></button>',tiles=FP_CATS.map(([id,t,sub])=>{const c=n(id);return '<button class="btn" data-action="fpcat" data-v="'+id+'" style="display:flex;flex-direction:column;align-items:flex-start;text-align:left;height:auto;padding:10px 12px"'+(c?'':' disabled')+'><strong>'+esc(t)+'</strong><span class="src">'+(sub?esc(sub)+', ':'')+c+' item'+(c===1?'':'s')+'</span></button>';});tiles.splice(Math.min(1,tiles.length),0,pz);return tiles.join('');})()+'</div>';}
 function fpResults(){const fp0=S.fp;if(fp0&&!(fp0.q||'').trim()){const all=foodSources(),c=fp0.cat;
     if(!c)return fpCats(all);
     if(c==='prep'){const nb=catFoods('prep:breakfast',all).length,nm=catFoods('prep:main',all).length;return '<div class="row" style="margin:6px 0;align-items:center"><button class="btn ghost" data-action="fpcat" data-v="">&larr; Categories</button><strong>Prepped meals</strong></div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px"><button class="btn" data-action="fpcat" data-v="prep:breakfast" style="display:flex;flex-direction:column;align-items:flex-start;height:auto;padding:10px 12px"><strong>Breakfast</strong><span class="src">'+nb+' recipes</span></button><button class="btn" data-action="fpcat" data-v="prep:main" style="display:flex;flex-direction:column;align-items:flex-start;height:auto;padding:10px 12px"><strong>Lunch and dinner</strong><span class="src">'+nm+' recipes</span></button></div>';}
@@ -4332,7 +4348,8 @@ function fpResults(){const fp0=S.fp;if(fp0&&!(fp0.q||'').trim()){const all=foodS
     return '<div class="row" style="margin:6px 0;align-items:center;flex-wrap:wrap"><button class="btn ghost" data-action="fpcat" data-v="'+(c.startsWith('prep:')?'prep':'')+'">&larr; '+(c.startsWith('prep:')?'Prepped meals':'Categories')+'</button><strong>'+esc(title)+'</strong> <span class="src">'+L.length+'</span></div>'+
       (L.length?L.map(fpRow).join(''):'<p class="hint">'+(c==='recent'?'Foods you log show up here next time.':'Nothing here yet.')+'</p>');}
   return fpResultsSearch();}
-function fpResultsSearch(){const fp=S.fp,all=foodSources(),q=(fp.q||'').trim();
+function fpResultsSearch(){return (/pizz/i.test((S.fp&&S.fp.q)||'')?'<button class="btn primary" data-action="fppizza" style="margin:4px 0 8px">Pizza: pick the place and kind</button>':'')+fpResultsSearch0();}
+function fpResultsSearch0(){const fp=S.fp,all=foodSources(),q=(fp.q||'').trim();
   const sw=/sand|sub\b|hoag|wrap|hero|grinder/i.test(q)?'<div class="note" style="margin:6px 0;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span>Making a sandwich? Build it from the bread, meat, and cheese you used.</span><button class="btn primary" data-action="sandopen">Build a sandwich</button></div>':'';
   if(q){const L=searchFoods(all,q);return sw+(L.length?L.map(fpRow).join(''):'<p class="hint">Nothing matches "'+esc(q)+'" yet. Tap <strong>Create a food</strong> to add it once; it will come up in searches for both of you from then on.</p>');}
   return '';}
@@ -4357,6 +4374,7 @@ function foodPicker(){const fp=S.fp;if(!fp)return '';const meal=fp.tgt==='meal';
       '<label class="f">Barcode (optional)<input type="text" inputmode="numeric" id="fnBc" value="'+esc(d.bc||'')+'"></label></div>'+
       (d.id?'':'<label class="row" style="gap:6px;margin:8px 0"><input type="checkbox" id="fnSave"'+(d.save===false?'':' checked')+'> Save to our foods so it comes up next time</label>')+
       '<div class="row" style="margin-top:8px"><button class="btn primary" data-action="fpsavefood">'+(d.id?'Save changes':'Next: how much')+'</button><button class="btn ghost" data-action="fpback">Back</button>'+(d.id?'<button class="btn ghost" data-action="fpdelfood">Remove from our foods</button>':'')+'</div>';
+  }else if(fp.mode==='pizza'){h+=fpPizza();
   }else if(fp.sel){const f=fpFood(fp.sel);if(!f){fp.sel=null;return foodPicker();}const q=fp.qty||1;
     h+='<div class="subhead" style="margin-top:0">'+esc(f.n)+(f.b?' <span class="src">'+esc(f.b)+'</span>':'')+'</div><div class="src">One serving is '+esc(f.s)+': '+fpMacroText(f,1)+'.</div>'+
       '<div class="row" style="margin-top:8px;align-items:center"><label class="f" style="max-width:140px">Servings<input type="number" inputmode="decimal" step="0.25" min="0.25" id="fpQty" value="'+q+'"></label>'+[0.5,1,1.5,2,3].map(n=>'<button class="btn'+(q===n?' on':'')+'" data-action="fpqty" data-v="'+n+'">'+fmtNum(n)+'</button>').join('')+'</div>'+
@@ -4365,7 +4383,7 @@ function foodPicker(){const fp=S.fp;if(!fp)return '';const meal=fp.tgt==='meal';
     h+='<div class="row"><input type="search" id="fpQ" value="'+esc(fp.q||'')+'" placeholder="Search foods, recipes, and snacks" style="flex:1;min-width:180px" autocomplete="off"></div>'+
       '<div class="row" style="margin-top:8px"><button class="btn" data-action="fpscan">Scan a barcode</button><button class="btn" data-action="sandopen">Build a sandwich</button><button class="btn" data-action="fpnew">Create a food</button></div><div id="fpRes" style="margin-top:6px">'+fpResults()+'</div>';}
   return h+'<div class="row" style="margin-top:10px"><button class="btn ghost" data-action="fpcancel">Cancel</button></div></div>';}
-function fpOpen(tgt,slot){stopScan();S.fp={tgt,slot:slot||null,items:[],q:'',mode:'list',sel:null,qty:1,temp:{},msg:''};S.openCustom=tgt==='meal'?slot:null;}
+function fpOpen(tgt,slot){stopScan();if(S.pzSel)delete S.pzSel.fp;if(S.pzAdd&&S.pzAdd.slot==='fp')S.pzAdd=null;S.fp={tgt,slot:slot||null,items:[],q:'',mode:'list',sel:null,qty:1,temp:{},msg:''};S.openCustom=tgt==='meal'?slot:null;}
 function fpClose(){stopScan();S.fp=null;S.openCustom=null;}
 function newFoodId(){return 'h'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function bumpUse(id,date){const me=myKey(),cur=((((S.house.foodUse||{})[id])||{})[me])||{c:0};hset(['foodUse',id,me],{c:n0(cur.c)+1,l:date});}
@@ -4860,6 +4878,13 @@ document.addEventListener('click',ev=>{
   if(a==='custom'||a==='addfood'){fpOpen(a==='custom'?'meal':'extra',slot);render();const el=document.getElementById('fpQ');if(el)el.focus();return;}
   if(a==='cancelcustom'||a==='fpcancel'){fpClose();render();return;}
   if(a.startsWith('fp')&&S.fp){const fp=S.fp;
+    const fpDone=()=>{if(fp.tgt==='snack'||fp.tgt==='addon'){fpCommit();return;}render();};
+    if(a==='fppizza'){fp.mode='pizza';fp.sel=null;fp.msg='';pzEnsureSel('fp');render();return;}
+    if(a==='fppz'){const sel=pzEnsureSel('fp'),T=allPzTypes()[sel.type],P=allPzPlaces()[sel.place],n=+v;if(!T||!(n>0))return;
+      fp.items.push({id:'t:pz:'+sel.type,n:(P?P.n+' ':'')+T.n,s:'1 piece',q:n,k:T.k*n,p:T.p*n,c:T.c*n,f:T.f*n});
+      hset(['pzLast'],{place:sel.place,type:sel.type,popId:sel.popId});fp.msg='Added '+n+' piece'+(n>1?'s':'')+' of '+T.n+'.';fpDone();return;}
+    if(a==='fppop'){const sel=pzEnsureSel('fp'),P=allPops()[sel.popId];if(!P)return;
+      fp.items.push({id:'t:pop:'+sel.popId,n:P.n,s:'1 can',q:1,k:P.k,p:P.p,c:P.c,f:P.f});fp.msg='Added a can of '+P.n+'.';fpDone();return;}
     if(a==='fpsel'){fp.sel=v;fp.qty=1;fp.msg='';render();return;}
     if(a==='fpqty'){fp.qty=+v;render();return;}
     if(a==='fpadd'){const f=fpFood(fp.sel),q=n0(fp.qty);if(!f||!(q>0)){const e=document.getElementById('fpQty');if(e)e.focus();return;}
@@ -4954,6 +4979,9 @@ document.addEventListener('change',ev=>{
     else if(el.dataset.pzfield==='pop'){sel.pop=el.checked;}
     else if(el.dataset.pzfield==='popid'){if(el.value==='__new'){S.pzAdd={kind:'pop',slot};render();return;}sel.popId=el.value;}
     render();return;}
+  if(el.dataset.pzday!==undefined){const wk=el.dataset.pzday,nd=+el.value,od=pizzaDayOf(wk);if(nd===od)return;
+    const m=clone(menuFor(wk));m.pzDay=nd;m.cells=Object.assign({},m.cells||{});delete m.cells[nd+'-dinner'];if(m.cells[od+'-dinner']==='__pizza')delete m.cells[od+'-dinner'];
+    setMenu(wk,m);toast('Pizza Tuesday at the in-laws moved to '+DAYN[nd]+'.');render();return;}
   if(el.dataset.side!==undefined){const wk=curMenuWeek();if(!el.value)hdel(['sides',wk,el.dataset.side]);else hset(['sides',wk,el.dataset.side],el.value);render();return;}
   if(el.dataset.pick!==undefined){const wk=curMenuWeek(),k=el.dataset.pick;if(k!==pkey({name:S.profile.name})){render();return;}if(el.checked)hset(['picked',wk,k],new Date().toISOString());else hdel(['picked',wk,k]);render();return;}
   if(el.dataset.pl!==undefined){const wk=curMenuWeek(),[nm,d]=el.dataset.pl.split('|');if(el.value==='__plan')hdel(['lunch',wk,nm,d]);else hset(['lunch',wk,nm,d],el.value);render();return;}
@@ -5050,6 +5078,7 @@ function applyUpdate(){
   if(u.menu&&/^\d{4}-\d{2}-\d{2}$/.test(String(u.menu.week||''))){const wk=monday(u.menu.week),m=clone(menuFor(wk));let n=0;
     for(const k of ['b1','b2','m1','m2','m3'])if(u.menu[k]&&R[u.menu[k]]){m[k]=u.menu[k];n++;}
     if(u.menu.mid===2||u.menu.mid===3){m.mid=u.menu.mid;n++;}
+    if(Number.isInteger(u.menu.pizzaDay)&&u.menu.pizzaDay>=0&&u.menu.pizzaDay<=6){m.pzDay=u.menu.pizzaDay;m.cells=Object.assign({},m.cells||{});delete m.cells[u.menu.pizzaDay+'-dinner'];n++;}
     if(u.menu.cells&&typeof u.menu.cells==='object'){m.cells=m.cells||{};for(const ck in u.menu.cells){const v=u.menu.cells[ck];if(/^[0-6]-(breakfast|lunch|dinner)$/.test(ck)&&(R[v]||v==='__none'||v==='__pizza')){m.cells[ck]=v;n++;}}}
     if(n){setMenu(wk,m);done.push(n+' menu changes for the week of '+fmtShort(wk));}}
   for(const k of (u.hide||[]))if(R[k]){hset(['hidden',k],true);done.push('removed '+R[k].name);}
