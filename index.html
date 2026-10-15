@@ -468,7 +468,7 @@ const POOLS={};for(const k in R){const t=R[k].tag;(POOLS[t]=POOLS[t]||[]).push(k
 const SLOW=new Set(['salsachicken','stenchiladas','sttacos','skinnyteriyaki','stuffing','ebpork','stpork','sttacochili','stcarnitas','rfwlbuffchili']);
 const isSlow=k=>SLOW.has(k)||!!(R[k]&&R[k].slow);
 POOLS.slow=Object.keys(R).filter(k=>R[k].cat==='main'&&isSlow(k));
-const tagMatch=(k,tag)=>!tag||(tag==='slow'?isSlow(k):R[k].tag===tag);
+const tagMatch=(k,tag)=>!tag||(tag==='slow'?isSlow(k):tag==='top'?hAvg(k)>=TOP_MIN:R[k].tag===tag);
 const SIDES={rice:{name:'1 cup cooked rice',kcal:205,p:4,c:45,f:0},potato:{name:'8 oz baked or roasted potato',kcal:180,p:5,c:41,f:0},pasta:{name:'2 oz dry pasta, cooked',kcal:200,p:7,c:42,f:1},fruit:{name:'1 banana or apple',kcal:100,p:1,c:26,f:0},eggwhites:{name:'1 cup liquid egg whites, scrambled',kcal:120,p:26,c:2,f:0},mash:{name:'1 cup mashed potatoes, made with milk and butter',kcal:237,p:4,c:35,f:9},mac:{name:'3/4 cup boxed macaroni and cheese, prepared',kcal:260,p:8,c:36,f:9},corn:{name:'1 cup corn, frozen or canned, with a little butter',kcal:150,p:4,c:30,f:3},bun:{name:'1 whole-wheat bun',kcal:140,p:6,c:24,f:2},tortillas:{name:'2 small flour tortillas',kcal:180,p:5,c:30,f:5}};
 // Grazing snacks with typical label values
 const QUICK=[
@@ -664,7 +664,7 @@ function defaultProfile(name,preset){const k=preset==='karl';
   return {v:3,name:name||'Me',sex:k?'male':'female',age:k?33:30,heightIn:k?70:65,startDate:k&&todayStr()>'2026-09-28'?'2026-09-28':todayStr(),startWeight:k?270:170,goal1:k?199:150,goal2:k?180:140,pace:k?1.5:1,activity:k?1.4:1.5,
     training:k?'home':'own',legsLevel:0,kneeCheck:k,kcalOffset:0,sched:clone(k?KARL_SCHED:DEFAULT_SCHED),share:clone(SHARE_DEFAULT),ratings:{},eaten:{},coachNote:null,pendingNotes:[],lunchStyle:(!k&&String(name||'').toLowerCase()==='jen')?'grab':'menu'};}
 function migrate(p){const d=defaultProfile(p&&p.name,'default');const o=Object.assign(d,p||{});o.sched=Object.assign(clone(DEFAULT_SCHED),o.sched||{});o.share=Object.assign(clone(SHARE_DEFAULT),o.share||{});o.ratings=o.ratings||{};o.eaten=o.eaten||{};o.pendingNotes=o.pendingNotes||[];return o;}
-const HOUSE_DEFAULT={photos:{},sides:{},picked:{},snacks:{},lunch:{},grab:{},menus:{},hidden:{},made:{},extras:{breakfast:0,lunch:0,dinner:1},grocery:{},basis:{},estimates:{},prices:{},stepsDone:{},foods:{},foodUse:{},foodEdit:{},foodHide:{}};
+const HOUSE_DEFAULT={ratings:{},photos:{},sides:{},picked:{},snacks:{},lunch:{},grab:{},menus:{},hidden:{},made:{},extras:{breakfast:0,lunch:0,dinner:1},grocery:{},basis:{},estimates:{},prices:{},stepsDone:{},foods:{},foodUse:{},foodEdit:{},foodHide:{}};
 
 /* =============== Helpers =============== */
 const pad=n=>String(n).padStart(2,'0');
@@ -736,10 +736,27 @@ function lastOf(arr){return arr&&arr.length?arr.slice().sort()[arr.length-1]:nul
 function daysSince(arr){const l=lastOf(arr);return l?diffD(todayStr(),l):null;}
 function agoText(arr,verb){const n=daysSince(arr);const V=verb.charAt(0).toUpperCase()+verb.slice(1);return n==null?'Never '+verb:n<=0?V+' today':V+' '+n+(n===1?' day':' days')+' ago';}
 function rating(k){return n0(S.profile.ratings&&S.profile.ratings[k]);}
+/* ===== Household ratings =====
+   Each person's stars stay in their own profile and are mirrored to house.ratings[recipe][name] so both
+   phones can see them. The household average decides how often a meal comes up and whether it is in
+   Highest rated; each person's own low rating (2 stars or less) holds just their own portion to 1 serving,
+   so a meal one of you loves still gets made without the other one eating a full plate of it. */
+function hRatings(k){const o=Object.assign({},(S.house&&S.house.ratings&&S.house.ratings[k])||{}),me=myKey(),mine=rating(k);
+  if(mine)o[me]=mine;else delete o[me];for(const n in o)if(!(n0(o[n])>0))delete o[n];return o;}
+function hAvg(k){const v=Object.values(hRatings(k)).map(Number);return v.length?v.reduce((a,b)=>a+b,0)/v.length:0;}
+function personRating(k,who){const w=String(who||'').toLowerCase();if(!w||w===myKey())return rating(k);return n0(((S.house&&S.house.ratings&&S.house.ratings[k])||{})[w]);}
+function dislikeCap(k,who){const r=personRating(k,who);return r&&r<=2?1:0;}
+function pName(n){const m=MEMBERS.find(x=>x.name.toLowerCase()===n);return m?m.name:n.charAt(0).toUpperCase()+n.slice(1);}
+const fmtAvg=a=>String(Math.round(a*10)/10);
+function ratingText(k){const o=hRatings(k),ks=Object.keys(o).sort();if(!ks.length)return '';return ks.map(n=>pName(n)+' '+o[n]).join(', ')+(ks.length>1?', average '+fmtAvg(hAvg(k)):'');}
+const TOP_MIN=3.5;
+const byTop=(a,b)=>(hAvg(b)-hAvg(a))||(Object.keys(hRatings(b)).length-Object.keys(hRatings(a)).length)||abc(R[a].name,R[b].name);
+function syncRatings(){if(S.rSynced||!S.house||!S.profile||!S.profile.ratings||S.houseLive===false)return;S.rSynced=true;
+  const me=myKey(),H=S.house.ratings||{};for(const k in S.profile.ratings){const v=n0(S.profile.ratings[k]);if(v>0&&n0((H[k]||{})[me])!==v)hset(['ratings',k,me],v);}}
 function stars(k){const r=rating(k);let h='<span class="stars" role="group" aria-label="Rate '+esc(R[k].name)+'">';for(let i=1;i<=5;i++)h+='<button class="star'+(i<=r?' on':'')+'" data-action="rate" data-k="'+k+'" data-v="'+i+'" aria-label="Rate '+i+' of 5">&#9733;</button>';return h+'</span>';}
 function recipeMeta(k){return esc(agoText(S.house.made[k],'made'))+'. '+esc(agoText(S.profile.eaten[k],'eaten'))+'.';}
 function ranked(pool){let p=(POOLS[pool]||[]).filter(k=>!isHidden(k));if(!p.length)p=Object.keys(R).filter(k=>R[k].cat==='main'&&!isHidden(k));
-  const sc=k=>{const r=rating(k)||3,ds=daysSince(S.house.made[k]);let s=r*10;if(ds!=null&&ds<10)s-=25;if(r&&r<=2)s-=20;return s;};
+  const sc=k=>recipeScore(k);
   return p.slice().sort((a,b)=>sc(b)-sc(a));}
 /* One-time repair (Oct 7, 2026): the week of Oct 5 menu was overwritten by an old copy on a device before the houseLive guard existed.
    Puts back the picks from Karl's Oct 5 report, once, only from server-confirmed data, only during that week; the day grid (cells) is left alone.
@@ -805,12 +822,12 @@ function isPiece(r){return r.step===1&&r.kcal<200;}
 function capFor(key){const c=S.house&&S.house.caps&&S.house.caps[key];return c?n0(c):0;}
 function capSelect(key){const r=R[key],c=capFor(key),auto=isPiece(r)?'Auto (no cap, small pieces)':'Auto (2)';
   return '<label class="capsel">Most per meal <select data-cap="'+key+'" aria-label="Most servings per meal for '+esc(r.name)+'"><option value="">'+auto+'</option>'+[1,2,3,4,5,6,8].map(n=>'<option value="'+n+'"'+(c===n?' selected':'')+'>'+n+'</option>').join('')+'</select></label>';}
-function portion(key,slotKcal,slot,date){
+function portion(key,slotKcal,slot,date,who){
   const r=R[key];if(!r)return null;if(r.cat==='grab')return grabPortion(key);
   const pk=date?snackPicks(monday(date)):null;
   const sd0=sideFor(key,date),sd=sd0&&!fHidden('side:'+sd0)&&(!SIDES[sd0]||SIDES[sd0].custom||inCat('side:'+sd0,'side'))?sd0:null,side=sd?SIDES[sd]:null,veg=(slot==='lunch'||slot==='dinner')?VEG:null;
   const base=(side?side.kcal:0)+(veg?veg.kcal:0);
-  const cap=capFor(key),max=cap||(isPiece(r)?Math.min(10,Math.max(4,Math.ceil(slotKcal*1.2/r.kcal))):MAX_SERVINGS);
+  const cap=capFor(key),dc=dislikeCap(key,who);let max=cap||(isPiece(r)?Math.min(10,Math.max(4,Math.ceil(slotKcal*1.2/r.kcal))):MAX_SERVINGS);if(dc)max=Math.min(max,dc);
   const fl=(FILLER_BY_SLOT[slot]||[]).filter(k=>!(r.side==='fruit'&&(k==='banana'||k==='apple'))&&!((sd==='potato'||sd==='mash')&&k==='fries')&&!(sd==='mac'&&k==='chips')&&!fHidden('fill:'+k)&&inCat('fill:'+k,'side')&&(!pk||pk.includes(FILLER_ITEM[k]))),fk=fl.length?fl[(key.length+slot.length)%fl.length]:null,F=fk?FILLERS[fk]:null;
   let best=null;
   for(const n of servingGrid(key,max,isPiece(r))){
@@ -820,7 +837,7 @@ function portion(key,slotKcal,slot,date){
   const n=best.n,u=best.u,sum=(k)=>n*r[k]+(side?side[k]:0)+(veg?veg[k]:0)+(u&&F?u*F[k]:0);
   const items=[amountText(key,n)];if(side)items.push(side.name);if(u&&F)items.push(u===1?F.name:F.name2);if(veg)items.push(veg.name);
   const P=(pid,label,o,m)=>({pid,label,kcal:o.kcal*m,p:o.p*m,c:o.c*m,f:o.f*m}),cparts=[P('main',r.name+', '+amountText(key,n),r,n)];if(side)cparts.push(P('side',side.name,side,1));if(u&&F)cparts.push(P('fill',u===1?F.name:F.name2,F,u));if(veg)cparts.push(P('veg','Green vegetables or a side salad (1 1/2 cups)',veg,1));
-  return {key,n,amt:amountText(key,n),name:r.name,url:r.url,mush:r.mush,items,cparts,filler:u?{k:fk,u}:null,kcal:Math.round(sum('kcal')),p:Math.round(sum('p')),c:Math.round(sum('c')),f:Math.round(sum('f')),prep:r.note};
+  return {key,n,capped:dc?personRating(key,who):0,amt:amountText(key,n),name:r.name,url:r.url,mush:r.mush,items,cparts,filler:u?{k:fk,u}:null,kcal:Math.round(sum('kcal')),p:Math.round(sum('p')),c:Math.round(sum('c')),f:Math.round(sum('f')),prep:r.note};
 }
 function plannedMeals(date){
   const t=targetsFor(date),sh=shares(date),l=S.days[date]||{},d=dow(date),out={};
@@ -963,6 +980,7 @@ function notesPanel(){
   return h;
 }
 function render(){
+  syncRatings();
   const app=document.getElementById('app');
   if(S.scanning)stopScan();
   if(!S.ready){app.innerHTML=S.screen||'<main><p>Loading...</p></main>';return;}
@@ -1161,7 +1179,8 @@ function mealCard(date,slot,m,time,sug){
   if(m.cparts&&m.cparts.length>1)h+=partsList(date,slot,m);
   else if((m.key||!m.fixed)&&m.items&&m.items.length)h+='<div class="src" style="margin:-2px 0 6px">'+m.items.map(x=>x===VEG.name?'Green vegetables or a side salad':x).map(esc).join(' &middot; ')+'</div>';
   h+=macroLine(m);
-  if(m.key&&R[m.key]&&!m.revised)h+='<div class="row" style="margin:4px 0 8px">'+stars(m.key)+'</div>';
+  if(m.key&&R[m.key]&&!m.revised){const others=Object.keys(hRatings(m.key)).filter(n=>n!==myKey()).length;h+='<div class="row" style="margin:4px 0 8px;align-items:center">'+stars(m.key)+(others?'<span class="src">'+esc(ratingText(m.key))+'</span>':'')+'</div>';
+    if(m.capped)h+='<div class="src" style="margin:-4px 0 8px">Kept to 1 serving because you rated it '+m.capped+' star'+(m.capped>1?'s':'')+'.</div>';}
   if(log){h+='<div class="logged'+(log.status==='skip'?' skip':'')+'">'+(log.status==='skip'?'Marked as skipped.':'Logged: '+esc(log.name)+(log.amt?' ('+esc(log.amt)+')':'')+', '+fmtN(log.kcal)+' kcal and '+fmtN(log.p)+' g protein.')+(log.status==='plan'&&canAmt(m)?' <button class="btn ghost" data-action="amt" data-slot="'+slot+'">Change amount</button>':'')+(log.status==='plan'&&!m.fixed?' <button class="btn ghost" data-action="addon" data-slot="'+slot+'">Add to this meal</button>':'')+' <button class="btn ghost" data-action="clearmeal" data-slot="'+slot+'">Change</button>'+(m.fixed==='extra'?' <button class="btn ghost" data-action="delxmeal" data-slot="'+slot+'">Remove this meal</button>':'')+'</div>';
     if(S.amtOpen===slot&&canAmt(m))h+=amountPanel(slot,m,log.n||m.n);
     if(S.fp&&S.fp.tgt==='addon'&&S.fp.slot===slot)h+=foodPicker();}
@@ -3891,7 +3910,7 @@ function eaters(){
   for(const m of MEMBERS){if(out.some(p=>String(p.name).toLowerCase()===m.name.toLowerCase()))continue;out.push({id:'est:'+m.name,name:m.name,est:true,kcal:n0((S.house.estimates||{})[m.name])||(m.preset==='karl'?2300:1800)});}
   return out;
 }
-function portionFor(p,key,date,slot){return portion(key,p.me?targetsFor(date).kcal*(shares(date)[slot]||BASIS[slot]):p.kcal*BASIS[slot],slot,date);}
+function portionFor(p,key,date,slot){return portion(key,p.me?targetsFor(date).kcal*(shares(date)[slot]||BASIS[slot]):p.kcal*BASIS[slot],slot,date,p.me?null:p.name);}
 function fmtS(n){return fmtNum(Math.round(n*4)/4||0.25);}
 function rolePlan(wk){
   const m=menuFor(wk),tot=prepTotals(wk);
@@ -3990,12 +4009,14 @@ function mpPlan(wk){
   h+='<div class="row" style="margin:14px 0"><button class="btn primary" data-action="mpstep" data-v="prep">Next: Cooking day</button></div>';
   return h+viewLibrary();
 }
-function recipeScore(k){const r=rating(k)||3,ds=daysSince(S.house.made[k]);let s=r*10;if(ds!=null&&ds<10)s-=25;if(rating(k)&&rating(k)<=2)s-=20;return s;}
+function recipeScore(k){const a=hAvg(k),r=a||3,ds=daysSince(S.house.made[k]);let s=r*10;if(ds!=null&&ds<10)s-=25;if(a&&a<=2)s-=20;return s;}
 function pickerHTML(role,cat,cur){
-  const tag=S.pickTag||'',ks=Object.keys(R).filter(k=>R[k].cat===cat&&!isHidden(k)&&k!==cur&&tagMatch(k,tag)).sort(tag?byName:byTagName);
+  const tag=S.pickTag||'',ks=Object.keys(R).filter(k=>R[k].cat===cat&&!isHidden(k)&&k!==cur&&tagMatch(k,tag)).sort(tag==='top'?byTop:tag?byName:byTagName);
   let h='<div class="picker"><label class="f">Search<input type="text" id="pickq" placeholder="Search by name" autocomplete="off"></label>';
-  if(cat==='main'){h+='<div class="row" style="margin:8px 0"><button class="btn'+(!tag?' on':'')+'" data-action="picktag" data-v="">All</button>';h+='<button class="btn'+(tag==='slow'?' on':'')+'" data-action="picktag" data-v="slow">Slow cooker</button>';for(const t in TAGS)if(t!=='bfast'&&t!=='grab')h+='<button class="btn'+(tag===t?' on':'')+'" data-action="picktag" data-v="'+t+'">'+esc(TAGS[t])+'</button>';h+='</div>';}
-  let lastT=null;for(const k of ks){const x=R[k];if(!tag&&x.tag!==lastT){lastT=x.tag;h+='<div class="subhead pickhead" data-t="'+x.tag+'">'+esc(TAGS[x.tag])+'</div>';}h+='<div class="prep-row pickrow" data-t="'+x.tag+'" data-q="'+esc(x.name.toLowerCase()+' '+TAGS[x.tag].toLowerCase())+'"><div><strong>'+esc(x.name)+'</strong><div class="src">'+esc(TAGS[x.tag])+(isSlow(k)?', slow cooker':'')+'. '+x.kcal+' kcal and '+x.p+' g protein per serving.'+(rating(k)?' Rated '+rating(k)+' of 5.':'')+' '+recipeMeta(k)+'</div></div><button class="btn primary" data-action="pickuse" data-v="'+role+'" data-k="'+k+'">Use this</button></div>';}
+  h+='<div class="row" style="margin:8px 0"><button class="btn'+(!tag?' on':'')+'" data-action="picktag" data-v="">All</button><button class="btn'+(tag==='top'?' on':'')+'" data-action="picktag" data-v="top">Highest rated</button>';
+  if(cat==='main'){h+='<button class="btn'+(tag==='slow'?' on':'')+'" data-action="picktag" data-v="slow">Slow cooker</button>';for(const t in TAGS)if(t!=='bfast'&&t!=='grab')h+='<button class="btn'+(tag===t?' on':'')+'" data-action="picktag" data-v="'+t+'">'+esc(TAGS[t])+'</button>';}
+  h+='</div>';if(tag==='top'&&!ks.length)h+='<p class="src">No meals here average '+TOP_MIN+' stars or better yet.</p>';
+  let lastT=null;for(const k of ks){const x=R[k];if(!tag&&x.tag!==lastT){lastT=x.tag;h+='<div class="subhead pickhead" data-t="'+x.tag+'">'+esc(TAGS[x.tag])+'</div>';}h+='<div class="prep-row pickrow" data-t="'+x.tag+'" data-q="'+esc(x.name.toLowerCase()+' '+TAGS[x.tag].toLowerCase())+'"><div><strong>'+esc(x.name)+'</strong><div class="src">'+esc(TAGS[x.tag])+(isSlow(k)?', slow cooker':'')+'. '+x.kcal+' kcal and '+x.p+' g protein per serving.'+(ratingText(k)?' Rated: '+esc(ratingText(k))+'.':'')+' '+recipeMeta(k)+'</div></div><button class="btn primary" data-action="pickuse" data-v="'+role+'" data-k="'+k+'">Use this</button></div>';}
   return h+'<button class="btn ghost" data-action="pickclose">Close</button></div>';
 }
 function cellOptions(wk,d,slot,cur,def){
@@ -4039,19 +4060,20 @@ function mpPrep(wk){
 
 function recipeOptions(cat,sel){
   let o='';for(const t in TAGS){const ks=Object.keys(R).filter(x=>R[x].cat===cat&&R[x].tag===t&&(!isHidden(x)||x===sel)).sort(byName);if(!ks.length)continue;
-    o+='<optgroup label="'+esc(TAGS[t])+'">'+ks.map(x=>'<option value="'+x+'"'+(x===sel?' selected':'')+'>'+(rating(x)?'&#9733;'+rating(x)+' ':'')+esc(R[x].name)+' ('+R[x].kcal+' kcal, '+R[x].p+' g protein)</option>').join('')+'</optgroup>';}
+    o+='<optgroup label="'+esc(TAGS[t])+'">'+ks.map(x=>'<option value="'+x+'"'+(x===sel?' selected':'')+'>'+(hAvg(x)?'&#9733;'+fmtAvg(hAvg(x))+' ':'')+esc(R[x].name)+' ('+R[x].kcal+' kcal, '+R[x].p+' g protein)</option>').join('')+'</optgroup>';}
   return o;
 }
 function viewLibrary(){
-  const tag=S.libTag||'',keys=Object.keys(R).sort(tag?byName:byTagName),vis=keys.filter(k=>!isHidden(k)).length;
+  const tag=S.libTag||'',keys=Object.keys(R).sort(tag==='top'?byTop:tag?byName:byTagName),vis=keys.filter(k=>!isHidden(k)).length,topN=keys.filter(k=>!isHidden(k)&&R[k].cat!=='grab'&&tagMatch(k,'top')).length;
   let h='<div class="section"><h2>Recipe library</h2><div class="card"><p style="margin-top:0">'+vis+' recipes from EmilyBites, Skinnytaste, and similar sites, with each source\'s posted nutrition per serving. Tap Add to this week on any recipe to put it into the plan above. Recipes marked Full recipe in app have their ingredients and steps built in.</p>'+
     '<label class="f">Search recipes<input type="text" id="libq" placeholder="Example: teriyaki, pulled pork, burrito" autocomplete="off"></label><div class="row" style="margin:10px 0">'+
     '<button class="btn'+(!tag?' on':'')+'" data-action="libtag" data-v="">All</button>';
+  h+='<button class="btn'+(tag==='top'?' on':'')+'" data-action="libtag" data-v="top">Highest rated ('+topN+')</button>';
   h+='<button class="btn'+(tag==='slow'?' on':'')+'" data-action="libtag" data-v="slow">Slow cooker ('+POOLS.slow.length+')</button>';for(const t in TAGS)if(t!=='grab')h+='<button class="btn'+(tag===t?' on':'')+'" data-action="libtag" data-v="'+t+'">'+esc(TAGS[t])+' ('+POOLS[t].length+')</button>';
-  h+='</div><div id="liblist">';
+  h+='</div>'+(tag==='top'?'<p class="src" style="margin:0 0 8px">Meals the two of you average '+TOP_MIN+' stars or better, best first. '+(topN?'':'Nothing qualifies yet. Rate meals with the stars on the Today page or below and they will show up here.')+'</p>':'')+'<div id="liblist">';
   let lastT=null;for(const k of keys){const r=R[k];if(isHidden(k)||r.cat==='grab'||!tagMatch(k,tag))continue;
     if(!tag&&r.tag!==lastT){lastT=r.tag;h+='<div class="subhead libhead" data-t="'+r.tag+'">'+esc(TAGS[r.tag])+'</div>';}
-    h+='<div class="librow" data-t="'+r.tag+'" data-q="'+esc((r.name+' '+TAGS[r.tag]+' '+srcName(r.url)).toLowerCase())+'"><div class="prep-row"><div><a href="'+esc(r.url)+'" target="_blank" rel="noopener">'+esc(r.name)+'</a>'+(RD[k]?' <span class="tag good">Full recipe in app</span>':'')+'<div class="src">'+esc(TAGS[r.tag])+', '+esc(srcName(r.url))+'. Per '+esc(r.serving)+': '+r.kcal+' kcal, '+r.p+' g protein, '+r.c+' g carbs, '+r.f+' g fat.'+(r.mush?' '+MUSH:'')+'</div><div class="row">'+stars(k)+'<span class="src">'+recipeMeta(k)+'</span></div>'+(S.addKey===k?'<div class="row" style="margin-top:6px">'+roles().filter(x=>x.cat===r.cat).map(x=>'<button class="btn" data-action="addto" data-v="'+x.role+'" data-k="'+k+'">'+esc(x.label)+(x.session==='sun'?' (Sunday)':'')+'</button>').join('')+'</div>':'')+'</div><div style="display:grid;gap:4px;justify-items:end"><button class="btn primary" data-action="addopen" data-k="'+k+'">'+(S.addKey===k?'Cancel':'Add to this week')+'</button>'+madeBtn(k)+'<button class="btn ghost" data-action="hide" data-k="'+k+'">'+(S.confirmHide===k?'Tap again to remove':'Remove')+'</button></div></div>'+recBlock(k,'lib',0)+'</div>';}
+    h+='<div class="librow" data-t="'+r.tag+'" data-q="'+esc((r.name+' '+TAGS[r.tag]+' '+srcName(r.url)).toLowerCase())+'"><div class="prep-row"><div><a href="'+esc(r.url)+'" target="_blank" rel="noopener">'+esc(r.name)+'</a>'+(RD[k]?' <span class="tag good">Full recipe in app</span>':'')+'<div class="src">'+esc(TAGS[r.tag])+', '+esc(srcName(r.url))+'. Per '+esc(r.serving)+': '+r.kcal+' kcal, '+r.p+' g protein, '+r.c+' g carbs, '+r.f+' g fat.'+(r.mush?' '+MUSH:'')+'</div><div class="row">'+stars(k)+(ratingText(k)?'<span class="src">'+esc(ratingText(k))+'.</span>':'')+'<span class="src">'+recipeMeta(k)+'</span></div>'+(S.addKey===k?'<div class="row" style="margin-top:6px">'+roles().filter(x=>x.cat===r.cat).map(x=>'<button class="btn" data-action="addto" data-v="'+x.role+'" data-k="'+k+'">'+esc(x.label)+(x.session==='sun'?' (Sunday)':'')+'</button>').join('')+'</div>':'')+'</div><div style="display:grid;gap:4px;justify-items:end"><button class="btn primary" data-action="addopen" data-k="'+k+'">'+(S.addKey===k?'Cancel':'Add to this week')+'</button>'+madeBtn(k)+'<button class="btn ghost" data-action="hide" data-k="'+k+'">'+(S.confirmHide===k?'Tap again to remove':'Remove')+'</button></div></div>'+recBlock(k,'lib',0)+'</div>';}
   const hid=keys.filter(isHidden).sort(byName);
   if(hid.length){h+='</div><details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600">Removed recipes ('+hid.length+')</summary><div>';for(const k of hid)h+='<div class="prep-row"><div>'+esc(R[k].name)+'</div><button class="btn" data-action="unhide" data-k="'+k+'">Restore</button></div>';h+='</div></details><div>';}
   return h+'</div></div></div>';
@@ -4208,7 +4230,8 @@ function buildReport(n){
   }
   ln('');ln('Summary: average '+(nK?Math.round(sumK/nK):'n/a')+' kcal and '+(nK?Math.round(sumP/nK):'n/a')+' g protein on '+nK+' fully logged days. Workouts completed '+wDone+' of '+wPlan+'. Step goal met on '+stepsHit+' of '+stepsDays+' logged days.');
   const wk=monday(td),m=menuFor(wk);const ch=Object.entries(m.cells||{});if(ch.length)ln('Single-meal changes this week (day 0 = Monday): '+ch.map(([k,v])=>k+' = '+(R[v]?R[v].name:v)).join('; ')+'.');ln('This week\'s cooking plan: '+['b1','b2','m1','m2','m3'].map(k=>k+' = '+(R[m[k]]?R[m[k]].name:'n/a')).join('; ')+'; midweek cook on '+DAYN[midDay(m)]+'.');
-  const rated=Object.keys(p.ratings||{}).filter(k=>R[k]);if(rated.length)ln('Ratings: '+rated.map(k=>R[k].name+' '+p.ratings[k]+'/5').join('; ')+'.');
+  const rated=[...new Set(Object.keys(p.ratings||{}).concat(Object.keys((S.house&&S.house.ratings)||{})))].filter(k=>R[k]&&Object.keys(hRatings(k)).length).sort(byTop);
+  if(rated.length)ln('Ratings (stars out of 5 by person, with the household average; anyone at 2 stars or less is held to 1 serving of that meal): '+rated.map(k=>R[k].name+' '+ratingText(k)).join('; ')+'.');
   const made=Object.keys(p.made||{}).filter(k=>R[k]&&p.made[k].length&&p.made[k][p.made[k].length-1]>=addD(td,-28));if(made.length)ln('Made in the last 4 weeks: '+made.map(k=>R[k].name+' (last '+lastOf(p.made[k])+')').join('; ')+'.');
   const hid=Object.keys(p.hidden||{}).filter(k=>R[k]);if(hid.length)ln('Removed from my list: '+hid.map(k=>R[k].name).join('; ')+'.');
   {const others=Object.keys(S.shared||{}).filter(u=>u!==S.uid);
@@ -4726,7 +4749,7 @@ document.addEventListener('click',ev=>{
   if(a==='shuffle'){const wk=curMenuWeek(),m=menuFor(wk),sg=suggestMenu(wk,n0(m.seed)+1,m.mid);if(m.cells)sg.cells=m.cells;setMenu(wk,sg);render();return;}
   if(a==='savemenu'){const wk=curMenuWeek();setMenu(wk,clone(menuFor(wk)));render();return;}
   if(a==='resetmenu'){hdel(['menus',curMenuWeek()]);render();return;}
-  if(a==='rate'){const k=b.dataset.k,n=+v;S.profile.ratings[k]=rating(k)===n?0:n;if(!S.profile.ratings[k])delete S.profile.ratings[k];saveProfile();render();return;}
+  if(a==='rate'){const k=b.dataset.k,n=+v,me=myKey();S.profile.ratings[k]=rating(k)===n?0:n;if(!S.profile.ratings[k]){delete S.profile.ratings[k];hdel(['ratings',k,me]);}else hset(['ratings',k,me],S.profile.ratings[k]);saveProfile();render();return;}
   if(a==='hide'){const k=b.dataset.k;if(S.confirmHide!==k){S.confirmHide=k;render();return;}S.confirmHide=null;hset(['hidden',k],true);render();return;}
   if(a==='unhide'){hdel(['hidden',b.dataset.k]);render();return;}
   if(a==='made'){const k=b.dataset.k,d=b.dataset.d||todayStr(),arr=(S.house.made[k]=(S.house.made[k]||[]).slice());const i=arr.indexOf(d);if(i>=0)arr.splice(i,1);else{arr.push(d);arr.sort();if(arr.length>30)arr.shift();}hset(['made',k],arr);render();return;}
