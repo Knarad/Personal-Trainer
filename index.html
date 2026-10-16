@@ -462,9 +462,16 @@ const R={
   grabcottage:{cat:'grab',tag:'grab',name:'Cottage Cheese, Pineapple, and Crackers',url:'',serving:'1 lunch',yield:null,kcal:485,p:32,c:55,f:18,step:1,note:'Pack it the night before.'},
   grabeggbox:{cat:'grab',tag:'grab',name:'Hard-Boiled Egg Protein Box',url:'',serving:'1 lunch',yield:null,kcal:444,p:23,c:49,f:20,step:1,note:'Hard-boil the week\u2019s eggs on Sunday.'},
 
+  // ===== Snacks to make (household recipes; nutrition is calculated from the ingredients, so there is no source link) =====
+  snpbball:{cat:'snack',tag:'snack',name:'Peanut Butter Protein Balls',url:'',serving:'2 balls',yield:10,kcal:238,p:13,c:23,f:12,step:1,note:'No bake. One batch makes 20 balls: 10 snacks of 2, or 5 snacks of 4.'},
+  snchocball:{cat:'snack',tag:'snack',name:'Chocolate Peanut Butter Protein Balls',url:'',serving:'2 balls',yield:10,kcal:242,p:13,c:24,f:12,step:1,note:'No bake. One batch makes 20 balls: 10 snacks of 2, or 5 snacks of 4.'},
+  sncocoball:{cat:'snack',tag:'snack',name:'Coconut Protein Balls',url:'',serving:'2 balls',yield:10,kcal:227,p:12,c:23,f:11,step:1,note:'No bake. One batch makes 20 balls: 10 snacks of 2, or 5 snacks of 4.'},
+  sneggs:{cat:'snack',tag:'snack',name:'Hard-Boiled Eggs',url:'',serving:'2 eggs',yield:6,kcal:140,p:12,c:1,f:10,step:1,note:'A dozen at a time covers 6 snacks of 2 eggs.'},
+  snshake:{cat:'snack',tag:'snack',name:'Protein Shake',url:'',serving:'1 shake',yield:1,kcal:150,p:25,c:4,f:4,step:1,note:'Made with almond milk. With water instead it is about 120 calories.'},
+
   buffsalad:{cat:'main',tag:'apps',name:'Buffalo Chicken Salad',url:EB+'/2021/07/buffalo-chicken-salad.html',serving:'3/4 cup',yield:6,kcal:204,p:18,c:14,f:8,step:0.5,side:'bun',note:'Great on a roll or in a wrap for lunch.'},
 };
-const TAGS={bfast:'Breakfast',pasta:'Pasta',pizza:'Pizza-style',mexican:'Mexican',asian:'Asian rice and chicken',chicken:'Chicken',comfort:'Comfort food',pork:'Pulled pork',soup:'Soups and chili',apps:'Appetizers and handhelds',italian:'Italian',grab:'Grab-and-go lunches'};
+const TAGS={bfast:'Breakfast',pasta:'Pasta',pizza:'Pizza-style',mexican:'Mexican',asian:'Asian rice and chicken',chicken:'Chicken',comfort:'Comfort food',pork:'Pulled pork',soup:'Soups and chili',apps:'Appetizers and handhelds',italian:'Italian',grab:'Grab-and-go lunches',snack:'Snacks to make'};
 const POOLS={};for(const k in R){const t=R[k].tag;(POOLS[t]=POOLS[t]||[]).push(k);}POOLS.breakfast=POOLS.bfast;
 /* Slow cooker recipes: a filter that cuts across the cuisine categories, and the midweek cook's go-to every other week. */
 const SLOW=new Set(['salsachicken','stenchiladas','sttacos','skinnyteriyaki','stuffing','ebpork','stpork','sttacochili','stcarnitas','rfwlbuffchili']);
@@ -522,7 +529,7 @@ const EVENING=[
   {needs:['cottage','pineapple'],name:'Cottage cheese and pineapple',items:['3/4 cup 2% cottage cheese','1/2 cup pineapple'],kcal:175,p:19,c:15,f:4},
   {needs:['whey','almondmilk'],name:'Protein shake with almond milk',items:['1 scoop whey protein','1 cup unsweetened almond milk'],kcal:150,p:25,c:4,f:4}
 ];
-const TUE_SNACK={name:'Protein shake on the drive home',items:['1 scoop whey protein with water'],kcal:120,p:24,c:3,f:2,prep:'Drink it on the drive home. Arriving at pizza night less hungry makes three slices feel like enough.'};
+const TUE_SNACK={needs:['whey'],name:'Protein shake on the drive home',items:['1 scoop whey protein with water'],kcal:120,p:24,c:3,f:2,prep:'Drink it on the drive home. Arriving at pizza night less hungry makes three slices feel like enough.'};
 // Karl does not like yogurt; Jen does, so these pools only drop yogurt items for him, never for her.
 const hasYogurt=x=>/yogurt/i.test(x.name+' '+(x.items||[]).join(' '));
 function likesYogurt(){return !(S.profile&&S.profile.name==='Karl');}
@@ -581,8 +588,7 @@ function pzTypesFor(pl){const T=allPzTypes();return Object.keys(T).filter(k=>T[k
 function newPzId(pre){return pre+Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
 const STAPLES=[
   {sec:'Vegetables for lunches and dinners',items:['Frozen broccoli and green beans','Salad greens and light dressing']},
-  {sec:'Prep supplies',items:['Snack bags for pre-portioning','Meal-prep containers with lids','Freezer bags for Thursday and Friday portions','Food scale']},
-  {sec:'Protein ball ingredients (for a homemade batch)',items:['Rolled oats','Peanut butter','Honey','Vanilla whey protein powder','Mini chocolate chips (peanut butter version)','Cocoa powder (chocolate version)','Shredded coconut (coconut version)']}
+  {sec:'Prep supplies',items:['Snack bags for pre-portioning','Meal-prep containers with lids','Freezer bags for Thursday and Friday portions','Food scale']}
 ];
 
 /* =============== Constants =============== */
@@ -945,7 +951,7 @@ function scheduleNeeds(){debounce('basis',()=>{if(!S.house||!S.profile)return;co
 function sharedSoon(){if(S._shPend)return;S._shPend=true;setTimeout(()=>{S._shPend=false;if(S.profile)wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2500);}
 function scheduleShared(){debounce('shared',()=>{if(!S.profile)return;wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2000);}
 /* App version shown in the header and stamped on every Claude report. Bump it with every index.html delivered. */
-const APP_VERSION='1.2';
+const APP_VERSION='1.3';
 function setSync(s){S.sync=s;const el=document.getElementById('sync');if(el)el.textContent=syncText();}
 function syncText(){return !navigator.onLine?'Offline; changes will sync':S.sync==='error'?'Last save failed':'Synced';}
 function nameOf(uid){if(uid===S.uid)return S.profile.name;const x=S.shared[uid];return (x&&x.name)||'Partner';}
@@ -1198,6 +1204,7 @@ function mealCard(date,slot,m,time,sug){
   if(m.cparts&&m.cparts.length>1)h+=partsList(date,slot,m);
   else if((m.key||!m.fixed)&&m.items&&m.items.length)h+='<div class="src" style="margin:-2px 0 6px">'+m.items.map(x=>x===VEG.name?'Green vegetables or a side salad':x).map(esc).join(' &middot; ')+'</div>';
   h+=macroLine(m);
+  if(SNACK_SLOTS.includes(slot)&&!m.key)h+=snackRecBlocks(snackRecipeKeys(m),'card'+slot);
   if(m.key&&R[m.key]&&!m.revised){const others=Object.keys(hRatings(m.key)).filter(n=>n!==myKey()).length;h+='<div class="row" style="margin:4px 0 8px;align-items:center">'+stars(m.key)+(others?'<span class="src">'+esc(ratingText(m.key))+'</span>':'')+'</div>';
     if(m.capped)h+='<div class="src" style="margin:-4px 0 8px">Kept to 1 serving because you rated it '+m.capped+' star'+(m.capped>1?'s':'')+'.</div>';}
   if(log){h+='<div class="logged'+(log.status==='skip'?' skip':'')+'">'+(log.status==='skip'?'Marked as skipped.':'Logged: '+esc(log.name)+(log.amt?' ('+esc(log.amt)+')':'')+', '+fmtN(log.kcal)+' kcal and '+fmtN(log.p)+' g protein.')+(log.status==='plan'&&canAmt(m)?' <button class="btn ghost" data-action="amt" data-slot="'+slot+'">Change amount</button>':'')+(log.status==='plan'&&!m.fixed?' <button class="btn ghost" data-action="addon" data-slot="'+slot+'">Add to this meal</button>':'')+' <button class="btn ghost" data-action="clearmeal" data-slot="'+slot+'">Change</button>'+(m.fixed==='extra'?' <button class="btn ghost" data-action="delxmeal" data-slot="'+slot+'">Remove this meal</button>':'')+'</div>';
@@ -1372,15 +1379,15 @@ const SNACK_ITEMS=[
   {id:'ham',role:'p',name:'Deli ham',sh:'Deli ham',por:'2 oz deli ham',por2:'4 oz deli ham',a:A.me,kcal:60,p:10,c:2,f:2},
   {id:'string',role:'p',name:'String cheese',sh:'String cheese',por:'1 string cheese',por2:'2 string cheese',a:A.da,kcal:80,p:7,c:1,f:6},
   {id:'cheddar',role:'p',name:'Cheddar cheese',sh:'Cheddar',por:'1 oz cheddar cheese',a:A.da,kcal:110,p:7,c:0,f:9},
-  {id:'eggs',role:'p',name:'Eggs for hard-boiling',sh:'Hard-boiled eggs',por:'2 hard-boiled eggs',a:A.da,kcal:140,p:12,c:1,f:10},
+  {id:'eggs',role:'p',name:'Eggs for hard-boiling',sh:'Hard-boiled eggs',por:'2 hard-boiled eggs',a:A.da,kcal:140,p:12,c:1,f:10,rk:'sneggs'},
   {id:'cottage',role:'p',name:'2% cottage cheese',sh:'Cottage cheese',por:'3/4 cup 2% cottage cheese',a:A.da,kcal:135,p:18,c:7,f:4},
   {id:'yogurt',role:'p',yog:1,name:'Nonfat Greek yogurt, 32 oz tub',sh:'Greek yogurt',por:'1 cup nonfat Greek yogurt',a:A.da,kcal:130,p:23,c:9,f:0},
-  {id:'whey',role:'p',name:'Whey protein powder',sh:'Protein shake',por:'1 scoop whey protein shaken with water',a:A.pa,kcal:120,p:24,c:3,f:2},
+  {id:'whey',role:'p',name:'Whey protein powder',sh:'Protein shake',por:'1 scoop whey protein shaken with water',a:A.pa,kcal:120,p:24,c:3,f:2,rk:'snshake'},
   {id:'tjerky',role:'p',name:'Turkey jerky',sh:'Turkey jerky',por:'1 oz turkey jerky',por2:'2 oz turkey jerky',a:A.sn,kcal:80,p:12,c:6,f:1},
   {id:'bjerky',role:'p',name:'Beef jerky',sh:'Beef jerky',por:'1 oz beef jerky',por2:'2 oz beef jerky',a:A.sn,kcal:80,p:11,c:6,f:1},
-  {id:'pbprotball',role:'p',name:'Peanut butter protein balls (estimate)',sh:'PB protein balls',por:'2 protein balls',por2:'4 protein balls',a:A.pa,kcal:210,p:11,c:21,f:10},
-  {id:'chocprotball',role:'p',name:'Chocolate protein balls (estimate)',sh:'Chocolate protein balls',por:'2 protein balls',por2:'4 protein balls',a:A.pa,kcal:200,p:11,c:23,f:8},
-  {id:'coconutprotball',role:'p',name:'Coconut protein balls (estimate)',sh:'Coconut protein balls',por:'2 protein balls',por2:'4 protein balls',a:A.pa,kcal:220,p:10,c:18,f:13},
+  {id:'pbprotball',role:'p',name:'Peanut butter protein balls (homemade)',sh:'PB protein balls',por:'2 protein balls',por2:'4 protein balls',a:A.pa,kcal:238,p:13,c:23,f:12,rk:'snpbball',shop:1},
+  {id:'chocprotball',role:'p',name:'Chocolate protein balls (homemade)',sh:'Chocolate protein balls',por:'2 protein balls',por2:'4 protein balls',a:A.pa,kcal:242,p:13,c:24,f:12,rk:'snchocball',shop:1},
+  {id:'coconutprotball',role:'p',name:'Coconut protein balls (homemade)',sh:'Coconut protein balls',por:'2 protein balls',por2:'4 protein balls',a:A.pa,kcal:227,p:12,c:23,f:11,rk:'sncocoball',shop:1},
   {id:'chips',role:'c',name:'Chips (snack-size bags make portions easy)',sh:'Chips',por:'1 oz chips (about 15)',a:A.sn,kcal:150,p:2,c:15,f:10},
   {id:'pretzels',role:'c',name:'Pretzels',sh:'Pretzels',por:'1 oz pretzels (a handful)',a:A.sn,kcal:110,p:3,c:23,f:1},
   {id:'crackers',role:'c',name:'Whole-grain crackers',sh:'Crackers',por:'6 whole-grain crackers',a:A.sn,kcal:120,p:3,c:20,f:4},
@@ -1388,7 +1395,7 @@ const SNACK_ITEMS=[
   {id:'almonds',role:'c',name:'Almonds',sh:'Almonds',por:'15 almonds',a:A.sn,kcal:105,p:4,c:4,f:9},
   {id:'fruitsnacks',role:'c',name:'Fruit snack pouches',sh:'Fruit snacks',por:'1 pouch fruit snacks',a:A.sn,kcal:80,p:1,c:19,f:0},
   {id:'granola',role:'x',name:'Granola (yogurt topping)',sh:'Granola',por:'3 tbsp granola',a:A.pa,kcal:90,p:2,c:14,f:3},
-  {id:'almondmilk',role:'x',name:'Unsweetened almond milk (for shakes)',sh:'Almond milk',por:'1 cup unsweetened almond milk',a:A.da,kcal:30,p:1,c:1,f:3},
+  {id:'almondmilk',role:'x',name:'Unsweetened almond milk (for shakes)',sh:'Almond milk',por:'1 cup unsweetened almond milk',a:A.da,kcal:30,p:1,c:1,f:3,rk:'snshake'},
   {id:'apples',role:'f',name:'Apples',sh:'Apple',por:'1 medium apple',a:A.pr,kcal:95,p:0,c:25,f:0},
   {id:'bananas',role:'f',name:'Bananas',sh:'Banana',por:'1 medium banana',a:A.pr,kcal:105,p:1,c:27,f:0},
   {id:'oranges',role:'f',name:'Oranges',sh:'Orange',por:'1 medium orange',a:A.pr,kcal:62,p:1,c:15,f:0},
@@ -1494,6 +1501,76 @@ function lunchCard(wk){const ppl=eaters(),prev=addD(wk,-7),hasPrev=S.house.lunch
 function grabPortion(key){const r=R[key],d=RD[key];return {key,n:1,grab:true,name:r.name,url:'',items:d?d.ing.filter(t=>t[0]!=null).map(t=>(t[0]+(t[1]?' '+unitLabel(t[1],t[0]):'')+' '+t[2]).trim()):[],kcal:r.kcal,p:r.p,c:r.c,f:r.f,prep:r.note};}
 
 const RD={
+  snpbball:{prep:15,cook:0,chill:'15 to 30 minutes',note:'Numbers assume a whey powder with about 120 calories and 24 g of protein per 32 g scoop. A different powder shifts them a little.',ing:[
+    [1,'cup','old-fashioned rolled oats','',A.pa],
+    [0.75,'cup','creamy peanut butter','',A.ca],
+    [1/3,'cup','honey','',A.ca],
+    [3,'scoop','vanilla whey protein powder','about 32 g each, 96 g total',A.pa],
+    [0.25,'cup','mini chocolate chips','',A.pa],
+    [1,'tsp','vanilla extract','',A.sp],
+    [0.25,'cup','milk','any kind; add it a tablespoon at a time',A.da],
+    [null,'','salt','a pinch',A.sp]],
+    steps:[
+      'Stir the peanut butter, honey, and vanilla together in a large bowl until smooth. If the peanut butter is stiff, microwave it 15 to 20 seconds first.',
+      'Add the protein powder and the salt and stir until no dry powder is left. The mix will be thick.',
+      'Stir in the oats and the chocolate chips.',
+      'Add the milk 1 tablespoon at a time, just until the mix holds together when you squeeze it. If it turns sticky, stir in a little more oats or protein powder; if it stays crumbly, add a little more milk.',
+      'Chill the bowl 15 to 30 minutes so the mix is easier to roll.',
+      'Roll into 20 balls, about 1 1/2 tablespoons each. A small cookie scoop makes this quick.',
+      'Store in an airtight container in the fridge up to 1 week, or freeze up to 3 months. Two balls is one serving.']},
+  snchocball:{prep:15,cook:0,chill:'15 to 30 minutes',note:'Numbers assume a whey powder with about 120 calories and 24 g of protein per 32 g scoop. A different powder shifts them a little.',ing:[
+    [1,'cup','old-fashioned rolled oats','',A.pa],
+    [0.75,'cup','creamy peanut butter','',A.ca],
+    [1/3,'cup','honey','',A.ca],
+    [3,'scoop','chocolate whey protein powder','about 32 g each, 96 g total',A.pa],
+    [2,'tbsp','unsweetened cocoa powder','',A.pa],
+    [0.25,'cup','mini chocolate chips','',A.pa],
+    [1,'tsp','vanilla extract','',A.sp],
+    [1/3,'cup','milk','any kind; add it a tablespoon at a time',A.da],
+    [null,'','salt','a pinch',A.sp]],
+    steps:[
+      'Stir the peanut butter, honey, and vanilla together in a large bowl until smooth. If the peanut butter is stiff, microwave it 15 to 20 seconds first.',
+      'Add the protein powder and cocoa powder and the salt and stir until no dry powder is left. The mix will be thick.',
+      'Stir in the oats and the chocolate chips.',
+      'Add the milk 1 tablespoon at a time, just until the mix holds together when you squeeze it. If it turns sticky, stir in a little more oats or protein powder; if it stays crumbly, add a little more milk.',
+      'Chill the bowl 15 to 30 minutes so the mix is easier to roll.',
+      'Roll into 20 balls, about 1 1/2 tablespoons each. A small cookie scoop makes this quick.',
+      'Store in an airtight container in the fridge up to 1 week, or freeze up to 3 months. Two balls is one serving.']},
+  sncocoball:{prep:15,cook:0,chill:'15 to 30 minutes',note:'Numbers assume a whey powder with about 120 calories and 24 g of protein per 32 g scoop. A different powder shifts them a little.',ing:[
+    [1,'cup','old-fashioned rolled oats','',A.pa],
+    [0.5,'cup','unsweetened shredded coconut','',A.pa],
+    [0.5,'cup','creamy peanut butter','',A.ca],
+    [1/3,'cup','honey','',A.ca],
+    [3,'scoop','vanilla whey protein powder','about 32 g each, 96 g total',A.pa],
+    [0.25,'cup','mini chocolate chips','',A.pa],
+    [1,'tsp','vanilla extract','',A.sp],
+    [0.25,'cup','milk','any kind; add it a tablespoon at a time',A.da],
+    [null,'','salt','a pinch',A.sp]],
+    steps:[
+      'Stir the peanut butter, honey, and vanilla together in a large bowl until smooth. If the peanut butter is stiff, microwave it 15 to 20 seconds first. Stir in the coconut.',
+      'Add the protein powder and the salt and stir until no dry powder is left. The mix will be thick.',
+      'Stir in the oats and the chocolate chips.',
+      'Add the milk 1 tablespoon at a time, just until the mix holds together when you squeeze it. If it turns sticky, stir in a little more oats or protein powder; if it stays crumbly, add a little more milk.',
+      'Chill the bowl 15 to 30 minutes so the mix is easier to roll.',
+      'Roll into 20 balls, about 1 1/2 tablespoons each. A small cookie scoop makes this quick.',
+      'Store in an airtight container in the fridge up to 1 week, or freeze up to 3 months. Two balls is one serving.']},
+  sneggs:{prep:5,cookText:'about 10 minutes to boil, then 12 minutes covered off the heat',ing:[
+    [12,'','eggs','large',A.da],
+    [null,'','ice','for an ice bath',A.no]],
+    steps:[
+      'Set the eggs in a single layer in a large pot and cover them with cold water by about an inch.',
+      'Bring the water to a full boil over high heat.',
+      'Turn off the heat, cover the pot, and let the eggs sit 12 minutes.',
+      'While they sit, fill a large bowl with ice and cold water. Move the eggs into the ice bath with a slotted spoon and leave them 5 minutes.',
+      'Refrigerate them in the shell and eat within 1 week. They peel most easily under cool running water, starting from the wide end.']},
+  snshake:{prep:2,cook:0,ing:[
+    [1,'scoop','whey protein powder','about 32 g',A.pa],
+    [1,'cup','unsweetened almond milk','or 8 oz cold water',A.da],
+    [3,'','ice cubes','optional',A.no]],
+    steps:[
+      'Pour the almond milk into a shaker bottle or blender first, then add the protein powder. Liquid first keeps the powder from caking on the bottom.',
+      'Shake hard for 20 to 30 seconds, or blend with the ice for a thicker shake.',
+      'Drink it right away, since it separates if it sits.']},
   potroast:{prep:15,cook:360,cookText:'6 hours on high (longer if the meat does not yet pull apart with two forks)',ing:[
     [3,'lb','chuck roast','',A.me],
     [2.75,'cup','beef broth','1 3/4 cups plus 1 cup used in place of the recipe\u2019s wine',A.ca],
@@ -3854,7 +3931,7 @@ function toBase(q,u){return u==='tbsp'?q*3:u==='cup'?q*48:u==='lb'?q*16:q;}
 function fmtNum(x){const t3=Math.round(x*3);if(t3%3!==0&&Math.abs(x*3-t3)<0.06){const w3=Math.floor(t3/3);return (w3?w3+' ':'')+(t3%3)+'/3';}const e=Math.round(x*8),w=Math.floor(e/8),r=e%8,F=['','1/8','1/4','3/8','1/2','5/8','3/4','7/8'];if(e===0)return '1/8';return (w?w:'')+(r?(w?' ':'')+F[r]:'');}
 const PL={'sweet potato':'sweet potatoes','lime':'limes','onion':'onions','apple':'apples'};
 function itemName(i,u,q){return (!u&&q>1&&PL[i])?PL[i]:i;}
-function unitLabel(u,q){const P={can:'cans',slice:'slices',clove:'cloves',packet:'packets',patty:'patties',jar:'jars'};return q>1?(P[u]||u):u;}
+function unitLabel(u,q){const P={scoop:'scoops',can:'cans',slice:'slices',clove:'cloves',packet:'packets',patty:'patties',jar:'jars'};return q>1?(P[u]||u):u;}
 function fmtBase(b,fam){if(fam==='vol'){if(b<3)return fmtNum(b)+' tsp';if(b<12)return fmtNum(b/3)+' tbsp';const c=b/48;return fmtNum(c)+(c>1?' cups':' cup');}return b<16?fmtNum(b)+' oz':fmtNum(b/16)+' lb';}
 function multFor(key,wk){const m=menuFor(wk||curMenuWeek());return (m.mult&&m.mult[key])||1;}
 const BATCHN=['','1 batch','Double batch','Triple batch','4 batches'];
@@ -3883,9 +3960,13 @@ function recipePanel(key,batches){
   if(d.ahead)h+='<div class="note warn" style="margin:8px 0">'+esc(d.ahead)+'</div>';
   h+='<div class="subhead">Ingredients</div><ul class="ing">'+d.ing.map(t=>'<li>'+ingLine(t,b)+'</li>').join('')+'</ul>';
   h+='<div class="subhead">Steps</div>'+d.steps.map((s,i)=>{const id=key+'|'+i,on=!!(S.house&&S.house.stepsDone&&S.house.stepsDone[id]);return '<label class="stepitem'+(on?' done':'')+'"><input type="checkbox" data-rstep="'+id+'"'+(on?' checked':'')+'><span><strong>'+(i+1)+'.</strong> '+esc(s)+'</span></label>';}).join('');
-  if(!r.url)return h+'<div class="src" style="margin-top:8px">Nutrition uses typical label values.</div></div>';
+  if(!r.url)return h+'<div class="src" style="margin-top:8px">'+(r.cat==='snack'?'Nutrition is calculated from the ingredients above.':'Nutrition uses typical label values.')+'</div></div>';
   return h+'<div class="src" style="margin-top:8px">These steps are a shortened rewrite. <a href="'+esc(r.url)+'" target="_blank" rel="noopener">The original on '+esc(srcName(r.url))+'</a> has tips, photos, and variations.</div></div>';
 }
+function snackRecBlocks(keys,ctx){return keys.filter(k=>RD[k]&&R[k]).map(k=>{const id=ctx+':'+k,open=!!S.recOpen[id];return '<div class="row" style="margin-top:4px"><button class="btn ghost'+(open?' on':'')+'" data-action="recipe" data-id="'+id+'" aria-expanded="'+open+'">'+(open?'Hide ':'How to make: ')+esc(R[k].name)+'</button></div>'+(open?recipePanel(k,1):'');}).join('');}
+function snackRecipeKeys(m){if(!m)return [];const ids=(m.parts||[]).map(x=>String(x.id||'')).filter(s=>s.startsWith('s:')).map(s=>s.slice(2)).concat(m.needs||[]);
+  return [...new Set(ids.map(id=>SNACK_BY_ID[id]&&SNACK_BY_ID[id].rk).filter(Boolean))];}
+const SNACK_PREP=['snpbball','snchocball','sncocoball','sneggs'];
 function recBlock(key,ctx,total){if(!RD[key])return '';const id=ctx+':'+key,open=!!S.recOpen[id];
   return '<div class="row" style="margin-top:6px"><button class="btn'+(open?' on':'')+'" data-action="recipe" data-id="'+id+'" aria-expanded="'+open+'">'+(open?'Hide recipe':'Ingredients and steps')+'</button></div>'+(open?recipePanel(key,total?batchesFor(key,total):1):'');}
 function coverageNote(wk){return '';}
@@ -3982,7 +4063,7 @@ function mpSnacks(wk){
   h+='<div class="row" style="margin-bottom:12px">'+(prev.length?'<button class="btn" data-action="snkcopy">Same as last week ('+prev.length+')</button>':'')+(pk.size?'<button class="btn ghost" data-action="snkclear">Uncheck all</button>':'')+'</div>';
   h+='<div class="note'+(pk.size?' good':'')+'" style="margin-bottom:12px">'+(pk.size?pk.size+' picked for this week.':'Nothing picked yet, so snack slots show a reminder instead of a suggestion.')+(likesYogurt()?'':' Yogurt is never suggested for you; it is here for Jen.')+'</div><div class="card grocery">';
   for(const[g,title]of SNACK_GROUPS){h+='<h3>'+esc(title)+'</h3>';for(const x of SNACK_ITEMS.filter(x=>snackGroup(x)===g&&!fHidden('s:'+x.id)&&(x.custom||inCat('s:'+x.id,'snack'))).sort((a,b)=>abc(a.name,b.name))){const id='sk'+(n++),on=pk.has(x.id);
-    h+='<div class="gitem'+(on?' got':'')+'"><input type="checkbox" id="'+id+'" data-snk="'+x.id+'"'+(on?' checked':'')+'><div class="gbody"><label for="'+id+'">'+esc(x.name)+'</label><div class="src">'+(x.por?'Snack portion: '+esc(x.por)+', '+x.kcal+' kcal, '+x.p+' g protein':'Used to top up meals')+'</div></div></div>';}}
+    h+='<div class="gitem'+(on?' got':'')+'"><input type="checkbox" id="'+id+'" data-snk="'+x.id+'"'+(on?' checked':'')+'><div class="gbody"><label for="'+id+'">'+esc(x.name)+'</label><div class="src">'+(x.por?'Snack portion: '+esc(x.por)+', '+x.kcal+' kcal, '+x.p+' g protein':'Used to top up meals')+'</div>'+(x.rk?snackRecBlocks([x.rk],'snk'+x.id):'')+'</div></div>';}}
   return h+'</div>';
 }
 function supplyTally(wk){
@@ -4033,7 +4114,7 @@ function pickerHTML(role,cat,cur){
   const tag=S.pickTag||'',ks=Object.keys(R).filter(k=>R[k].cat===cat&&!isHidden(k)&&k!==cur&&tagMatch(k,tag)).sort(tag==='top'?byTop:tag?byName:byTagName);
   let h='<div class="picker"><label class="f">Search<input type="text" id="pickq" placeholder="Search by name" autocomplete="off"></label>';
   h+='<div class="row" style="margin:8px 0"><button class="btn'+(!tag?' on':'')+'" data-action="picktag" data-v="">All</button><button class="btn'+(tag==='top'?' on':'')+'" data-action="picktag" data-v="top">Highest rated</button>';
-  if(cat==='main'){h+='<button class="btn'+(tag==='slow'?' on':'')+'" data-action="picktag" data-v="slow">Slow cooker</button>';for(const t in TAGS)if(t!=='bfast'&&t!=='grab')h+='<button class="btn'+(tag===t?' on':'')+'" data-action="picktag" data-v="'+t+'">'+esc(TAGS[t])+'</button>';}
+  if(cat==='main'){h+='<button class="btn'+(tag==='slow'?' on':'')+'" data-action="picktag" data-v="slow">Slow cooker</button>';for(const t in TAGS)if(t!=='bfast'&&t!=='grab'&&t!=='snack')h+='<button class="btn'+(tag===t?' on':'')+'" data-action="picktag" data-v="'+t+'">'+esc(TAGS[t])+'</button>';}
   h+='</div>';if(tag==='top'&&!ks.length)h+='<p class="src">No meals here average '+TOP_MIN+' stars or better yet.</p>';
   let lastT=null;for(const k of ks){const x=R[k];if(!tag&&x.tag!==lastT){lastT=x.tag;h+='<div class="subhead pickhead" data-t="'+x.tag+'">'+esc(TAGS[x.tag])+'</div>';}h+='<div class="prep-row pickrow" data-t="'+x.tag+'" data-q="'+esc(x.name.toLowerCase()+' '+TAGS[x.tag].toLowerCase())+'"><div><strong>'+esc(x.name)+'</strong><div class="src">'+esc(TAGS[x.tag])+(isSlow(k)?', slow cooker':'')+'. '+x.kcal+' kcal and '+x.p+' g protein per serving.'+(ratingText(k)?' Rated: '+esc(ratingText(k))+'.':'')+' '+recipeMeta(k)+'</div></div><button class="btn primary" data-action="pickuse" data-v="'+role+'" data-k="'+k+'">Use this</button></div>';}
   return h+'<button class="btn ghost" data-action="pickclose">Close</button></div>';
@@ -4073,6 +4154,8 @@ function mpPrep(wk){
   let h=coverageNote(wk)+'<p class="prose" style="margin-top:0">Your cooking list for the week of '+fmtDate(wk)+', sized for everyone. Open each recipe for ingredients and steps, and tap Mark as made when it is done.</p>';
   h+='<div class="section" style="margin-top:0"><h2>Sunday, '+fmtShort(sun)+'</h2>'+(list.filter(x=>x.session==='sun').map(item).join('')||'<p class="hint">Nothing to cook.</p>')+'</div>';
   h+='<div class="section"><h2>'+DAYN[md]+', '+fmtShort(midD)+'</h2>'+(list.filter(x=>x.session==='mid').map(item).join('')||'<p class="hint">Nothing to cook.</p>')+'</div>';
+  {const sk=[...new Set(snackPicks(wk).map(id=>SNACK_BY_ID[id]&&SNACK_BY_ID[id].rk).filter(k=>SNACK_PREP.includes(k)))];
+    if(sk.length)h+='<div class="section"><h2>Snacks to make</h2><p class="src" style="margin-top:0">From this week\u2019s snack picks. Make these on Sunday with everything else.</p>'+sk.map(k=>'<div class="slot"><div class="when">Snack prep</div><h3>'+esc(R[k].name)+'</h3><div class="src">'+esc(R[k].note)+' '+R[k].kcal+' kcal and '+R[k].p+' g protein per '+esc(R[k].serving)+'.</div>'+recBlock(k,'prep',0)+'</div>').join('')+'</div>';}
   h+='<p class="prep">Cooked food keeps about 3 to 4 days in the fridge, which is why Sunday portions for Friday through Sunday go in the freezer. The midweek main is eaten within four days of cooking.</p><div class="row"><button class="btn primary" data-action="mpstep" data-v="grocery">Open the shopping list</button><button class="btn" data-action="mpstep" data-v="week">See the week at a glance</button></div>';
   return h;
 }
@@ -4092,7 +4175,7 @@ function viewLibrary(){
   h+='</div>'+(tag==='top'?'<p class="src" style="margin:0 0 8px">Meals the two of you average '+TOP_MIN+' stars or better, best first. '+(topN?'':'Nothing qualifies yet. Rate meals with the stars on the Today page or below and they will show up here.')+'</p>':'')+'<div id="liblist">';
   let lastT=null;for(const k of keys){const r=R[k];if(isHidden(k)||r.cat==='grab'||!tagMatch(k,tag))continue;
     if(!tag&&r.tag!==lastT){lastT=r.tag;h+='<div class="subhead libhead" data-t="'+r.tag+'">'+esc(TAGS[r.tag])+'</div>';}
-    h+='<div class="librow" data-t="'+r.tag+'" data-q="'+esc((r.name+' '+TAGS[r.tag]+' '+srcName(r.url)).toLowerCase())+'"><div class="prep-row"><div><a href="'+esc(r.url)+'" target="_blank" rel="noopener">'+esc(r.name)+'</a>'+(RD[k]?' <span class="tag good">Full recipe in app</span>':'')+'<div class="src">'+esc(TAGS[r.tag])+', '+esc(srcName(r.url))+'. Per '+esc(r.serving)+': '+r.kcal+' kcal, '+r.p+' g protein, '+r.c+' g carbs, '+r.f+' g fat.'+(r.mush?' '+MUSH:'')+'</div><div class="row">'+stars(k)+(ratingText(k)?'<span class="src">'+esc(ratingText(k))+'.</span>':'')+'<span class="src">'+recipeMeta(k)+'</span></div>'+(S.addKey===k?'<div class="row" style="margin-top:6px">'+roles().filter(x=>x.cat===r.cat).map(x=>'<button class="btn" data-action="addto" data-v="'+x.role+'" data-k="'+k+'">'+esc(x.label)+(x.session==='sun'?' (Sunday)':'')+'</button>').join('')+'</div>':'')+'</div><div style="display:grid;gap:4px;justify-items:end"><button class="btn primary" data-action="addopen" data-k="'+k+'">'+(S.addKey===k?'Cancel':'Add to this week')+'</button>'+madeBtn(k)+'<button class="btn ghost" data-action="hide" data-k="'+k+'">'+(S.confirmHide===k?'Tap again to remove':'Remove')+'</button></div></div>'+recBlock(k,'lib',0)+'</div>';}
+    h+='<div class="librow" data-t="'+r.tag+'" data-q="'+esc((r.name+' '+TAGS[r.tag]+' '+srcName(r.url)).toLowerCase())+'"><div class="prep-row"><div><a href="'+esc(r.url)+'" target="_blank" rel="noopener">'+esc(r.name)+'</a>'+(RD[k]?' <span class="tag good">Full recipe in app</span>':'')+'<div class="src">'+esc(TAGS[r.tag])+', '+esc(srcName(r.url))+'. Per '+esc(r.serving)+': '+r.kcal+' kcal, '+r.p+' g protein, '+r.c+' g carbs, '+r.f+' g fat.'+(r.mush?' '+MUSH:'')+'</div><div class="row">'+stars(k)+(ratingText(k)?'<span class="src">'+esc(ratingText(k))+'.</span>':'')+'<span class="src">'+recipeMeta(k)+'</span></div>'+(S.addKey===k?'<div class="row" style="margin-top:6px">'+roles().filter(x=>x.cat===r.cat).map(x=>'<button class="btn" data-action="addto" data-v="'+x.role+'" data-k="'+k+'">'+esc(x.label)+(x.session==='sun'?' (Sunday)':'')+'</button>').join('')+'</div>':'')+'</div><div style="display:grid;gap:4px;justify-items:end">'+(r.cat==='snack'?'<span class="src" style="text-align:right">Pick it in Pick snacks</span>':'<button class="btn primary" data-action="addopen" data-k="'+k+'">'+(S.addKey===k?'Cancel':'Add to this week')+'</button>')+''+madeBtn(k)+'<button class="btn ghost" data-action="hide" data-k="'+k+'">'+(S.confirmHide===k?'Tap again to remove':'Remove')+'</button></div></div>'+recBlock(k,'lib',0)+'</div>';}
   const hid=keys.filter(isHidden).sort(byName);
   if(hid.length){h+='</div><details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600">Removed recipes ('+hid.length+')</summary><div>';for(const k of hid)h+='<div class="prep-row"><div>'+esc(R[k].name)+'</div><button class="btn" data-action="unhide" data-k="'+k+'">Restore</button></div>';h+='</div></details><div>';}
   return h+'</div></div></div>';
@@ -4308,7 +4391,7 @@ function foodSources(){const out=new Map(),put=f=>{if(!out.has(f.id))out.set(f.i
   const H=(S.house&&S.house.foods)||{};
   for(const id in H){const x=H[id];if(!x)continue;if(out.has(id)){const b=out.get(id);if(x.del)out.delete(id);else if(!b.bc&&x.bc)b.bc=x.bc;continue;}if(x.del)continue;
     if(!foodCats(x).includes('food'))continue;put({id,n:x.n||'Food',b:x.b||'',s:x.s||'1 serving',k:n0(x.k),p:n0(x.p),c:n0(x.c),f:n0(x.f),bc:x.bc||'',src:x.src==='scan'?'scan':'mine',by:x.by||'',own:true});}
-  for(const k in R){const r=R[k];if(r.custom)continue;put({id:'r:'+k,n:r.name,s:r.serving||'1 serving',k:r.kcal,p:r.p,c:r.c,f:r.f,src:r.cat==='grab'?'grab':'recipe'});}
+  for(const k in R){const r=R[k];if(r.custom||r.cat==='snack')continue;put({id:'r:'+k,n:r.name,s:r.serving||'1 serving',k:r.kcal,p:r.p,c:r.c,f:r.f,src:r.cat==='grab'?'grab':'recipe'});}
   for(const x of SNACK_ITEMS)if(x.por&&!x.custom)put({id:'s:'+x.id,n:x.sh||x.name,s:x.por,k:x.kcal,p:x.p,c:x.c,f:x.f,src:'snack'});
   for(const f of historyFoods())put(f);
   for(const k in SIDES){const x=SIDES[k];if(x.custom||fHidden('side:'+k)||!inCat('side:'+k,'side'))continue;put({id:'side:'+k,n:x.name.charAt(0).toUpperCase()+x.name.slice(1),b:'',s:'as a side',k:x.kcal,p:x.p,c:x.c,f:x.f,src:'side'});}
@@ -4457,6 +4540,7 @@ const SAND={
 const SAND_GROUPS=[['bread','Bread'],['meat','Meat'],['cheese','Cheese'],['top','Toppings and spreads']];
 const fHidden=id=>!!(S.house&&S.house.foodHide&&S.house.foodHide[id]);
 const fEdit=id=>(S.house&&S.house.foodEdit&&S.house.foodEdit[id])||null;
+for(const x of SNACK_ITEMS)if(x.shop&&x.rk&&RD[x.rk])x.ing=RD[x.rk].ing;
 const ORIG={sides:JSON.parse(JSON.stringify(SIDES)),fill:JSON.parse(JSON.stringify(FILLERS)),snack:SNACK_ITEMS.map(x=>Object.assign({},x)),grab:{}};
 for(const k in R)if(R[k].cat==='grab')ORIG.grab[k]={name:R[k].name,kcal:R[k].kcal,p:R[k].p,c:R[k].c,f:R[k].f};
 // Put edits on the built-in objects the planner reads (and take them back off when an edit is cleared).
