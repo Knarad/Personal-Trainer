@@ -782,7 +782,9 @@ function gridRoles(m){const mid=m.mid===3?3:2,pz=SC().pizzaTue,G={};
     :{'0-lunch':'m1','0-dinner':'m2','1-lunch':'m2','1-dinner':'m1','2-lunch':'m1','2-dinner':'m2','3-lunch':'m1','3-dinner':'m3','4-lunch':'m3','4-dinner':'m1','5-lunch':'m3','5-dinner':'m2','6-lunch':'m3','6-dinner':'m3'};
   Object.assign(G,W);if(pz){const pd=Number.isInteger(m&&m.pzDay)&&m.pzDay>=0&&m.pzDay<=6?m.pzDay:1;G[pd+'-dinner']='__pizza';}return G;}
 function roleDefault(m,d,slot){const r=gridRoles(m)[d+'-'+slot];return r==='__pizza'?'__pizza':m[r];}
-function recipeForSlot(date,slot){
+function recipeForSlot(date,slot){const A=allocWeek(monday(date)),a=A&&A.map[dow(date)+'-'+slot];if(a)return a==='__gap'?null:a;return rawRecipeForSlot(date,slot);}
+function slotGap(date,slot){const A=allocWeek(monday(date));return !!(A&&A.map[dow(date)+'-'+slot]==='__gap');}
+function rawRecipeForSlot(date,slot){
   const o=cellOverride(date,slot);if(o)return o==='__pizza'||o==='__none'?null:o;
   const k=roleDefault(menuFor(monday(date)),dow(date),slot);return k==='__pizza'?null:k;
 }
@@ -875,6 +877,8 @@ function plannedMeals(date){
     if(slot==='snack'){const x=snackForSlot(isPizza(date)?'evening':'snack',target,date);if(isPizza(date)&&!x.fixed)x.prep='A lighter snack today to leave room for pizza night.';out[slot]=x;continue;}
     if(slot==='evening'){const x=snackForSlot('evening',target,date);if(!x.fixed&&d===4&&SC().friSkate)x.prep='After skating. Keep it small and high in protein.';out[slot]=x;continue;}
     if((slot==='breakfast'||slot==='lunch'||slot==='dinner')&&cellOverride(date,slot)==='__none'&&!(l.swaps&&l.swaps[slot])){const k=Math.round(target/10)*10;out[slot]={fixed:'none',name:'Eating out or no prep',items:['Nothing is prepped for this meal','Aim for about '+fmtN(k)+' calories with a protein at the center of the plate','Log what you eat with Ate something else'],kcal:k,p:Math.round(k*.25/4),c:Math.round(k*.45/4),f:Math.round(k*.3/9),prep:''};continue;}
+    if((slot==='breakfast'||slot==='lunch'||slot==='dinner')&&!(l.swaps&&l.swaps[slot])&&slotGap(date,slot)){const k=Math.round(target/10)*10;
+      out[slot]={fixed:'gap',name:'Nothing left from this week\u2019s cooking',items:['The batches cooked this week run out before this meal','Aim for about '+fmtN(k)+' calories with a protein at the center of the plate','Log what you eat with Log what I ate'],kcal:k,p:Math.round(k*.25/4),c:Math.round(k*.45/4),f:Math.round(k*.3/9),prep:''};continue;}
     const key=(l.swaps&&l.swaps[slot]&&R[l.swaps[slot]])?l.swaps[slot]:recipeForSlot(date,slot);
     const pr=portion(key,target,slot,date);if(!pr)continue;
     if(slot==='lunch'&&d>=5)pr.leftover=true;
@@ -950,16 +954,16 @@ const refs={profile:()=>FB.doc(FB.db,'people',S.uid),day:d=>FB.doc(FB.db,'people
 const timers={};
 function debounce(key,fn,ms){clearTimeout(timers[key]);timers[key]=setTimeout(fn,ms);}
 function wrote(p){p.then(()=>setSync('cloud')).catch(e=>{console.warn(e);setSync('error');});}
-function saveDay(date){achDirty(date);debounce('day:'+date,()=>wrote(FB.setDoc(refs.day(date),clone(S.days[date]||{}))),500);scheduleShared();}
+function saveDay(date){ALLOC_TICK++;achDirty(date);debounce('day:'+date,()=>wrote(FB.setDoc(refs.day(date),clone(S.days[date]||{}))),500);scheduleShared();}
 function saveProfile(){ACHV++;debounce('profile',()=>wrote(FB.setDoc(refs.profile(),clone(S.profile))),500);scheduleShared();scheduleNeeds();}
-function hset(path,val){let o=S.house;for(let i=0;i<path.length-1;i++){o[path[i]]=o[path[i]]||{};o=o[path[i]];}o[path[path.length-1]]=val;wrote(FB.updateDoc(refs.house(),new FB.FieldPath(...path),clone(val)));scheduleNeeds();}
+function hset(path,val){ALLOC_TICK++;let o=S.house;for(let i=0;i<path.length-1;i++){o[path[i]]=o[path[i]]||{};o=o[path[i]];}o[path[path.length-1]]=val;wrote(FB.updateDoc(refs.house(),new FB.FieldPath(...path),clone(val)));scheduleNeeds();}
 function hdel(path){let o=S.house;for(let i=0;i<path.length-1;i++){o=o[path[i]]||{};}delete o[path[path.length-1]];wrote(FB.updateDoc(refs.house(),new FB.FieldPath(...path),FB.deleteField()));scheduleNeeds();}
 let lastBasis='';
 function scheduleNeeds(){debounce('basis',()=>{if(!S.house||!S.profile)return;const o={name:S.profile.name,kcal:targetsFor(todayStr()).kcal,lunch:['grab','own'].includes(S.profile.lunchStyle)?'own':'menu'},j=JSON.stringify(o);if(j===lastBasis)return;lastBasis=j;S.house.basis=S.house.basis||{};S.house.basis[S.uid]=o;wrote(FB.updateDoc(refs.house(),new FB.FieldPath('basis',S.uid),o));},1500);}
 function sharedSoon(){if(S._shPend)return;S._shPend=true;setTimeout(()=>{S._shPend=false;if(S.profile)wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2500);}
 function scheduleShared(){debounce('shared',()=>{if(!S.profile)return;wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2000);}
 /* App version shown in the header and stamped on every Claude report. Bump it with every index.html delivered. */
-const APP_VERSION='1.5';
+const APP_VERSION='1.6';
 function setSync(s){S.sync=s;const el=document.getElementById('sync');if(el)el.textContent=syncText();}
 function syncText(){return !navigator.onLine?'Offline; changes will sync':S.sync==='error'?'Last save failed':'Synced';}
 function nameOf(uid){if(uid===S.uid)return S.profile.name;const x=S.shared[uid];return (x&&x.name)||'Partner';}
@@ -1000,6 +1004,7 @@ function notesPanel(){
   return h;
 }
 function render(){
+  ALLOC_TICK++;
   syncRatings();
   const app=document.getElementById('app');
   if(S.scanning)stopScan();
@@ -1218,7 +1223,7 @@ function stagedBox(date,slot,st){const r=st.rec||{};
   return h;}
 function mealCard(date,slot,m,time,sug){
   const l=S.days[date]||{},log=l.meals&&l.meals[slot];
-  let h='<div class="mcard'+(log?(log.status==='skip'?' skip':' done'):'')+'"><div class="kicker">'+timeTag(slot,time,sug)+' &middot; '+(SLOT_LABEL[slot]||'Added meal')+(l.swaps&&l.swaps[slot]?' &middot; swapped':'')+(m.edited?' &middot; edited':'')+'</div>'+(S.edTime===slot?timeEditor(date,slot,time,sug):'')+'<h3>'+esc(m.name)+'</h3>';
+  let h='<div class="mcard'+(log?(log.status==='skip'?' skip':' done'):'')+'"'+(m.fixed==='gap'&&!log?' style="border-left:4px solid var(--red)"':'')+'><div class="kicker">'+timeTag(slot,time,sug)+' &middot; '+(SLOT_LABEL[slot]||'Added meal')+(m.fixed==='gap'?' <span class="tag red">Not enough cooked</span>':'')+(l.swaps&&l.swaps[slot]?' &middot; swapped':'')+(m.edited?' &middot; edited':'')+'</div>'+(S.edTime===slot?timeEditor(date,slot,time,sug):'')+'<h3>'+esc(m.name)+'</h3>';
   if(m.cparts&&m.cparts.length>1)h+=partsList(date,slot,m);
   else if((m.key||!m.fixed)&&m.items&&m.items.length)h+='<div class="src" style="margin:-2px 0 6px">'+m.items.map(x=>x===VEG.name?'Green vegetables or a side salad':x).map(esc).join(' &middot; ')+'</div>';
   h+=macroLine(m);
@@ -1234,7 +1239,7 @@ function mealCard(date,slot,m,time,sug){
       h+=pizzaPicker(date,slot,m);
     }else if(m.fixed==='nolunch')h+='<div class="row"><button class="btn primary" data-action="golunch">Pick lunches</button><button class="btn" data-action="custom" data-slot="'+slot+'">Log what I ate</button></div>';
     else if(m.fixed==='nosnack')h+='<div class="row"><button class="btn primary" data-action="gosnacks">Pick this week\u2019s snacks</button><button class="btn" data-action="snedit" data-slot="'+slot+'">Add snacks for today</button><button class="btn" data-action="custom" data-slot="'+slot+'">Log what I ate</button><button class="btn" data-action="skipmeal" data-slot="'+slot+'">Skipped</button></div>';
-    else if(m.fixed==='none')h+='<div class="row"><button class="btn primary" data-action="custom" data-slot="'+slot+'">Log what I ate</button><button class="btn" data-action="skipmeal" data-slot="'+slot+'">Skipped</button></div>';
+    else if(m.fixed==='none'||m.fixed==='gap')h+='<div class="row"><button class="btn primary" data-action="custom" data-slot="'+slot+'">Log what I ate</button><button class="btn" data-action="skipmeal" data-slot="'+slot+'">Skipped</button></div>';
     else if(m.fixed==='extra')h+='<div class="row"><button class="btn primary" data-action="custom" data-slot="'+slot+'">Log what I ate</button><button class="btn" data-action="skipmeal" data-slot="'+slot+'">Skipped</button><button class="btn ghost" data-action="delxmeal" data-slot="'+slot+'">Remove this meal</button></div>';
     else{const isSn=SNACK_SLOTS.includes(slot)&&!m.key;h+='<div class="row">'+(m.edited&&!m.parts.length?'':'<button class="btn primary" data-action="ate" data-slot="'+slot+'">Ate this</button>')+(isSn?'<button class="btn" data-action="snedit" data-slot="'+slot+'">Edit snacks</button>':'<button class="btn" data-action="addon" data-slot="'+slot+'">Add to this meal</button>')+(canAmt(m)?'<button class="btn" data-action="amt" data-slot="'+slot+'">Different amount</button>':'')+'<button class="btn" data-action="custom" data-slot="'+slot+'">Ate something else</button><button class="btn" data-action="skipmeal" data-slot="'+slot+'">Skipped</button></div>';
       if(S.amtOpen===slot&&canAmt(m))h+=amountPanel(slot,m,m.n);
@@ -1491,7 +1496,7 @@ function defaultGrab(name,wk,d){const n=String(name||'').toLowerCase(),ks=(POOLS
 function ownLunch(p){if(p.me)return ['grab','own'].includes(S.profile.lunchStyle);if(p.est)return String(p.name).toLowerCase()==='jen';const b=S.house.basis&&S.house.basis[p.id];return !!(b&&['grab','own'].includes(b.lunch));}
 function eatsCell(p,c,wk){if(c.only)return pkey(p)===c.only;if(c.slot==='lunch'&&(lunchPick(p.name,wk,c.d)||(c.d<5&&ownLunch(p))))return false;return true;}
 function personalCells(wk){const out=[];for(const p of eaters())for(let d=0;d<5;d++){const v=lunchPick(p.name,wk,d);if(v&&R[v]&&R[v].cat==='main')out.push({d,date:addD(wk,d),slot:'lunch',key:v,only:pkey(p),personal:true});}return out;}
-function prepCells(wk){return weekCells(wk).concat(personalCells(wk));}
+function prepCells(wk,raw){return weekCells(wk,raw).concat(personalCells(wk));}
 function grabDay(p,wk,d){const v=lunchPick(p.name,wk,d);return v&&R[v]&&R[v].cat==='grab'?v:null;}
 function grabCounts(wk){const o={};for(const p of eaters())for(let d=0;d<5;d++){const k=grabDay(p,wk,d);if(k)o[k]=(o[k]||0)+1;}return o;}
 function lunchOptions(wk,d,name,cur,own){
@@ -3952,8 +3957,34 @@ function itemName(i,u,q){return (!u&&q>1&&PL[i])?PL[i]:i;}
 function unitLabel(u,q){const P={scoop:'scoops',can:'cans',slice:'slices',clove:'cloves',packet:'packets',patty:'patties',jar:'jars'};return q>1?(P[u]||u):u;}
 function fmtBase(b,fam){if(fam==='vol'){if(b<3)return fmtNum(b)+' tsp';if(b<12)return fmtNum(b/3)+' tbsp';const c=b/48;return fmtNum(c)+(c>1?' cups':' cup');}return b<16?fmtNum(b)+' oz':fmtNum(b/16)+' lb';}
 /* Batches default to whatever covers the week's need for everyone, in half-batch steps; the stepper overrides it. */
+/* ===== Plan only what gets cooked =====
+   When a batch is set by hand, a recipe can run out before the week does. Portions go out in date order (personal
+   swaps first); a meal whose recipe has run out moves to another recipe of the same kind that has portions to spare,
+   and any meal still uncovered becomes a flagged gap. Gaps are then pushed to the latest lunches and dinners, so the
+   empty meals land at the end of the week. Automatic batch sizes always cover the week, so with no hand-set batch
+   this does nothing. Cached per render tick. */
+let ALLOC_TICK=0,ALLOCC={};
+function allocWeek(wk){if(!S.house||!S.house.menus)return null;const m0=S.house.menus[wk];if(!m0||!m0.mult||!Object.keys(m0.mult).length)return null;
+  const c0=ALLOCC[wk];if(c0&&c0.t===ALLOC_TICK)return c0.v;ALLOCC[wk]={t:ALLOC_TICK,v:null};const v=allocCompute(wk);ALLOCC[wk]={t:ALLOC_TICK,v};return v;}
+function allocCompute(wk){const m=menuFor(wk),ov=m.mult||{},ppl=eaters(),ex=(S.house.extras||{})[wk]||S.house.extras||{};
+  const raw=weekCells(wk,true),pers=personalCells(wk),K=c=>c.d+'-'+c.slot,pos=c=>c.d*3+['breakfast','lunch','dinner'].indexOf(c.slot),kind=k=>R[k].cat==='breakfast'?'b':'m';
+  const dem=(c,k)=>{let t=c.personal?0:n0(ex[c.slot]);for(const p of ppl)if(eatsCell(p,c,wk))t+=portionFor(p,k,c.date,c.slot).n;return t;};
+  const keys=[...new Set(raw.concat(pers).filter(c=>c.key).map(c=>c.key))],rawT=prepTotals(wk,true),rem={};
+  for(const k of keys){const y=R[k].yield;if(!y){rem[k]=Infinity;continue;}const x=rawT.find(q=>q.key===k);rem[k]=(ov[k]||needBatches(k,x?x.total:0))*y;}
+  for(const c of pers)if(c.key&&isFinite(rem[c.key]))rem[c.key]-=dem(c,c.key);
+  const order=raw.filter(c=>c.key).sort((a,b)=>(b.over-a.over)||(pos(a)-pos(b))),map={};
+  for(const c of order){const k=c.key,need=dem(c,k);if(need<=rem[k]+1e-6){rem[k]-=need;map[K(c)]=k;continue;}
+    const alts=keys.filter(x=>x!==k&&kind(x)===kind(k)&&R[x].yield&&isFinite(rem[x])&&rem[x]>0).map(x=>[x,dem(c,x)]).filter(([x,n])=>n<=rem[x]+1e-6).sort((a,b)=>(rem[b[0]]-b[1])-(rem[a[0]]-a[1]));
+    if(alts.length){const[x,n]=alts[0];rem[x]-=n;map[K(c)]=x;}else map[K(c)]='__gap';}
+  for(let guard=0;guard<60;guard++){let moved=false;
+    for(const g of order.filter(c=>map[K(c)]==='__gap').sort((a,b)=>pos(a)-pos(b))){
+      for(const f of order.filter(f=>pos(f)>pos(g)&&!f.over&&map[K(f)]!=='__gap'&&kind(map[K(f)])===kind(g.key)).sort((a,b)=>pos(b)-pos(a))){
+        const kf=map[K(f)],give=dem(f,kf),take=dem(g,kf);if(take<=rem[kf]+give+1e-6){rem[kf]+=give-take;map[K(g)]=kf;map[K(f)]='__gap';moved=true;break;}}
+      if(moved)break;}
+    if(!moved)break;}
+  return {map,gaps:order.filter(c=>map[K(c)]==='__gap').sort((a,b)=>pos(a)-pos(b)).map(c=>({d:c.d,slot:c.slot,key:c.key}))};}
 function needBatches(key,total){const y=R[key]&&R[key].yield;if(!y||!(total>0))return 1;return Math.max(1,Math.ceil(total/y*2-1e-9)/2);}
-function autoMult(key,wk){const x=prepTotals(wk||curMenuWeek()).find(y=>y.key===key);return x?needBatches(key,x.total):1;}
+function autoMult(key,wk){const x=prepTotals(wk||curMenuWeek(),true).find(y=>y.key===key);return x?needBatches(key,x.total):1;}
 function multFor(key,wk){const m=menuFor(wk||curMenuWeek());return (m.mult&&m.mult[key])||autoMult(key,wk);}
 function batchName(b){return b===0.5?'Half batch':b===1?'1 batch':b===2?'Double batch':b===3?'Triple batch':fmtNum(b)+' batches';}
 const BATCHN=['','1 batch','Double batch','Triple batch','4 batches'];
@@ -4038,19 +4069,19 @@ function rolePlan(wk){
   const m=menuFor(wk),tot=prepTotals(wk);
   return roles().map(r=>{const key=m[r.role];if(!R[key])return null;const x=tot.find(t=>t.key===key)||{total:0,per:{},kids:0,uses:[],freeze:0,roles:['']};return Object.assign({},r,{key,x});}).filter(Boolean);
 }
-function weekCells(wk){const out=[];
+function weekCells(wk,raw){const out=[];
   for(let d=0;d<7;d++){const date=addD(wk,d);for(const slot of ['breakfast','lunch','dinner']){
     if(slot==='dinner'&&isPizza(date)){out.push({d,date,slot,pizza:true,over:cellOverride(date,slot)==='__pizza'&&roleDefault(menuFor(wk),d,slot)!=='__pizza'});continue;}
     const o=cellOverride(date,slot);if(o==='__none'){out.push({d,date,slot,none:true,over:true});continue;}
     if(o==='__pizza'&&slot!=='breakfast'){out.push({d,date,slot,pizza:true,over:true});continue;}
-    const key=recipeForSlot(date,slot);out.push({d,date,slot,key:R[key]?key:null,over:!!o});}}
+    const key=raw?rawRecipeForSlot(date,slot):recipeForSlot(date,slot);out.push({d,date,slot,key:R[key]?key:null,over:!!o,gap:!raw&&slotGap(date,slot)});}}
   return out;}
 function usesText(uses){const by={};for(const[d,slot]of uses)(by[slot]=by[slot]||[]).push(d);
   return ['breakfast','lunch','dinner'].filter(s=>by[s]).map(s=>{const ds=[...new Set(by[s])].sort();return (s.charAt(0).toUpperCase()+s.slice(1))+' '+(ds.length===7?'every day':ds.map(d=>DAYN[d].slice(0,3)).join(', '));}).join('; ');}
 function sessionOf(m,key,firstDay){if(key===m.m3)return 'mid';if([m.b1,m.b2,m.m1,m.m2].includes(key))return 'sun';return firstDay>=(m.mid===3?3:2)?'mid':'sun';}
-function prepTotals(wk){
+function prepTotals(wk,raw){
   const o={},ppl=eaters(),ex=S.house.extras||{},m=menuFor(wk);
-  for(const c of prepCells(wk)){if(!c.key)continue;const x=o[c.key]=o[c.key]||{key:c.key,total:0,uses:[],per:{},kids:0,freeze:0,first:c.d};
+  for(const c of prepCells(wk,raw)){if(!c.key)continue;const x=o[c.key]=o[c.key]||{key:c.key,total:0,uses:[],per:{},kids:0,freeze:0,first:c.d};
     let tot=0;for(const p of ppl){if(!eatsCell(p,c,wk))continue;const n=portionFor(p,c.key,c.date,c.slot).n;x.per[p.name]=(x.per[p.name]||0)+n;tot+=n;}
     const k=c.personal?0:n0(ex[c.slot]);x.kids+=k;tot+=k;x.total+=tot;x.uses.push([c.d,c.slot]);x.first=Math.min(x.first,c.d);x._late=(x._late||0)+(c.d>=4?tot:0);}
   return Object.values(o).map(x=>{x.session=sessionOf(m,x.key,x.first);x.freeze=x.session==='sun'?x._late:0;x.roles=[usesText(x.uses)];return x;});
@@ -4090,7 +4121,7 @@ function mpSnacks(wk){
 }
 function supplyTally(wk){
   const ppl=eaters(),ex=S.house.extras||{},cats={breakfast:{need:0,slots:{breakfast:0},keys:[]},main:{need:0,slots:{lunch:0,dinner:0},keys:[]}};let pizza=0,none=0;
-  for(const c of prepCells(wk)){if(c.pizza){pizza++;continue;}if(c.none||!c.key){none++;continue;}
+  for(const c of prepCells(wk)){if(c.pizza){pizza++;continue;}if(c.gap){let cnt=n0(ex[c.slot]);for(const p of ppl)if(eatsCell(p,c,wk))cnt++;const cat=c.slot==='breakfast'?'breakfast':'main';cats[cat].need+=cnt;cats[cat].gap=(cats[cat].gap||0)+cnt;(cats[cat].gapL=cats[cat].gapL||[]).push(c);continue;}if(c.none||!c.key){none++;continue;}
     let cnt=c.personal?0:n0(ex[c.slot]);for(const p of ppl){if(eatsCell(p,c,wk))cnt++;}
     const cat=R[c.key].cat==='breakfast'?'breakfast':'main';cats[cat].need+=cnt;cats[cat].slots[c.slot]=(cats[cat].slots[c.slot]||0)+cnt;cats[cat].by=cats[cat].by||{};cats[cat].by[c.key]=(cats[cat].by[c.key]||0)+cnt;}
   for(const x of prepTotals(wk)){const r=R[x.key],cat=r.cat==='breakfast'?'breakfast':'main',b=multFor(x.key,wk);
@@ -4103,7 +4134,7 @@ function tallyCard(wk){
   const T=supplyTally(wk),ppl=eaters().map(p=>p.name).join(' and ');
   const block=(title,c,sub)=>{const short=c.keys.filter(k=>!k.fit&&k.makes+1e-6<k.need);
     const by=c.by||{},cov=Math.round(c.keys.reduce((a,k)=>a+n0(by[k.key])*(k.fit||!(k.need>0)?1:Math.min(1,k.makes/k.need)),0)),pct=c.need?Math.min(100,cov/c.need*100):100;
-    let h='<div class="tblock"><div class="trow"><strong>'+title+'</strong><span class="tnum'+(short.length?' short':'')+'">'+cov+' of '+c.need+' meal'+(c.need===1?'':'s')+' covered</span></div><div class="tbar"><i class="'+(short.length?'short':'')+'" style="width:'+pct+'%"></i></div><div class="src">'+(sub?sub+'. ':'')+(short.length?short.map(k=>esc(R[k.key].name)).join(' and ')+(short.length>1?' come':' comes')+' up short; add to the batch below.':'Every recipe covers what you need.')+'</div>';
+    let h='<div class="tblock"><div class="trow"><strong>'+title+'</strong><span class="tnum'+(short.length||c.gap?' short':'')+'">'+cov+' of '+c.need+' meal'+(c.need===1?'':'s')+' covered</span></div><div class="tbar"><i class="'+(short.length||c.gap?'short':'')+'" style="width:'+pct+'%"></i></div><div class="src">'+(sub?sub+'. ':'')+(c.gap?(()=>{const gl=c.gapL||[];const nm=gl.map(g=>DAYN[g.d]+' '+g.slot),lst=nm.length>1?nm.slice(0,-1).join(', ')+' and '+nm[nm.length-1]:nm[0];return '<span style="color:var(--red)">Not enough cooked for '+lst+' ('+c.gap+' of the '+c.need+' meals). They are left empty for you to fill in, or add to a batch below.</span> ';})():'')+(short.length?short.map(k=>esc(R[k.key].name)).join(' and ')+(short.length>1?' come':' comes')+' up short; add to the batch below.':c.gap?'':'Every recipe covers what you need.')+'</div>';
     for(const k of c.keys){const r=R[k.key],sh=!k.fit&&k.makes+1e-6<k.need,ext=k.fit?0:k.makes-k.need;
       h+='<div class="tline"><span>'+esc(r.name)+' <span class="src"'+(sh?' style="color:var(--red)"':'')+'>Need '+esc(qtyOf(k.key,k.need))+(k.fit?', made to fit':'; makes '+esc(qtyOf(k.key,k.makes))+(sh?', short '+esc(qtyOf(k.key,k.need-k.makes)):ext>0.12?', '+esc(qtyOf(k.key,ext))+' extra':''))+'</span></span>'+batchStepper(k.key,wk)+'</div>';}
     return h+'</div>';};
@@ -4158,13 +4189,14 @@ function mpGlance(wk){
   let h='<p class="prose" style="margin-top:0">Every meal for the week, filled from your Sunday and midweek cooking. Change any single meal with its dropdown: pick something already planned, anything from the library, pizza, or eating out. The meal count below updates as you change days, and so do the prep and shopping lists for both of you.</p>'+(SC().pizzaTue?'<div class="card" style="margin-bottom:10px"><label class="f" style="max-width:320px">Pizza Tuesday at the in-laws this week is on<select data-pzday="'+wk+'">'+DAYN.map((n,i)=>'<option value="'+i+'"'+(i===pizzaDayOf(wk)?' selected':'')+'>'+n+'</option>').join('')+'</select></label><p class="src" style="margin:4px 0 0">Moving it puts that night\'s planned dinner back on the menu where pizza was, and resizes both of your days around it.</p></div>':'')+tallyCard(wk)+lunchCard(wk)+'<div class="glance2">';
   for(let d=0;d<7;d++){const date=addD(wk,d);
     h+='<div class="gday'+(date===td?' today':'')+'"><div class="gdh"><strong>'+DAYN[d]+'</strong> <span class="src">'+fmtShort(date)+'</span></div>';
-    for(const slot of ['breakfast','lunch','dinner']){const c=cells.find(x=>x.d===d&&x.slot===slot),def=roleDefault(m,d,slot),cur=c.pizza?'__pizza':c.none?'__none':c.key;
+    for(const slot of ['breakfast','lunch','dinner']){const c=cells.find(x=>x.d===d&&x.slot===slot),def=roleDefault(m,d,slot),cur=c.pizza?'__pizza':c.none?'__none':c.gap?'__gap':c.key;
       let sub='';
-      if(c.key)sub=ppl.filter(p=>eatsCell(p,c,wk)).map(p=>esc(p.name)+' '+fmtS(portionFor(p,c.key,date,slot).n)).join(', ');
+      if(c.key)sub=ppl.filter(p=>eatsCell(p,c,wk)).map(p=>esc(p.name)+' '+esc(amountText(c.key,portionFor(p,c.key,date,slot).n))).join(', ');
+      else if(c.gap)sub='<span style="color:var(--red)">Not enough cooked for this meal. Pick something here, add to a batch, or fill it in that day.</span>';
       if(slot==='lunch'){const own=ppl.map(p=>{const v=lunchPick(p.name,wk,d);return v?esc(p.name)+': '+(v==='__pizza'?'pizza':v==='__none'?'eating out':esc(R[v].name)):'';}).filter(Boolean);if(own.length)sub+=(sub?'. ':'')+own.join('; ');}
       else if(c.pizza)sub='Each person\'s plan sets their own slice count';else if(c.none)sub='Nothing to prep';
       if(c.key&&!c.over&&c.d>=4&&sessionOf(m,c.key,0)==='sun')sub+=' (from the freezer)';
-      h+='<label class="gcell"><span class="glab">'+(slot.charAt(0).toUpperCase()+slot.slice(1))+(c.over?' <span class="tag red">Changed</span>':'')+'</span><select data-cell="'+d+'-'+slot+'" aria-label="'+DAYN[d]+' '+slot+'">'+cellOptions(wk,d,slot,cur,def)+'</select><span class="src">'+sub+'</span></label>';}
+      h+='<label class="gcell"><span class="glab">'+(slot.charAt(0).toUpperCase()+slot.slice(1))+(c.over?' <span class="tag red">Changed</span>':'')+(c.gap?' <span class="tag red">Not enough cooked</span>':'')+'</span><select data-cell="'+d+'-'+slot+'" aria-label="'+DAYN[d]+' '+slot+'">'+(c.gap?'<option value="__gap" selected>Nothing left (fill in)</option>':'')+cellOptions(wk,d,slot,cur,def)+'</select><span class="src">'+sub+'</span></label>';}
     h+='</div>';}
   return h+'</div><p class="hint">Servings are per person for that meal. Each person\'s Today view shows the same portions with calories and protein.</p>';
 }
@@ -5086,7 +5118,7 @@ document.addEventListener('change',ev=>{
   if(el.dataset.swap){const l=day(date);l.swaps=l.swaps||{};if(el.value)l.swaps[el.dataset.swap]=el.value;else delete l.swaps[el.dataset.swap];saveDay(date);render();return;}
   if(el.dataset.menu){const wk=curMenuWeek(),m=clone(menuFor(wk));m[el.dataset.menu]=el.value;setMenu(wk,m);render();return;}
   if(el.dataset.cell){const wk=curMenuWeek(),m=clone(menuFor(wk)),[d,slot]=el.dataset.cell.split('-'),def=roleDefault(m,+d,slot);m.cells=m.cells||{};
-    if(el.value==='__reset'||el.value===def)delete m.cells[el.dataset.cell];else m.cells[el.dataset.cell]=el.value;setMenu(wk,m);render();return;}
+    if(el.value==='__gap')return;if(el.value==='__reset'||el.value===def)delete m.cells[el.dataset.cell];else m.cells[el.dataset.cell]=el.value;setMenu(wk,m);render();return;}
   if(el.dataset.est){hset(['estimates',el.dataset.est],Math.max(1200,Math.min(4000,Math.round(n0(el.value)))));render();return;}
   if(el.dataset.cap){const v=el.value;S.house.caps=S.house.caps||{};hset(['caps',el.dataset.cap],v?+v:null);render();return;}
   if(el.dataset.hh){hset(['extras',el.dataset.hh],Math.max(0,Math.round(n0(el.value))));render();return;}
