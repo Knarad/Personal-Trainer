@@ -959,7 +959,7 @@ function scheduleNeeds(){debounce('basis',()=>{if(!S.house||!S.profile)return;co
 function sharedSoon(){if(S._shPend)return;S._shPend=true;setTimeout(()=>{S._shPend=false;if(S.profile)wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2500);}
 function scheduleShared(){debounce('shared',()=>{if(!S.profile)return;wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2000);}
 /* App version shown in the header and stamped on every Claude report. Bump it with every index.html delivered. */
-const APP_VERSION='1.4';
+const APP_VERSION='1.5';
 function setSync(s){S.sync=s;const el=document.getElementById('sync');if(el)el.textContent=syncText();}
 function syncText(){return !navigator.onLine?'Offline; changes will sync':S.sync==='error'?'Last save failed':'Synced';}
 function nameOf(uid){if(uid===S.uid)return S.profile.name;const x=S.shared[uid];return (x&&x.name)||'Partner';}
@@ -4092,7 +4092,7 @@ function supplyTally(wk){
   const ppl=eaters(),ex=S.house.extras||{},cats={breakfast:{need:0,slots:{breakfast:0},keys:[]},main:{need:0,slots:{lunch:0,dinner:0},keys:[]}};let pizza=0,none=0;
   for(const c of prepCells(wk)){if(c.pizza){pizza++;continue;}if(c.none||!c.key){none++;continue;}
     let cnt=c.personal?0:n0(ex[c.slot]);for(const p of ppl){if(eatsCell(p,c,wk))cnt++;}
-    const cat=R[c.key].cat==='breakfast'?'breakfast':'main';cats[cat].need+=cnt;cats[cat].slots[c.slot]=(cats[cat].slots[c.slot]||0)+cnt;}
+    const cat=R[c.key].cat==='breakfast'?'breakfast':'main';cats[cat].need+=cnt;cats[cat].slots[c.slot]=(cats[cat].slots[c.slot]||0)+cnt;cats[cat].by=cats[cat].by||{};cats[cat].by[c.key]=(cats[cat].by[c.key]||0)+cnt;}
   for(const x of prepTotals(wk)){const r=R[x.key],cat=r.cat==='breakfast'?'breakfast':'main',b=multFor(x.key,wk);
     cats[cat].keys.push({key:x.key,b,need:x.total,makes:r.yield?r.yield*b:x.total,fit:!r.yield,uses:x.uses.length});}
   let snacks=0;for(let d=0;d<7;d++)for(const s of slotsFor(addD(wk,d)))if(['snack','evening','fruit','preshake'].includes(s))snacks++;
@@ -4102,7 +4102,8 @@ function supplyTally(wk){
 function tallyCard(wk){
   const T=supplyTally(wk),ppl=eaters().map(p=>p.name).join(' and ');
   const block=(title,c,sub)=>{const short=c.keys.filter(k=>!k.fit&&k.makes+1e-6<k.need);
-    let h='<div class="tblock"><div class="trow"><strong>'+title+'</strong><span class="tnum'+(short.length?' short':'')+'">'+c.need+' meal'+(c.need===1?'':'s')+'</span></div><div class="src">'+(sub?sub+'. ':'')+(short.length?short.map(k=>esc(R[k.key].name)).join(' and ')+(short.length>1?' come':' comes')+' up short; add to the batch below.':'Every recipe covers what you need.')+'</div>';
+    const by=c.by||{},cov=Math.round(c.keys.reduce((a,k)=>a+n0(by[k.key])*(k.fit||!(k.need>0)?1:Math.min(1,k.makes/k.need)),0)),pct=c.need?Math.min(100,cov/c.need*100):100;
+    let h='<div class="tblock"><div class="trow"><strong>'+title+'</strong><span class="tnum'+(short.length?' short':'')+'">'+cov+' of '+c.need+' meal'+(c.need===1?'':'s')+' covered</span></div><div class="tbar"><i class="'+(short.length?'short':'')+'" style="width:'+pct+'%"></i></div><div class="src">'+(sub?sub+'. ':'')+(short.length?short.map(k=>esc(R[k.key].name)).join(' and ')+(short.length>1?' come':' comes')+' up short; add to the batch below.':'Every recipe covers what you need.')+'</div>';
     for(const k of c.keys){const r=R[k.key],sh=!k.fit&&k.makes+1e-6<k.need,ext=k.fit?0:k.makes-k.need;
       h+='<div class="tline"><span>'+esc(r.name)+' <span class="src"'+(sh?' style="color:var(--red)"':'')+'>Need '+esc(qtyOf(k.key,k.need))+(k.fit?', made to fit':'; makes '+esc(qtyOf(k.key,k.makes))+(sh?', short '+esc(qtyOf(k.key,k.need-k.makes)):ext>0.12?', '+esc(qtyOf(k.key,ext))+' extra':''))+'</span></span>'+batchStepper(k.key,wk)+'</div>';}
     return h+'</div>';};
