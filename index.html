@@ -20,7 +20,9 @@
   --bg:#F4F4F2;--panel:#FFFFFF;--ink:#141414;--muted:#5C5C5C;--line:#DDDBD6;--soft:#ECEAE6;
   --red:#E8590C;--redsoft:#FDEADB;--blue:#B4460A;--bluesoft:#FBE4D2;--good:#2E7D32;--goodsoft:#E3F1E3;
   --warn:#C2410C;--warnsoft:#FCE9DC;--head:#000000;--headink:#FFFFFF;--headmuted:#B8B8B8;--onaccent:#000000;
+  --zoom:1;
   box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  zoom:var(--zoom);
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#0D0D0D;--panel:#181818;--ink:#F2F2F2;--muted:#A6A6A6;--line:#2F2F2F;--soft:#222222;
@@ -46,6 +48,10 @@ button,input,select,textarea{font:inherit;color:inherit}
 .sync{font-size:12px;color:var(--headmuted)}
 .status{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right;flex-shrink:0}
 .ver{font-size:11px;color:var(--headmuted);opacity:.85}
+.zoomctl{display:flex;align-items:center;gap:4px}
+.zoomctl button{background:none;border:1px solid var(--headmuted);color:var(--headink);border-radius:6px;width:20px;height:20px;line-height:1;font-size:13px;padding:0;cursor:pointer}
+.zoomctl button:disabled{opacity:.35;cursor:default}
+.zoompct{font-size:11px;color:var(--headmuted);min-width:30px;text-align:center}
 nav{display:flex;gap:2px;overflow-x:auto;margin-top:6px;scrollbar-width:none}
 nav::-webkit-scrollbar{display:none}
 nav button{background:none;border:0;color:var(--headmuted);font:600 15px 'Barlow',sans-serif;padding:8px 12px 10px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
@@ -297,6 +303,7 @@ table.psum{min-width:0}
 </style>
 </head>
 <body>
+<script>(function(){try{var z=localStorage.getItem('training-plan:zoom');if(z)document.documentElement.style.setProperty('--zoom',z);}catch(e){}})();</script>
 <div id="app"><main><p>Loading your plan...</p></main></div>
 <script src="config.js"></script>
 <script type="module">
@@ -651,7 +658,14 @@ const DEFAULT_SCHED={wake:'06:00',breakfast:'06:45',leave:'',lunch:'12:00',snack
   pizzaTue:true,pizzaTime:'18:15',monLate:false,monWorkout:'18:00',monDinner:'18:50',friSkate:false,friDinner:'18:00',deskBreaks:false,sundayPrep:true};
 
 /* =============== State =============== */
-const S={tm:{restEnd:0,restLen:90},autoRest:true,recOpen:{},salad:{t:{},d:1},reportDays:0,profile:null,days:{},house:null,shared:{},view:'today',viewing:null,date:null,menuWeek:null,uid:null,user:null,sync:'cloud',openCustom:null,ready:false};
+const S={tm:{restEnd:0,restLen:90},autoRest:true,recOpen:{},salad:{t:{},d:1},reportDays:0,profile:null,days:{},house:null,shared:{},view:'today',viewing:null,date:null,menuWeek:null,uid:null,user:null,sync:'cloud',openCustom:null,ready:false,zoom:1};
+/* Display size, this device only (a phone and a monitor may want different levels, so it is never synced to the
+   household doc): stored in localStorage and applied to :root's --zoom custom property, which the stylesheet reads
+   via the CSS `zoom` property, so the whole page reflows and fits the screen width at the smaller size, the same
+   way the browser's own zoom-out does. Read once at startup; the <head> script already applied it before first
+   paint, so this just keeps S.zoom (used for the header readout) in sync. */
+try{const z0=parseFloat(localStorage.getItem('training-plan:zoom'));if(z0&&z0>=0.6&&z0<=1)S.zoom=z0;}catch(e){}
+function setZoom(z){z=Math.round(Math.min(1,Math.max(0.6,z))*100)/100;S.zoom=z;document.documentElement.style.setProperty('--zoom',z);try{localStorage.setItem('training-plan:zoom',z);}catch(e){}}
 const CFG=window.APP_CONFIG||{};
 function sha256Hex(str){
   const b=new TextEncoder().encode(str),K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
@@ -967,7 +981,7 @@ function scheduleNeeds(){debounce('basis',()=>{if(!S.house||!S.profile)return;co
 function sharedSoon(){if(S._shPend)return;S._shPend=true;setTimeout(()=>{S._shPend=false;if(S.profile)wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2500);}
 function scheduleShared(){debounce('shared',()=>{if(!S.profile)return;wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2000);}
 /* App version shown in the header and stamped on every Claude report. Bump it with every index.html delivered. */
-const APP_VERSION='1.7';
+const APP_VERSION='1.8';
 function setSync(s){S.sync=s;const el=document.getElementById('sync');if(el)el.textContent=syncText();}
 function syncText(){return !navigator.onLine?'Offline; changes will sync':S.sync==='error'?'Last save failed':'Synced';}
 function nameOf(uid){if(uid===S.uid)return S.profile.name;const x=S.shared[uid];return (x&&x.name)||'Partner';}
@@ -1016,7 +1030,7 @@ function render(){
   const PP=[['today','Today'],['week','This week'],['progress','Progress'],['ach','Achievements'],['plan','My plan']],inPP=PP.some(t=>t[0]===S.view);if(inPP)S.lastPP=S.view;
   const tabs=[[S.lastPP||'today','Plan and Progress',inPP],['workout','Workout',S.view==='workout'],['menu','Meals',S.view==='menu']];
   const viewingOther=S.viewing&&S.viewing!==S.uid;
-  let h='<header class="top"><div class="top-in"><div class="brand"><h1>'+esc(viewingOther?nameOf(S.viewing):S.profile.name)+'\'s <span>Training Plan</span></h1><span class="status"><span class="sync" id="sync">'+syncText()+'</span><span class="ver">Version '+APP_VERSION+'</span></span></div>';
+  let h='<header class="top"><div class="top-in"><div class="brand"><h1>'+esc(viewingOther?nameOf(S.viewing):S.profile.name)+'\'s <span>Training Plan</span></h1><span class="status"><span class="sync" id="sync">'+syncText()+'</span><span class="ver">Version '+APP_VERSION+'</span><span class="zoomctl" role="group" aria-label="Display size"><button data-action="zoom" data-v="-0.1" aria-label="Zoom out"'+(S.zoom<=0.6?' disabled':'')+'>\u2212</button><span class="zoompct">'+Math.round(S.zoom*100)+'%</span><button data-action="zoom" data-v="0.1" aria-label="Zoom in"'+(S.zoom>=1?' disabled':'')+'>+</button></span></span></div>';
   const others=Object.keys(S.shared).filter(u=>u!==S.uid);
   if(others.length||MEMBERS.length>1){h+='<div class="who" role="group" aria-label="Choose whose plan to view"><button class="whob'+(!viewingOther?' on':'')+'" data-action="viewas" data-v="">'+esc(S.profile.name)+'</button>';
     for(const u of others)h+='<button class="whob'+(S.viewing===u?' on':'')+'" data-action="viewas" data-v="'+u+'">'+esc(nameOf(u))+'</button>';
@@ -1539,6 +1553,17 @@ function personSlotOptions(slot,wk,d,cur){
   for(const t in TAGS){const ks=Object.keys(R).filter(k=>R[k].cat===cat&&R[k].tag===t&&!isHidden(k)&&!planned.includes(k)).sort(byName);if(ks.length)o+='<optgroup label="'+esc(TAGS[t])+'">'+ks.map(k=>'<option value="'+k+'"'+(k===cur?' selected':'')+'>'+esc(R[k].name)+'</option>').join('')+'</optgroup>';}
   o+='<option value="__none"'+(cur==='__none'?' selected':'')+'>Eating out or making something else</option>';
   return o;}
+// How much of whatever a person is actually eating for one cell: their own pick if they have one (skipped for a
+// packed grab-and-go item, since "1 portion" says nothing useful there), otherwise their share of the household
+// plan's recipe, in the recipe's own unit (cups, pieces, and so on). Blank when there is nothing to measure
+// (eating out, a pizza night slice count shown elsewhere, or a gap).
+function personAmountLine(p,wk,d,slot){const date=addD(wk,d),target=p.me?targetsFor(date).kcal*(shares(date)[slot]||BASIS[slot]):p.kcal*BASIS[slot];
+  const v=slot==='lunch'?lunchPick(p.name,wk,d):personSlotPick(slot,p.name,wk,d);
+  if(v==='__pizza'){const n=slicesFor(date,slot,target);return n+' slice'+(n===1?'':'s')+' planned';}
+  if(v==='__none')return '';
+  if(v&&R[v]){if(R[v].cat==='grab')return '';const pr=portionFor(p,v,date,slot);return pr?amountText(v,pr.n):'';}
+  const c=weekCells(wk).find(x=>x.d===d&&x.slot===slot);
+  return (c&&c.key)?amountText(c.key,portionFor(p,c.key,date,slot).n):'';}
 function mealsByPersonCard(wk){const ppl=eaters(),prev=addD(wk,-7),hasPrev=S.house.lunch&&S.house.lunch[prev]&&Object.keys(S.house.lunch[prev]).length;
   let h='<div class="section" style="margin-top:0"><h2>Meals by person</h2><div class="card"><p class="hint" style="margin-top:0">Each of you can eat something different for any meal, any day. Leave a slot on Same as the plan to eat the household meal. For lunch, grab-and-go items go on the shopping list; for any slot, a different recipe adds to that recipe\u2019s amounts, and pizza or eating out or making something else takes your share off. The count above updates as you pick.</p>'+(hasPrev?'<div class="row" style="margin-bottom:8px"><button class="btn" data-action="lunchcopy">Same lunches as last week</button></div>':'')+'<div class="lgrid">';
   const owners=ppl.filter(ownLunch);if(owners.length)h+='<div class="note" style="margin-bottom:8px">'+owners.map(p=>esc(p.name)).join(' and ')+' packs '+(owners.length>1?'their':'her or his').replace('her or his',owners[0].name.toLowerCase()==='jen'?'her':'his')+' own weekday lunches by default, so none of the prepped lunch is set aside for them Monday through Friday. Change any day below, including weekends.</div>';
@@ -1547,15 +1572,17 @@ function mealsByPersonCard(wk){const ppl=eaters(),prev=addD(wk,-7),hasPrev=S.hou
     for(const slot of ['breakfast','lunch','dinner']){
       h+='<div style="margin:0 0 8px"><div class="src" style="font-weight:600;margin-bottom:2px">'+(slot.charAt(0).toUpperCase()+slot.slice(1))+'</div>';
       for(const p of ppl){
+        const amt=personAmountLine(p,wk,d,slot);
         if(slot==='lunch'){const own=ownLunch(p)&&d<5,nm=pkey(p),L=S.house.lunch&&S.house.lunch[wk]&&S.house.lunch[wk][nm],raw=L?L[d]:undefined,arr=Array.isArray(raw)?raw.filter(k=>R[k]&&!isHidden(k)):null;
           h+='<label style="display:block;margin:0 0 6px;max-width:100%"><span class="src" style="display:block;margin-bottom:2px">'+esc(p.name)+'</span>';
           if(own&&arr&&arr.length>1)h+='<div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:4px">'+arr.map((k,i)=>'<span class="pill">'+esc(R[k].name)+' <button class="btn ghost" style="padding:0 4px" data-action="lunchrm" data-v="'+nm+'|'+d+'|'+i+'" aria-label="Remove '+esc(R[k].name)+'">\u00d7</button></span>').join('')+'</div>';
           else{const cur=own?(arr&&arr[0]?arr[0]:(typeof raw==='string'?raw:null)):lunchPick(p.name,wk,d);
             h+='<select data-pl="'+esc(nm)+'|'+d+'" aria-label="'+esc(p.name+' '+DAYN[d]+' lunch')+'" style="display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0">'+lunchOptions(wk,d,p.name,cur,own)+'</select>';}
           if(own){const base=lunchBase(p.name,wk,d);if(base)h+='<select data-pladd="'+nm+'|'+d+'" aria-label="Add another item for '+esc(p.name+' '+DAYN[d])+'" style="display:block;margin-top:4px;max-width:100%"><option value="">+ Add another item</option>'+(POOLS.grab||[]).filter(k=>!isHidden(k)&&!base.includes(k)).sort(byName).map(k=>'<option value="'+k+'">'+esc(R[k].name)+'</option>').join('')+'</select>';}
+          if(amt)h+='<span class="src" style="display:block;margin-top:2px">'+esc(amt)+'</span>';
           h+='</label>';
         }else{const nm=pkey(p),cur=personSlotPick(slot,p.name,wk,d);
-          h+='<label style="display:block;margin:0 0 6px;max-width:100%"><span class="src" style="display:block;margin-bottom:2px">'+esc(p.name)+'</span><select data-mp="'+nm+'|'+d+'|'+slot+'" aria-label="'+esc(p.name+' '+DAYN[d]+' '+slot)+'" style="display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0">'+personSlotOptions(slot,wk,d,cur)+'</select></label>';}
+          h+='<label style="display:block;margin:0 0 6px;max-width:100%"><span class="src" style="display:block;margin-bottom:2px">'+esc(p.name)+'</span><select data-mp="'+nm+'|'+d+'|'+slot+'" aria-label="'+esc(p.name+' '+DAYN[d]+' '+slot)+'" style="display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0">'+personSlotOptions(slot,wk,d,cur)+'</select>'+(amt?'<span class="src" style="display:block;margin-top:2px">'+esc(amt)+'</span>':'')+'</label>';}
       }
       h+='</div>';}
     h+='</div>';}
@@ -4923,6 +4950,7 @@ function setMenu(wk,m){hset(['menus',wk],m);}
 document.addEventListener('click',ev=>{
   const b=ev.target.closest('[data-action]');if(!b)return;
   const a=b.dataset.action,v=b.dataset.v,slot=b.dataset.slot,date=S.date;
+  if(a==='zoom'){setZoom(S.zoom+parseFloat(v));render();return;}
   if(a==='pwk'){S.pwk=v;render();return;}
   if(a==='viewas'){S.viewing=v||null;window.scrollTo(0,0);render();return;}
   if(a==='signout'){FB.signOut(FB.auth);return;}
