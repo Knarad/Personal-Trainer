@@ -870,6 +870,10 @@ function plannedMeals(date){
       if(v==='__pizza'){const n=slicesFor(date,slot,target);out[slot]=Object.assign({},PIZZA,{name:'Pizza',slices:n,prep:'Your own pick for this day. Log the real slice count.',items:['Plan on '+n+' slices','Add a side salad first','Water or diet soda to drink'],kcal:n*SLICE.kcal+80,p:n*SLICE.p+2,c:n*SLICE.c+8,f:n*SLICE.f+4});continue;}
       if(v){const pr=R[v].cat==='grab'?grabPortion(v):portion(v,target,slot,date);if(pr){pr.mine=true;out[slot]=pr;continue;}}
       if(d<5&&ownLunch({me:true})){out[slot]={fixed:'nolunch',name:'Pick your packed lunch',items:[],kcal:0,p:0,c:0,f:0,prep:'You pack your own weekday lunches. Pick one for this day in Meals, The week.'};continue;}}
+    if((slot==='breakfast'||slot==='dinner')&&!(l.swaps&&l.swaps[slot])){const v=personSlotPick(slot,S.profile.name,monday(date),d);
+      if(v==='__none'){const k=Math.round(target/10)*10;out[slot]={fixed:'none',name:'Eating out or making something else',items:['Your own pick for this day','Aim for about '+fmtN(k)+' calories with a protein at the center','Log what you eat with Ate something else'],kcal:k,p:Math.round(k*.25/4),c:Math.round(k*.45/4),f:Math.round(k*.3/9),prep:''};continue;}
+      if(v==='__pizza'){const n=slicesFor(date,slot,target);out[slot]=Object.assign({},PIZZA,{name:'Pizza',slices:n,prep:'Your own pick for this day. Log the real slice count.',items:['Plan on '+n+' slices','Add a side salad first','Water or diet soda to drink'],kcal:n*SLICE.kcal+80,p:n*SLICE.p+2,c:n*SLICE.c+8,f:n*SLICE.f+4});continue;}
+      if(v){const pr=portion(v,target,slot,date);if(pr){pr.mine=true;out[slot]=pr;continue;}}}
     if(slot==='lunch'&&pizzaCell(date,'lunch')){const n=slicesFor(date,slot,target);out[slot]=Object.assign({},PIZZA,{name:'Pizza',slices:n,prep:'Planned as a pizza meal. Log the real slice count.',items:['Plan on '+n+' slices','Add a side salad first','Water or diet soda to drink'],kcal:n*SLICE.kcal+80,p:n*SLICE.p+2,c:n*SLICE.c+8,f:n*SLICE.f+4});continue;}
     if(slot==='dinner'&&pizzaCell(date,'dinner')){const tue=isPizza(date),n=tue?pizzaSlices(date):slicesFor(date,slot,target),karl=String(S.profile.name).toLowerCase()==='karl';out[slot]=Object.assign({},PIZZA,(tue&&karl)?{}:{name:'Pizza night',prep:tue?PIZZA.prep:'An extra pizza night. Log the real slice count.'},{slices:n,items:['Plan on '+n+' slices','Fill the rest of the plate with salad and eat it first','Water or diet soda to drink'],kcal:n*SLICE.kcal+80,p:n*SLICE.p+2,c:n*SLICE.c+8,f:n*SLICE.f+4});continue;}
     if(slot==='fruit'){out[slot]=snackForSlot('fruit',target,date);continue;}
@@ -963,7 +967,7 @@ function scheduleNeeds(){debounce('basis',()=>{if(!S.house||!S.profile)return;co
 function sharedSoon(){if(S._shPend)return;S._shPend=true;setTimeout(()=>{S._shPend=false;if(S.profile)wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2500);}
 function scheduleShared(){debounce('shared',()=>{if(!S.profile)return;wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2000);}
 /* App version shown in the header and stamped on every Claude report. Bump it with every index.html delivered. */
-const APP_VERSION='1.6';
+const APP_VERSION='1.7';
 function setSync(s){S.sync=s;const el=document.getElementById('sync');if(el)el.textContent=syncText();}
 function syncText(){return !navigator.onLine?'Offline; changes will sync':S.sync==='error'?'Last save failed':'Synced';}
 function nameOf(uid){if(uid===S.uid)return S.profile.name;const x=S.shared[uid];return (x&&x.name)||'Partner';}
@@ -1473,7 +1477,7 @@ function lunchBase(name,wk,d){
   const L=S.house&&S.house.lunch&&S.house.lunch[wk],raw=L&&L[String(name).toLowerCase()]&&L[String(name).toLowerCase()][d];
   if(Array.isArray(raw)){const a=raw.filter(k=>R[k]&&!isHidden(k));return a.length?a:null;}
   if(raw&&raw!=='__plan'&&raw!=='__pizza'&&raw!=='__none'&&R[raw]&&!isHidden(raw))return [raw];
-  if((raw===undefined||raw==='__plan')&&ownByName(name)){const dg=defaultGrab(name,wk,d);return dg?[dg]:null;}
+  if((raw===undefined||raw==='__plan')&&d<5&&ownByName(name)){const dg=defaultGrab(name,wk,d);return dg?[dg]:null;}
   return null;
 }
 function comboGrabKey(arr){return 'combo:'+arr.slice().sort().join('+');}
@@ -1484,21 +1488,39 @@ function ensureComboRecipe(arr){const id=comboGrabKey(arr),sig=arr.join('+');
     for(const g of arr){const r=R[g];if(!r)continue;k+=r.kcal;p+=r.p;c+=r.c;f+=r.f;names.push(r.name);}
     R[id]={cat:'grab',tag:'grab',name:names.join(' + '),url:'',serving:'1 lunch',yield:null,kcal:k,p,c,f,step:1,note:'Packed lunch combining '+names.join(' and ')+'.',custom:true,combo:true,parts:sig};}
   return id;}
-function lunchPick(name,wk,d){if(d>4)return null;const arr=lunchBase(name,wk,d);
+function lunchPick(name,wk,d){const arr=lunchBase(name,wk,d);
   if(arr)return arr.length===1?arr[0]:ensureComboRecipe(arr);
   const L=S.house&&S.house.lunch&&S.house.lunch[wk],v=L&&L[String(name).toLowerCase()]&&L[String(name).toLowerCase()][d];
   return (v==='__pizza'||v==='__none')?v:null;}
+/* Per-person breakfast and dinner, any day: house.bfast[week][name][day] and house.dinner[week][name][day] =
+   recipe key, '__pizza' (dinner only), '__none', or unset (eats the household plan). Same idea as house.lunch
+   above but with no grab-and-go or combo-item support, since those are a packed-lunch idea only. */
+const SLOT_STORE={breakfast:'bfast',dinner:'dinner'};
+function personSlotPick(slot,name,wk,d){
+  if(slot==='lunch')return lunchPick(name,wk,d);
+  const sk=SLOT_STORE[slot];if(!sk)return null;
+  const L=S.house&&S.house[sk]&&S.house[sk][wk],v=L&&L[String(name).toLowerCase()]&&L[String(name).toLowerCase()][d];
+  if(v==='__pizza')return slot==='dinner'?'__pizza':null;
+  if(v==='__none')return '__none';
+  return (v&&R[v]&&!isHidden(v))?v:null;
+}
 // People who pack their own lunch get a handheld lunch by default on every weekday they haven't picked; picking still wins.
 function ownByName(name){const n=String(name||'').toLowerCase();if(S.profile&&String(S.profile.name).toLowerCase()===n)return ['grab','own'].includes(S.profile.lunchStyle);
   const b=S.house&&S.house.basis&&Object.values(S.house.basis).find(x=>x&&String(x.name||'').toLowerCase()===n);if(b)return ['grab','own'].includes(b.lunch);return n==='jen';}
 function defaultGrab(name,wk,d){const n=String(name||'').toLowerCase(),ks=(POOLS.grab||[]).filter(k=>R[k]&&!isHidden(k)&&(k!=='grabpizza'||d>=2)&&(n!=='karl'||!/yogurt/i.test(R[k].name)));if(!ks.length)return null;
   const i=(Math.round(diffD(wk,'2026-01-05')/7)*3+d+(n==='jen'?0:7))%ks.length;return ks[(i+ks.length)%ks.length];}
 function ownLunch(p){if(p.me)return ['grab','own'].includes(S.profile.lunchStyle);if(p.est)return String(p.name).toLowerCase()==='jen';const b=S.house.basis&&S.house.basis[p.id];return !!(b&&['grab','own'].includes(b.lunch));}
-function eatsCell(p,c,wk){if(c.only)return pkey(p)===c.only;if(c.slot==='lunch'&&(lunchPick(p.name,wk,c.d)||(c.d<5&&ownLunch(p))))return false;return true;}
-function personalCells(wk){const out=[];for(const p of eaters())for(let d=0;d<5;d++){const v=lunchPick(p.name,wk,d);if(v&&R[v]&&R[v].cat==='main')out.push({d,date:addD(wk,d),slot:'lunch',key:v,only:pkey(p),personal:true});}return out;}
+function eatsCell(p,c,wk){if(c.only)return pkey(p)===c.only;
+  if(c.slot==='lunch'&&(lunchPick(p.name,wk,c.d)||(c.d<5&&ownLunch(p))))return false;
+  if((c.slot==='breakfast'||c.slot==='dinner')&&personSlotPick(c.slot,p.name,wk,c.d))return false;
+  return true;}
+function personalCells(wk){const out=[];for(const p of eaters())for(let d=0;d<7;d++){
+  const lv=lunchPick(p.name,wk,d);if(lv&&R[lv]&&R[lv].cat==='main')out.push({d,date:addD(wk,d),slot:'lunch',key:lv,only:pkey(p),personal:true});
+  for(const slot of ['breakfast','dinner']){const v=personSlotPick(slot,p.name,wk,d);if(v&&R[v]&&(slot==='breakfast'?R[v].cat==='breakfast':R[v].cat==='main'))out.push({d,date:addD(wk,d),slot,key:v,only:pkey(p),personal:true});}
+}return out;}
 function prepCells(wk,raw){return weekCells(wk,raw).concat(personalCells(wk));}
 function grabDay(p,wk,d){const v=lunchPick(p.name,wk,d);return v&&R[v]&&R[v].cat==='grab'?v:null;}
-function grabCounts(wk){const o={};for(const p of eaters())for(let d=0;d<5;d++){const k=grabDay(p,wk,d);if(k)o[k]=(o[k]||0)+1;}return o;}
+function grabCounts(wk){const o={};for(const p of eaters())for(let d=0;d<7;d++){const k=grabDay(p,wk,d);if(k)o[k]=(o[k]||0)+1;}return o;}
 function lunchOptions(wk,d,name,cur,own){
   if(own)return '<option value="__plan"'+(!cur?' selected':'')+'>Default packed lunch</option><optgroup label="Packed lunches">'+(POOLS.grab||[]).filter(k=>!isHidden(k)&&(k!=='grabpizza'||d>=2)).sort(byName).map(k=>'<option value="'+k+'"'+(k===cur?' selected':'')+'>'+esc(R[k].name)+'</option>').join('')+'</optgroup><option value="__pizza"'+(cur==='__pizza'?' selected':'')+'>Pizza</option><option value="__none"'+(cur==='__none'?' selected':'')+'>Eating out or buying lunch</option>';const date=addD(wk,d),c=weekCells(wk).find(x=>x.d===d&&x.slot==='lunch'),plan=c?(c.pizza?'Pizza':c.none?'Eating out':c.key?R[c.key].name:'nothing planned'):'';
   let o='<option value="__plan"'+(!cur?' selected':'')+'>Same as the plan: '+esc(plan)+'</option>';
@@ -1507,18 +1529,35 @@ function lunchOptions(wk,d,name,cur,own){
   if(planned.length)o+='<optgroup label="Already cooking this week">'+planned.map(k=>'<option value="'+k+'"'+(k===cur?' selected':'')+'>'+esc(R[k].name)+'</option>').join('')+'</optgroup>';
   for(const t in TAGS){if(t==='grab'||t==='bfast')continue;const ks=Object.keys(R).filter(k=>R[k].cat==='main'&&R[k].tag===t&&!isHidden(k)&&!planned.includes(k)).sort(byName);if(ks.length)o+='<optgroup label="'+esc(TAGS[t])+'">'+ks.map(k=>'<option value="'+k+'"'+(k===cur?' selected':'')+'>'+esc(R[k].name)+'</option>').join('')+'</optgroup>';}
   return o+'<option value="__pizza"'+(cur==='__pizza'?' selected':'')+'>Pizza</option><option value="__none"'+(cur==='__none'?' selected':'')+'>Eating out or buying lunch</option>';}
-function lunchCard(wk){const ppl=eaters(),prev=addD(wk,-7),hasPrev=S.house.lunch&&S.house.lunch[prev]&&Object.keys(S.house.lunch[prev]).length;
-  let h='<div class="section" style="margin-top:0"><h2>Weekday lunches by person</h2><div class="card"><p class="hint" style="margin-top:0">Each of you can take something different to work. Leave a day on Same as the plan to eat the household lunch. Grab-and-go items go on the shopping list, a different recipe adds to that recipe\u2019s amounts, and pizza or eating out takes your share off. The count above updates as you pick.</p>'+(hasPrev?'<div class="row" style="margin-bottom:8px"><button class="btn" data-action="lunchcopy">Same lunches as last week</button></div>':'')+'<div class="lgrid">';
-  const owners=ppl.filter(ownLunch);if(owners.length)h+='<div class="note" style="margin-bottom:8px">'+owners.map(p=>esc(p.name)).join(' and ')+' packs '+(owners.length>1?'their':'her or his').replace('her or his',owners[0].name.toLowerCase()==='jen'?'her':'his')+' own weekday lunches, so none of the prepped food is set aside for them. Each weekday starts with a packed lunch; change any day below.</div>';
-  // One block per day, each person's choice stacked underneath, so it fits a phone screen.
-  for(let d=0;d<5;d++){h+='<div class="lday" style="padding:8px 0;border-top:1px solid var(--line)"><div style="font-weight:600;margin-bottom:6px">'+DAYN[d]+' '+fmtShort(addD(wk,d))+'</div>';
-    for(const p of ppl){const own=ownLunch(p),nm=pkey(p),L=S.house.lunch&&S.house.lunch[wk]&&S.house.lunch[wk][nm],raw=L?L[d]:undefined,arr=Array.isArray(raw)?raw.filter(k=>R[k]&&!isHidden(k)):null;
-      h+='<label style="display:block;margin:0 0 6px;max-width:100%"><span class="src" style="display:block;margin-bottom:2px">'+esc(p.name)+'</span>';
-      if(own&&arr&&arr.length>1)h+='<div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:4px">'+arr.map((k,i)=>'<span class="pill">'+esc(R[k].name)+' <button class="btn ghost" style="padding:0 4px" data-action="lunchrm" data-v="'+nm+'|'+d+'|'+i+'" aria-label="Remove '+esc(R[k].name)+'">\u00d7</button></span>').join('')+'</div>';
-      else{const cur=own?(arr&&arr[0]?arr[0]:(typeof raw==='string'?raw:null)):lunchPick(p.name,wk,d);
-        h+='<select data-pl="'+esc(nm)+'|'+d+'" aria-label="'+esc(p.name+' '+DAYN[d]+' lunch')+'" style="display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0">'+lunchOptions(wk,d,p.name,cur,own)+'</select>';}
-      if(own){const base=lunchBase(p.name,wk,d);if(base)h+='<select data-pladd="'+nm+'|'+d+'" aria-label="Add another item for '+esc(p.name+' '+DAYN[d])+'" style="display:block;margin-top:4px;max-width:100%"><option value="">+ Add another item</option>'+(POOLS.grab||[]).filter(k=>!isHidden(k)&&!base.includes(k)).sort(byName).map(k=>'<option value="'+k+'">'+esc(R[k].name)+'</option>').join('')+'</select>';}
-      h+='</label>';}
+function personSlotOptions(slot,wk,d,cur){
+  const date=addD(wk,d),c=weekCells(wk).find(x=>x.d===d&&x.slot===slot),plan=c?(c.pizza?'Pizza':c.none?'Eating out':c.key?R[c.key].name:'nothing planned'):'';
+  const m=menuFor(wk),cat=slot==='breakfast'?'breakfast':'main';
+  let o='<option value="__plan"'+(!cur?' selected':'')+'>Same as the plan: '+esc(plan)+'</option>';
+  if(slot==='dinner')o+='<option value="__pizza"'+(cur==='__pizza'?' selected':'')+'>Pizza</option>';
+  const planned=[...new Set(['b1','b2','m1','m2','m3'].map(k=>m[k]).concat(Object.values(m.cells||{})))].filter(k=>R[k]&&!isHidden(k)&&R[k].cat===cat).sort(byName);
+  if(planned.length)o+='<optgroup label="Already planned this week">'+planned.map(k=>'<option value="'+k+'"'+(k===cur?' selected':'')+'>'+esc(R[k].name)+'</option>').join('')+'</optgroup>';
+  for(const t in TAGS){const ks=Object.keys(R).filter(k=>R[k].cat===cat&&R[k].tag===t&&!isHidden(k)&&!planned.includes(k)).sort(byName);if(ks.length)o+='<optgroup label="'+esc(TAGS[t])+'">'+ks.map(k=>'<option value="'+k+'"'+(k===cur?' selected':'')+'>'+esc(R[k].name)+'</option>').join('')+'</optgroup>';}
+  o+='<option value="__none"'+(cur==='__none'?' selected':'')+'>Eating out or making something else</option>';
+  return o;}
+function mealsByPersonCard(wk){const ppl=eaters(),prev=addD(wk,-7),hasPrev=S.house.lunch&&S.house.lunch[prev]&&Object.keys(S.house.lunch[prev]).length;
+  let h='<div class="section" style="margin-top:0"><h2>Meals by person</h2><div class="card"><p class="hint" style="margin-top:0">Each of you can eat something different for any meal, any day. Leave a slot on Same as the plan to eat the household meal. For lunch, grab-and-go items go on the shopping list; for any slot, a different recipe adds to that recipe\u2019s amounts, and pizza or eating out or making something else takes your share off. The count above updates as you pick.</p>'+(hasPrev?'<div class="row" style="margin-bottom:8px"><button class="btn" data-action="lunchcopy">Same lunches as last week</button></div>':'')+'<div class="lgrid">';
+  const owners=ppl.filter(ownLunch);if(owners.length)h+='<div class="note" style="margin-bottom:8px">'+owners.map(p=>esc(p.name)).join(' and ')+' packs '+(owners.length>1?'their':'her or his').replace('her or his',owners[0].name.toLowerCase()==='jen'?'her':'his')+' own weekday lunches by default, so none of the prepped lunch is set aside for them Monday through Friday. Change any day below, including weekends.</div>';
+  // One block per day, breakfast/lunch/dinner stacked underneath with each person's choice, so it fits a phone screen.
+  for(let d=0;d<7;d++){h+='<div class="lday" style="padding:8px 0;border-top:1px solid var(--line)"><div style="font-weight:600;margin-bottom:6px">'+DAYN[d]+' '+fmtShort(addD(wk,d))+'</div>';
+    for(const slot of ['breakfast','lunch','dinner']){
+      h+='<div style="margin:0 0 8px"><div class="src" style="font-weight:600;margin-bottom:2px">'+(slot.charAt(0).toUpperCase()+slot.slice(1))+'</div>';
+      for(const p of ppl){
+        if(slot==='lunch'){const own=ownLunch(p)&&d<5,nm=pkey(p),L=S.house.lunch&&S.house.lunch[wk]&&S.house.lunch[wk][nm],raw=L?L[d]:undefined,arr=Array.isArray(raw)?raw.filter(k=>R[k]&&!isHidden(k)):null;
+          h+='<label style="display:block;margin:0 0 6px;max-width:100%"><span class="src" style="display:block;margin-bottom:2px">'+esc(p.name)+'</span>';
+          if(own&&arr&&arr.length>1)h+='<div class="row" style="flex-wrap:wrap;gap:6px;margin-bottom:4px">'+arr.map((k,i)=>'<span class="pill">'+esc(R[k].name)+' <button class="btn ghost" style="padding:0 4px" data-action="lunchrm" data-v="'+nm+'|'+d+'|'+i+'" aria-label="Remove '+esc(R[k].name)+'">\u00d7</button></span>').join('')+'</div>';
+          else{const cur=own?(arr&&arr[0]?arr[0]:(typeof raw==='string'?raw:null)):lunchPick(p.name,wk,d);
+            h+='<select data-pl="'+esc(nm)+'|'+d+'" aria-label="'+esc(p.name+' '+DAYN[d]+' lunch')+'" style="display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0">'+lunchOptions(wk,d,p.name,cur,own)+'</select>';}
+          if(own){const base=lunchBase(p.name,wk,d);if(base)h+='<select data-pladd="'+nm+'|'+d+'" aria-label="Add another item for '+esc(p.name+' '+DAYN[d])+'" style="display:block;margin-top:4px;max-width:100%"><option value="">+ Add another item</option>'+(POOLS.grab||[]).filter(k=>!isHidden(k)&&!base.includes(k)).sort(byName).map(k=>'<option value="'+k+'">'+esc(R[k].name)+'</option>').join('')+'</select>';}
+          h+='</label>';
+        }else{const nm=pkey(p),cur=personSlotPick(slot,p.name,wk,d);
+          h+='<label style="display:block;margin:0 0 6px;max-width:100%"><span class="src" style="display:block;margin-bottom:2px">'+esc(p.name)+'</span><select data-mp="'+nm+'|'+d+'|'+slot+'" aria-label="'+esc(p.name+' '+DAYN[d]+' '+slot)+'" style="display:block;box-sizing:border-box;width:100%;max-width:100%;min-width:0">'+personSlotOptions(slot,wk,d,cur)+'</select></label>';}
+      }
+      h+='</div>';}
     h+='</div>';}
   return h+'</div></div></div>';}
 function grabPortion(key){const r=R[key],d=RD[key];return {key,n:1,grab:true,name:r.name,url:'',items:d?d.ing.filter(t=>t[0]!=null).map(t=>(t[0]+(t[1]?' '+unitLabel(t[1],t[0]):'')+' '+t[2]).trim()):[],kcal:r.kcal,p:r.p,c:r.c,f:r.f,prep:r.note};}
@@ -4108,7 +4147,7 @@ function viewMenu(){
   h+='<details class="swap"><summary>Extra plates for kids or guests</summary><div class="form"><label class="f">Breakfast<input type="number" min="0" data-hh="breakfast" value="'+esc(ex.breakfast||0)+'"></label><label class="f">Lunch<input type="number" min="0" data-hh="lunch" value="'+esc(ex.lunch||0)+'"></label><label class="f">Dinner<input type="number" min="0" data-hh="dinner" value="'+esc(ex.dinner||0)+'"></label></div><div class="hint">Added to every meal of that type. Each adult in the app is sized automatically.</div></details></div>';}
   h+=doneCard(wk);
   if(S.mpMsg){h+='<div class="note good" style="margin-bottom:12px">'+esc(S.mpMsg)+'</div>';S.mpMsg='';}
-  return h+(step==='plan'?mpPlan(wk)+'<p class="hint" style="margin-top:12px">Different weekday lunches for each of you, including grab-and-go, are picked on The week.</p>':step==='snacks'?mpSnacks(wk):step==='prep'?mpPrep(wk):step==='week'?mpGlance(wk):viewGrocery(wk));
+  return h+(step==='plan'?mpPlan(wk)+'<p class="hint" style="margin-top:12px">Different breakfasts, lunches, and dinners for each of you, any day, including grab-and-go lunches, are picked on The week.</p>':step==='snacks'?mpSnacks(wk):step==='prep'?mpPrep(wk):step==='week'?mpGlance(wk):viewGrocery(wk));
 }
 function mpSnacks(wk){
   const pk=new Set(snackPicks(wk)),prev=snackPicks(addD(wk,-7));let n=0;
@@ -4127,7 +4166,7 @@ function supplyTally(wk){
   for(const x of prepTotals(wk)){const r=R[x.key],cat=r.cat==='breakfast'?'breakfast':'main',b=multFor(x.key,wk);
     cats[cat].keys.push({key:x.key,b,need:x.total,makes:r.yield?r.yield*b:x.total,fit:!r.yield,uses:x.uses.length});}
   let snacks=0;for(let d=0;d<7;d++)for(const s of slotsFor(addD(wk,d)))if(['snack','evening','fruit','preshake'].includes(s))snacks++;
-  let grab=0,own=0,packs=ppl.filter(ownLunch).map(p=>p.name);for(const p of ppl)for(let d=0;d<5;d++){const v=lunchPick(p.name,wk,d);if(!v)continue;if(v==='__pizza')pizza++;else if(v==='__none')none++;else if(R[v].cat==='grab')grab++;else own++;}
+  let grab=0,own=0,packs=ppl.filter(ownLunch).map(p=>p.name);for(const p of ppl)for(let d=0;d<7;d++)for(const slot of ['breakfast','lunch','dinner']){const v=personSlotPick(slot,p.name,wk,d);if(!v)continue;if(v==='__pizza')pizza++;else if(v==='__none')none++;else if(R[v].cat==='grab')grab++;else own++;}
   return {cats,pizza,none,snacks,grab,own,packs};
 }
 function tallyCard(wk){
@@ -4141,7 +4180,7 @@ function tallyCard(wk){
   const m=T.cats.main.slots;
   let h='<div class="card tally-card"><div class="subhead" style="margin-top:0">Meals to cover this week for '+esc(ppl)+'</div>';
   h+=block('Breakfasts',T.cats.breakfast,'');
-  h+=block('Lunches and dinners',T.cats.main,'About '+Math.ceil(m.lunch||0)+' for lunch and '+Math.ceil(m.dinner||0)+' for dinner'+(T.pizza?'; '+T.pizza+' pizza meal'+(T.pizza>1?'s':'')+' not counted':'')+(T.none?'; '+T.none+' meal'+(T.none>1?'s':'')+' marked as eating out':'')+(T.grab?'; '+T.grab+' grab-and-go lunch'+(T.grab>1?'es':'')+' not counted':'')+(T.own?'; '+T.own+' personal lunch pick'+(T.own>1?'s':'')+' included':'')+(T.packs&&T.packs.length?'; '+T.packs.join(' and ')+' pack'+(T.packs.length>1?' their':'s '+(String(T.packs[0]).toLowerCase()==='jen'?'her':'his'))+' own weekday lunch'+(T.packs.length>1?'es':'')+', so those are not counted':''));
+  h+=block('Lunches and dinners',T.cats.main,'About '+Math.ceil(m.lunch||0)+' for lunch and '+Math.ceil(m.dinner||0)+' for dinner'+(T.pizza?'; '+T.pizza+' pizza meal'+(T.pizza>1?'s':'')+' not counted':'')+(T.none?'; '+T.none+' meal'+(T.none>1?'s':'')+' marked as eating out':'')+(T.grab?'; '+T.grab+' grab-and-go lunch'+(T.grab>1?'es':'')+' not counted':'')+(T.own?'; '+T.own+' personal meal pick'+(T.own>1?'s':'')+' included':'')+(T.packs&&T.packs.length?'; '+T.packs.join(' and ')+' pack'+(T.packs.length>1?' their':'s '+(String(T.packs[0]).toLowerCase()==='jen'?'her':'his'))+' own weekday lunch'+(T.packs.length>1?'es':'')+', so those are not counted':''));
   h+='<div class="tblock"><div class="trow"><strong>Snacks</strong><span class="tnum">'+T.snacks+' for '+esc(S.profile.name)+'</span></div><div class="src">Afternoon, evening, and fruit snacks are grab-and-go from the shopping list. Nothing to cook.</div></div>';
   return h+'</div>';
 }
@@ -4186,15 +4225,15 @@ function cellOptions(wk,d,slot,cur,def){
 }
 function mpGlance(wk){
   const ppl=eaters(),td=todayStr(),m=menuFor(wk),cells=weekCells(wk);
-  let h='<p class="prose" style="margin-top:0">Every meal for the week, filled from your Sunday and midweek cooking. Change any single meal with its dropdown: pick something already planned, anything from the library, pizza, or eating out. The meal count below updates as you change days, and so do the prep and shopping lists for both of you.</p>'+(SC().pizzaTue?'<div class="card" style="margin-bottom:10px"><label class="f" style="max-width:320px">Pizza Tuesday at the in-laws this week is on<select data-pzday="'+wk+'">'+DAYN.map((n,i)=>'<option value="'+i+'"'+(i===pizzaDayOf(wk)?' selected':'')+'>'+n+'</option>').join('')+'</select></label><p class="src" style="margin:4px 0 0">Moving it puts that night\'s planned dinner back on the menu where pizza was, and resizes both of your days around it.</p></div>':'')+tallyCard(wk)+lunchCard(wk)+'<div class="glance2">';
+  let h='<p class="prose" style="margin-top:0">Every meal for the week, filled from your Sunday and midweek cooking. Change any single meal with its dropdown: pick something already planned, anything from the library, pizza, or eating out. The meal count below updates as you change days, and so do the prep and shopping lists for both of you. For a different pick just for one of you, any day, use Meals by person below.</p>'+(SC().pizzaTue?'<div class="card" style="margin-bottom:10px"><label class="f" style="max-width:320px">Pizza Tuesday at the in-laws this week is on<select data-pzday="'+wk+'">'+DAYN.map((n,i)=>'<option value="'+i+'"'+(i===pizzaDayOf(wk)?' selected':'')+'>'+n+'</option>').join('')+'</select></label><p class="src" style="margin:4px 0 0">Moving it puts that night\'s planned dinner back on the menu where pizza was, and resizes both of your days around it.</p></div>':'')+tallyCard(wk)+mealsByPersonCard(wk)+'<div class="glance2">';
   for(let d=0;d<7;d++){const date=addD(wk,d);
     h+='<div class="gday'+(date===td?' today':'')+'"><div class="gdh"><strong>'+DAYN[d]+'</strong> <span class="src">'+fmtShort(date)+'</span></div>';
     for(const slot of ['breakfast','lunch','dinner']){const c=cells.find(x=>x.d===d&&x.slot===slot),def=roleDefault(m,d,slot),cur=c.pizza?'__pizza':c.none?'__none':c.gap?'__gap':c.key;
       let sub='';
       if(c.key)sub=ppl.filter(p=>eatsCell(p,c,wk)).map(p=>esc(p.name)+' '+esc(amountText(c.key,portionFor(p,c.key,date,slot).n))).join(', ');
       else if(c.gap)sub='<span style="color:var(--red)">Not enough cooked for this meal. Pick something here, add to a batch, or fill it in that day.</span>';
-      if(slot==='lunch'){const own=ppl.map(p=>{const v=lunchPick(p.name,wk,d);return v?esc(p.name)+': '+(v==='__pizza'?'pizza':v==='__none'?'eating out':esc(R[v].name)):'';}).filter(Boolean);if(own.length)sub+=(sub?'. ':'')+own.join('; ');}
-      else if(c.pizza)sub='Each person\'s plan sets their own slice count';else if(c.none)sub='Nothing to prep';
+      const own=ppl.map(p=>{const v=personSlotPick(slot,p.name,wk,d);return v?esc(p.name)+': '+(v==='__pizza'?'pizza':v==='__none'?'eating out':esc(R[v].name)):'';}).filter(Boolean);if(own.length)sub+=(sub?'. ':'')+own.join('; ');
+      if(c.pizza&&!own.length)sub='Each person\'s plan sets their own slice count';else if(c.none&&!own.length)sub='Nothing to prep';
       if(c.key&&!c.over&&c.d>=4&&sessionOf(m,c.key,0)==='sun')sub+=' (from the freezer)';
       h+='<label class="gcell"><span class="glab">'+(slot.charAt(0).toUpperCase()+slot.slice(1))+(c.over?' <span class="tag red">Changed</span>':'')+(c.gap?' <span class="tag red">Not enough cooked</span>':'')+'</span><select data-cell="'+d+'-'+slot+'" aria-label="'+DAYN[d]+' '+slot+'">'+(c.gap?'<option value="__gap" selected>Nothing left (fill in)</option>':'')+cellOptions(wk,d,slot,cur,def)+'</select><span class="src">'+sub+'</span></label>';}
     h+='</div>';}
@@ -4354,7 +4393,10 @@ function buildReport(n){
   const L=[];const ln=x=>L.push(x);
   ln(p.name+'\'s Training Plan update, generated '+new Date().toLocaleString()+', app version '+APP_VERSION);
   ln('Person: '+p.name+'. Sex '+p.sex+', age '+p.age+', height '+p.heightIn+' in. Main training: '+(p.training==='own'?'own gym program':'home plan')+'; home sessions and gym workouts are logged separately and can both happen on one day. Pace goal '+p.pace+' lb per week, activity factor '+p.activity+'.');
-  for(const wk of [monday(td),addD(monday(td),7)]){const sp=snackPicks(wk);if(wk!==monday(td)&&!sp.length&&!(S.house.lunch&&S.house.lunch[wk]))continue;const lp=[0,1,2,3,4].map(d=>{const v=lunchPick(p.name,wk,d);return v?DAYN[d].slice(0,3)+' '+(v==='__pizza'?'pizza':v==='__none'?'eating out':R[v].name):'';}).filter(Boolean);ln('Snacks picked for the week of '+wk+': '+(sp.length?sp.map(k=>SNACK_BY_ID[k].name).join(', '):'none yet')+'. Plan snacks only from these.'+(lp.length?' Own weekday lunches: '+lp.join('; ')+'.':''));}
+  for(const wk of [monday(td),addD(monday(td),7)]){const sp=snackPicks(wk);if(wk!==monday(td)&&!sp.length&&!(S.house.lunch&&S.house.lunch[wk])&&!(S.house.bfast&&S.house.bfast[wk])&&!(S.house.dinner&&S.house.dinner[wk]))continue;
+    const ownText=slot=>[0,1,2,3,4,5,6].map(d=>{const v=personSlotPick(slot,p.name,wk,d);return v?DAYN[d].slice(0,3)+' '+(v==='__pizza'?'pizza':v==='__none'?'eating out':R[v].name):'';}).filter(Boolean);
+    const bp=ownText('breakfast'),lp=ownText('lunch'),dp=ownText('dinner');
+    ln('Snacks picked for the week of '+wk+': '+(sp.length?sp.map(k=>SNACK_BY_ID[k].name).join(', '):'none yet')+'. Plan snacks only from these.'+(bp.length?' Own breakfasts: '+bp.join('; ')+'.':'')+(lp.length?' Own lunches: '+lp.join('; ')+'.':'')+(dp.length?' Own dinners: '+dp.join('; ')+'.':''));}
   ln('Range: '+from+' to '+td+'. Program week '+weekNum(td)+', phase '+phaseOf(weekNum(td))+'. Start date '+p.startDate+'.');
   if((p.pendingNotes||[]).length){ln('');ln('NOTES FOR CLAUDE (act on these, then clear with clearNotes in the reply block):');for(const n of p.pendingNotes)ln('- ['+n.id+'] ('+n.date+', left on the '+(VIEWLABEL[n.view]||n.view)+' view): '+n.text);}
   {const H=(S.house&&S.house.foods)||{},need=Object.keys(H).filter(id=>H[id]&&!H[id].del&&H[id].fullRecipe&&H[id].url);
@@ -4955,7 +4997,12 @@ document.addEventListener('click',ev=>{
   if(a==='picktag'){S.pickTag=v;render();return;}
   if(a==='pickuse'||a==='addto'){const wk=curMenuWeek(),m=clone(menuFor(wk)),k=b.dataset.k;m[v]=k;setMenu(wk,m);S.pick=null;S.addKey=null;S.mpMsg=R[k].name+' is now '+(roles().find(x=>x.role===v)||{label:v}).label.toLowerCase()+' for the week of '+fmtShort(wk)+'.';if(a==='addto')window.scrollTo(0,0);render();return;}
   if(a==='addopen'){S.addKey=S.addKey===b.dataset.k?null:b.dataset.k;render();return;}
-  if(a==='copyweek'){const wk=curMenuWeek(),prev=S.house.menus&&S.house.menus[addD(wk,-7)];if(!prev||!prev.m1){S.mpMsg='There is no saved plan for last week to repeat.';render();return;}setMenu(wk,clone(prev));S.mpMsg='Copied last week\'s plan.';render();return;}
+  if(a==='copyweek'){const wk=curMenuWeek(),prev=S.house.menus&&S.house.menus[addD(wk,-7)];if(!prev||!prev.m1){S.mpMsg='There is no saved plan for last week to repeat.';render();return;}
+    // Cell-by-cell overrides (a single day swapped to a different recipe, marked pizza, or marked eating out/no prep)
+    // are a one-time, date-specific choice, often the result of a gap workaround, so they never carry forward to a
+    // new week; the new week starts with a clean slate and is free to flag its own real shortfalls. Recipe roles,
+    // the midweek cook day, and hand-set batch sizes still repeat, since those are standing choices.
+    const m=clone(prev);delete m.cells;setMenu(wk,m);S.mpMsg='Copied last week\'s plan.';render();return;}
   if(a==='midday'){const wk=curMenuWeek(),m=clone(menuFor(wk));m.mid=+v;setMenu(wk,m);render();return;}
   if(a==='nextpick'){const wk=curMenuWeek(),m=clone(menuFor(wk)),cur=m[v],pool=ranked(R[cur]?R[cur].tag:'pasta');m[v]=pool[(pool.indexOf(cur)+1)%pool.length];setMenu(wk,m);render();return;}
   if(a==='ate'){const m=plannedMeals(date)[slot];if(m.key&&R[m.key]){const arr=S.profile.eaten[m.key]=S.profile.eaten[m.key]||[];if(!arr.includes(date)){arr.push(date);arr.sort();if(arr.length>40)arr.shift();}saveProfile();}logMeal(date,slot,Object.assign({status:'plan',name:m.name,key:m.key||null,kcal:m.kcal,p:m.p,c:m.c,f:m.f},canAmt(m)?{n:m.n,amt:m.amt||amountText(m.key,m.n)}:{},m.cparts&&m.cparts.length>1?{items:m.cparts.filter(x=>x.on!==false).map(x=>({id:x.pid,n:x.label,s:'',q:1,k:r1(x.kcal),p:r1(x.p),c:r1(x.c),f:r1(x.f)}))}:m.parts&&m.parts.length?{items:m.parts.map(x=>({id:x.id,n:x.n,s:x.s,q:x.q,k:r1(x.q*x.k),p:r1(x.q*x.p),c:r1(x.q*x.c),f:r1(x.q*x.f)}))}:{}));S.snEdit=null;return;}
@@ -5145,6 +5192,8 @@ document.addEventListener('change',ev=>{
   if(el.dataset.side!==undefined){const wk=curMenuWeek();if(!el.value)hdel(['sides',wk,el.dataset.side]);else hset(['sides',wk,el.dataset.side],el.value);render();return;}
   if(el.dataset.pick!==undefined){const wk=curMenuWeek(),k=el.dataset.pick;if(k!==pkey({name:S.profile.name})){render();return;}if(el.checked)hset(['picked',wk,k],new Date().toISOString());else hdel(['picked',wk,k]);render();return;}
   if(el.dataset.pl!==undefined){const wk=curMenuWeek(),[nm,d]=el.dataset.pl.split('|');if(el.value==='__plan')hdel(['lunch',wk,nm,d]);else hset(['lunch',wk,nm,d],el.value);render();return;}
+  if(el.dataset.mp!==undefined){const[nm,d,slot]=el.dataset.mp.split('|'),wk=curMenuWeek(),sk=SLOT_STORE[slot];if(!sk)return;
+    if(el.value==='__plan')hdel([sk,wk,nm,d]);else hset([sk,wk,nm,d],el.value);render();return;}
   if(el.dataset.pladd!==undefined){const[nm,d]=el.dataset.pladd.split('|'),v=el.value;if(!v){render();return;}
     const wk=curMenuWeek(),base=lunchBase(nm,wk,+d)||[],arr=base.includes(v)?base.slice():base.concat([v]);
     hset(['lunch',wk,nm,d],arr);render();return;}
