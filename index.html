@@ -512,7 +512,7 @@ const SIDE_SHOP={rice:n=>'Rice: '+fmtS(n)+' cups cooked, about '+fmtS(Math.ceil(
   pasta:n=>'Pasta for sides: '+fmtS(n*2)+' oz dry, about '+fmtS(Math.ceil(n*2/16*4)/4)+' lb',bun:n=>'Whole-wheat buns: '+Math.ceil(n),tortillas:n=>'Small flour tortillas: '+Math.ceil(n*2),
   fruit:n=>'Bananas or apples for breakfast: '+Math.ceil(n),eggwhites:n=>'Liquid egg whites: '+fmtS(n)+' cups'};
 function sideFor(key,date){const r=R[key];if(!r)return null;if(date&&r.cat==='main'){const o=S.house&&S.house.sides&&S.house.sides[monday(date)]&&S.house.sides[monday(date)][key];if(o==='none')return null;if(o&&SIDES[o])return o;}return r.side||null;}
-function sideCounts(wk){const o={},ppl=eaters();for(const c of prepCells(wk)){if(!c.key)continue;const sd=sideFor(c.key,c.date);if(!sd)continue;for(const p of ppl)if(eatsCell(p,c,wk))o[sd]=(o[sd]||0)+1;}return o;}
+function sideCounts(wk){const o={},ppl=eaters();for(const c of cookCells(wk)){if(!c.key)continue;const sd=sideFor(c.key,c.date);if(!sd)continue;for(const p of ppl)if(eatsCell(p,c,wk))o[sd]=(o[sd]||0)+1;}return o;}
 function sideSelect(key,wk){const cur=(S.house.sides&&S.house.sides[wk]&&S.house.sides[wk][key])||'',def=R[key].side;
   return '<label class="f" style="min-width:180px">Side<select data-side="'+key+'">'+'<option value=""'+(!cur?' selected':'')+'>'+(def?'Recipe default: '+esc((SIDE_OPTS.find(x=>x[0]===def)||[0,def])[1]):'Recipe default: none')+'</option>'+SIDE_OPTS.slice().sort((a,b)=>a[0]==='none'?1:b[0]==='none'?-1:abc(a[1],b[1])).map(([v,l])=>'<option value="'+v+'"'+(cur===v?' selected':'')+'>'+esc(l)+'</option>').join('')+'</select></label>';}
 const VEG={name:'1 1/2 cups green vegetables or a side salad with light dressing',kcal:50,p:3,c:9,f:1};
@@ -800,6 +800,7 @@ function recipeForSlot(date,slot){const A=allocWeek(monday(date)),a=A&&A.map[dow
 function slotGap(date,slot){const A=allocWeek(monday(date));return !!(A&&A.map[dow(date)+'-'+slot]==='__gap');}
 function rawRecipeForSlot(date,slot){
   const o=cellOverride(date,slot);if(o)return o==='__pizza'||o==='__none'?null:o;
+  const cp=carryPlan(monday(date)).map[dow(date)+'-'+slot];if(cp)return cp;
   const k=roleDefault(menuFor(monday(date)),dow(date),slot);return k==='__pizza'?null:k;
 }
 /* =============== Portions in real amounts ===============
@@ -981,7 +982,7 @@ function scheduleNeeds(){debounce('basis',()=>{if(!S.house||!S.profile)return;co
 function sharedSoon(){if(S._shPend)return;S._shPend=true;setTimeout(()=>{S._shPend=false;if(S.profile)wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2500);}
 function scheduleShared(){debounce('shared',()=>{if(!S.profile)return;wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2000);}
 /* App version shown in the header and stamped on every Claude report. Bump it with every index.html delivered. */
-const APP_VERSION='2.0';
+const APP_VERSION='2.2';
 function setSync(s){S.sync=s;const el=document.getElementById('sync');if(el)el.textContent=syncText();}
 function syncText(){return !navigator.onLine?'Offline; changes will sync':S.sync==='error'?'Last save failed':'Synced';}
 function nameOf(uid){if(uid===S.uid)return S.profile.name;const x=S.shared[uid];return (x&&x.name)||'Partner';}
@@ -1338,10 +1339,42 @@ function tickWo(){if(S.view!=='workout'||!S.ready)return;const e=document.getEle
 setInterval(tickWo,500);
 async function toggleWake(){if(S.wake){try{await S.wake.release();}catch(e){}S.wake=null;S.wakeMsg='';}else{try{if(!('wakeLock' in navigator))throw new Error('unsupported');S.wake=await navigator.wakeLock.request('screen');S.wake.addEventListener('release',()=>{S.wake=null;});S.wakeMsg='';}catch(e){S.wake=null;S.wakeMsg='This browser did not allow keeping the screen on.';}}render();}
 function refreshWoStats(){const w=workoutFor(workoutKey(S.date),weekNum(S.date)),c=setCounts(S.date,w),el=document.getElementById('woProgress');if(el)el.textContent=c.total?c.done+' of '+c.total+' sets done':'';}
-function weekWoTotals(date){const mon=monday(date);let n=0,mins=0,plan=0;for(let i=0;i<7;i++){const d=addD(mon,i),l=S.days[d]||{};if(S.profile.training==='home'&&workoutKey(d)!=='REC')plan++;for(const r of [l.workout,l.gym])if(sessDone(r)){n++;mins+=n0(r.minutes);}}return {n,mins,plan};}
+function weekWoTotals(date){const mon=monday(date);let n=0,mins=0,plan=0;for(let i=0;i<7;i++){const d=addD(mon,i),l=S.days[d]||{};if(S.profile.training==='home'&&workoutKey(d)!=='REC')plan++;for(const r of [l.workout,l.gym])if(sessDone(r)){n++;mins+=n0(r.minutes);}for(const x of (l.mylog||[])){n++;mins+=n0(x.f&&x.f.min);}}return {n,mins,plan};}
+/* =============== Log my own workout ===============
+   A plain log on the Workout page: pick the equipment or exercise, fill in its fields, Add. Entries live on the day as
+   days[date].mylog = [{eq, name, f:{field:value}}] and count as a session in the week totals. Built-in equipment is the
+   garage gear; anything added with "+ Add equipment or exercise" is saved for the household in house.equip. */
+const FIELD_LIB={min:{l:'Time, minutes',t:'num',step:'1'},mph:{l:'Average speed, mph',t:'num',step:'0.1'},inc:{l:'Average incline, %',t:'num',step:'0.5'},
+  dist:{l:'Distance, miles (optional)',t:'num',step:'0.01',opt:true},distm:{l:'Distance, meters (optional)',t:'num',step:'10',opt:true},
+  res:{l:'Average resistance',t:'sel',o:['Low','Medium','High']},ped:{l:'Pedaling intensity',t:'sel',o:['Low-speed','Medium-speed','High-speed']},
+  pace:{l:'Stroke pace',t:'sel',o:['Easy','Steady','Hard']},eff:{l:'Effort',t:'sel',o:['Easy','Moderate','Hard']},
+  elev:{l:'Elevation gain, feet (optional)',t:'num',step:'10',opt:true},ex:{l:'Exercise',t:'text'},sets:{l:'Sets',t:'num',step:'1'},
+  reps:{l:'Reps per set',t:'num',step:'1'},lb:{l:'Weight, lb',t:'num',step:'2.5'},notes:{l:'Notes (optional)',t:'text',opt:true}};
+const EQUIP=[{id:'tread',name:'Treadmill',fields:['min','mph','inc','dist']},{id:'bike',name:'Stationary bike',fields:['min','res','ped']},
+  {id:'row',name:'Rowing machine',fields:['min','res','pace','distm']},{id:'db',name:'Dumbbells',fields:['ex','sets','reps','lb']},
+  {id:'bench',name:'Barbell bench',fields:['ex','sets','reps','lb']},{id:'swim',name:'Pool swim',fields:['min','eff']},
+  {id:'walk',name:'Walk outside',fields:['min','dist']},{id:'hike',name:'Hike',fields:['min','dist','elev']},{id:'mtb',name:'Mountain bike',fields:['min','eff','dist']}];
+function equipList(){return EQUIP.concat(((S.house&&S.house.equip)||[]).filter(e=>e&&e.id&&e.name&&Array.isArray(e.fields)));}
+function equipById(id){return equipList().find(e=>e.id===id);}
+function myLogText(x){const e=equipById(x.eq),f=x.f||{},bits=[];
+  if(f.ex)bits.push(f.ex);if(f.min)bits.push(f.min+' min');if(f.mph)bits.push(f.mph+' mph');if(f.inc!=null&&f.inc!=='')bits.push(f.inc+'% incline');
+  if(f.res)bits.push(f.res.toLowerCase()+' resistance');if(f.ped)bits.push(f.ped.toLowerCase()+' pedaling');if(f.pace)bits.push(f.pace.toLowerCase()+' stroke pace');
+  if(f.eff)bits.push(f.eff.toLowerCase()+' effort');if(f.sets&&f.reps)bits.push(f.sets+' x '+f.reps+(f.lb?' at '+f.lb+' lb':''));else if(f.lb)bits.push(f.lb+' lb');
+  if(f.dist)bits.push(f.dist+' mi');if(f.distm)bits.push(f.distm+' m');if(f.elev)bits.push(f.elev+' ft gain');if(f.notes)bits.push(f.notes);
+  return (x.name||(e&&e.name)||'Workout')+': '+bits.join(', ');}
+function myLogCard(date){const l=S.days[date]||{},log=l.mylog||[],eqs=equipList(),sel=equipById(S.myEq)||eqs[0];
+  let h='<div class="card"><div class="subhead" style="margin-top:0">Log my own workout</div>';
+  if(log.length)h+=log.map((x,i)=>'<div class="tline"><span>'+esc(myLogText(x))+'</span><button class="btn ghost" data-action="mylogrm" data-v="'+i+'" aria-label="Remove this entry">\u00d7</button></div>').join('');
+  h+='<label class="f" style="margin-top:6px">Equipment or exercise<select data-myeq>'+eqs.map(e=>'<option value="'+esc(e.id)+'"'+(e.id===sel.id?' selected':'')+'>'+esc(e.name)+'</option>').join('')+'</select></label><div class="form">';
+  for(const k of sel.fields){const F=FIELD_LIB[k];if(!F)continue;
+    h+='<label class="f">'+esc(F.l)+(F.t==='sel'?'<select id="myf-'+k+'"><option value="">Choose</option>'+F.o.map(o=>'<option>'+esc(o)+'</option>').join('')+'</select>':'<input id="myf-'+k+'" type="'+(F.t==='num'?'number':'text')+'"'+(F.t==='num'?' inputmode="decimal" min="0" step="'+F.step+'"':'')+'>')+'</label>';}
+  h+='</div><div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn primary" data-action="mylogadd">Add to today\u2019s log</button><button class="btn ghost" data-action="myeqnew">+ Add equipment or exercise</button>'+(sel.id.indexOf('c_')===0?'<button class="btn ghost" data-action="myeqdel" data-v="'+esc(sel.id)+'">Remove '+esc(sel.name)+' from the list</button>':'')+'</div>'+(S.myLogMsg?'<div class="src" style="color:var(--red)">'+esc(S.myLogMsg)+'</div>':'');
+  if(S.myEqNew)h+='<div class="card" style="margin-top:10px"><label class="f">Name<input id="myeqName" type="text" placeholder="For example, Kettlebell or Elliptical"></label><div class="src" style="margin:6px 0">What do you want to fill in for it?</div>'+Object.keys(FIELD_LIB).map(k=>'<label class="gitem" style="border:0;padding:2px 0"><input type="checkbox" data-myeqf="'+k+'"'+(k==='min'||k==='notes'?' checked':'')+'><span>'+esc(FIELD_LIB[k].l)+'</span></label>').join('')+'<div class="row" style="margin-top:6px"><button class="btn primary" data-action="myeqsave">Save to the list</button><button class="btn ghost" data-action="myeqnew">Cancel</button></div></div>';
+  return h+'</div>';}
 function viewWorkout(){
   const date=S.date,l=S.days[date]||{},wk=weekNum(date),mode=woMode(),rk=RK(mode),own=mode==='gym',key=workoutKey(date,mode),w=workoutFor(key,wk),st=l[rk]&&l[rk].status,wo=l.wo||{},tot=weekWoTotals(date);
   let h='<div class="daybar"><div><h2>Workout</h2><div class="sub">'+DAYN[dow(date)]+', '+fmtDate(date)+(date<S.profile.startDate?'':', week '+wk+', phase '+phaseOf(wk))+'</div></div><div class="navbtns"><button class="btn" data-action="date" data-v="-1" aria-label="Previous day">Prev</button>'+(date!==todayStr()?'<button class="btn" data-action="date" data-v="0">Today</button>':'')+'<button class="btn" data-action="date" data-v="1" aria-label="Next day">Next</button></div></div>';
+  h+=myLogCard(date);
   h+='<div class="row" style="margin-bottom:10px"><button class="btn'+(!own?' on':'')+'" data-action="womode" data-v="home" aria-pressed="'+!own+'">Home plan</button><button class="btn'+(own?' on':'')+'" data-action="womode" data-v="gym" aria-pressed="'+own+'">Gym</button><span class="src" style="align-self:center">Log either one, or both, on any day.</span></div>';
   {const ok2=own?'workout':'gym',o=l[ok2];if(o&&(o.status||o.minutes||o.type)){const t=own?workoutFor(workoutKey(date,'home'),wk).title:(o.type||'Gym workout');h+='<div class="note good" style="margin-bottom:10px"><strong>Also logged today, '+(own?'home plan':'gym')+':</strong> '+esc(t)+(o.status?', '+({done:'completed',partial:'partial',skip:'skipped',rest:'rest day'}[o.status]||o.status):'')+(o.minutes?', '+o.minutes+' min':'')+(o.intensity?', '+esc(o.intensity.toLowerCase()):'')+'. <button class="btn ghost" data-action="womode" data-v="'+(own?'home':'gym')+'">Open it</button></div>';}}
   // week strip
@@ -1528,11 +1561,36 @@ function eatsCell(p,c,wk){if(c.only)return pkey(p)===c.only;
   if(c.slot==='lunch'&&(lunchPick(p.name,wk,c.d)||(c.d<5&&ownLunch(p))))return false;
   if((c.slot==='breakfast'||c.slot==='dinner')&&personSlotPick(c.slot,p.name,wk,c.d))return false;
   return true;}
-function personalCells(wk){const out=[];for(const p of eaters())for(let d=0;d<7;d++){
-  const lv=lunchPick(p.name,wk,d);if(lv&&R[lv]&&R[lv].cat==='main')out.push({d,date:addD(wk,d),slot:'lunch',key:lv,only:pkey(p),personal:true});
-  for(const slot of ['breakfast','dinner']){const v=personSlotPick(slot,p.name,wk,d);if(v&&R[v]&&(slot==='breakfast'?R[v].cat==='breakfast':R[v].cat==='main'))out.push({d,date:addD(wk,d),slot,key:v,only:pkey(p),personal:true});}
+/* Meals already made that carry into a week (leftovers, extra frozen portions): house.carry[week] = {recipeKey: meals}.
+   They are not cooked or shopped for. They count toward the week's covered meals, and when one of you picks that
+   recipe for a slot in Meals by person, that slot is eaten from the carry-over (up to the number carried) instead of
+   from this week's cooking, so automatic batch sizes shrink. */
+function carryFor(wk){return {};}
+/* Meals carrying over from the week before (house.carryover[week] = {on, items:[{k, amt}]}, amt in the recipe's own
+   unit). They are planned FIRST: starting Monday, each carried-over recipe takes the earliest lunches and dinners (or
+   breakfasts, for a breakfast recipe) that both of you eat from the plan, a whole meal at a time, until its amount runs
+   out. A slot you set by hand, pizza, or eating out is skipped. Those slots are not cooked or shopped for, so this
+   week's recipes cover only what is left and their automatic batches shrink. Cached per render tick. */
+function carryItems(wk){const c=S.house&&S.house.carryover&&S.house.carryover[wk];return (c&&c.on&&Array.isArray(c.items))?c.items.filter(x=>x&&R[x.k]&&n0(x.amt)>0):[];}
+let CARRYC={},CARRY_BUSY=false;
+function carryPlan(wk){const c0=CARRYC[wk];if(c0&&c0.t===ALLOC_TICK)return c0.v;const out={map:{},items:[]};if(CARRY_BUSY)return out;
+  const items=carryItems(wk);if(!items.length){CARRYC[wk]={t:ALLOC_TICK,v:out};return out;}
+  CARRY_BUSY=true;try{const m=menuFor(wk),ppl=eaters();
+    for(const it of items){const cat=R[it.k].cat==='breakfast'?'breakfast':'main';let A=n0(it.amt);const cells=[];
+      for(let d=0;d<7;d++){const date=addD(wk,d);let stop=false;for(const slot of (cat==='breakfast'?['breakfast']:['lunch','dinner'])){const K=d+'-'+slot;
+        if(out.map[K]||cellOverride(date,slot)||(slot==='dinner'&&isPizza(date))||roleDefault(m,d,slot)==='__pizza')continue;
+        const c={d,date,slot},dem=ppl.reduce((t,p)=>t+(eatsCell(p,c,wk)?portionFor(p,it.k,date,slot).n:0),0)+n0((S.house.extras||{})[slot]);if(!(dem>0))continue;
+        if(A+1e-6>=dem*0.75){out.map[K]=it.k;A-=dem;cells.push({d,slot});}else{stop=true;break;}}if(stop)break;}
+      out.items.push({k:it.k,amt:n0(it.amt),cells,left:Math.max(0,Math.round(A*4)/4)});}
+  }finally{CARRY_BUSY=false;}
+  CARRYC[wk]={t:ALLOC_TICK,v:out};return out;}
+function personalCells(wk){const out=[],cf=carryFor(wk),used={};const mark=c=>{if(cf[c.key]&&(used[c.key]||0)<cf[c.key]){used[c.key]=(used[c.key]||0)+1;c.carry=true;}return c;};
+  for(const p of eaters())for(let d=0;d<7;d++){
+  const lv=lunchPick(p.name,wk,d);if(lv&&R[lv]&&R[lv].cat==='main')out.push(mark({d,date:addD(wk,d),slot:'lunch',key:lv,only:pkey(p),personal:true}));
+  for(const slot of ['breakfast','dinner']){const v=personSlotPick(slot,p.name,wk,d);if(v&&R[v]&&(slot==='breakfast'?R[v].cat==='breakfast':R[v].cat==='main'))out.push(mark({d,date:addD(wk,d),slot,key:v,only:pkey(p),personal:true}));}
 }return out;}
 function prepCells(wk,raw){return weekCells(wk,raw).concat(personalCells(wk));}
+function cookCells(wk,raw){return prepCells(wk,raw).filter(c=>!c.carry);}
 function grabDay(p,wk,d){const v=lunchPick(p.name,wk,d);return v&&R[v]&&R[v].cat==='grab'?v:null;}
 function grabCounts(wk){const o={};for(const p of eaters())for(let d=0;d<7;d++){const k=grabDay(p,wk,d);if(k)o[k]=(o[k]||0)+1;}return o;}
 function lunchOptions(wk,d,name,cur,own){
@@ -1548,9 +1606,11 @@ function personSlotOptions(slot,wk,d,cur){
   const m=menuFor(wk),cat=slot==='breakfast'?'breakfast':'main';
   let o='<option value="__plan"'+(!cur?' selected':'')+'>Same as the plan: '+esc(plan)+'</option>';
   if(slot==='dinner')o+='<option value="__pizza"'+(cur==='__pizza'?' selected':'')+'>Pizza</option>';
-  const planned=[...new Set(['b1','b2','m1','m2','m3'].map(k=>m[k]).concat(Object.values(m.cells||{})))].filter(k=>R[k]&&!isHidden(k)&&R[k].cat===cat).sort(byName);
+  const cfk=Object.keys(carryFor(wk)).filter(k=>R[k].cat===cat).sort(byName);
+  if(cfk.length)o+='<optgroup label="Already made, carried over">'+cfk.map(k=>'<option value="'+k+'"'+(k===cur?' selected':'')+'>'+esc(R[k].name)+'</option>').join('')+'</optgroup>';
+  const planned=[...new Set(['b1','b2','m1','m2','m3'].map(k=>m[k]).concat(Object.values(m.cells||{})))].filter(k=>R[k]&&!isHidden(k)&&R[k].cat===cat&&!cfk.includes(k)).sort(byName);
   if(planned.length)o+='<optgroup label="Already planned this week">'+planned.map(k=>'<option value="'+k+'"'+(k===cur?' selected':'')+'>'+esc(R[k].name)+'</option>').join('')+'</optgroup>';
-  for(const t in TAGS){const ks=Object.keys(R).filter(k=>R[k].cat===cat&&R[k].tag===t&&!isHidden(k)&&!planned.includes(k)).sort(byName);if(ks.length)o+='<optgroup label="'+esc(TAGS[t])+'">'+ks.map(k=>'<option value="'+k+'"'+(k===cur?' selected':'')+'>'+esc(R[k].name)+'</option>').join('')+'</optgroup>';}
+  for(const t in TAGS){const ks=Object.keys(R).filter(k=>R[k].cat===cat&&R[k].tag===t&&!isHidden(k)&&!planned.includes(k)&&!cfk.includes(k)).sort(byName);if(ks.length)o+='<optgroup label="'+esc(TAGS[t])+'">'+ks.map(k=>'<option value="'+k+'"'+(k===cur?' selected':'')+'>'+esc(R[k].name)+'</option>').join('')+'</optgroup>';}
   o+='<option value="__none"'+(cur==='__none'?' selected':'')+'>Eating out or making something else</option>';
   return o;}
 // How much of whatever a person is actually eating for one cell: their own pick if they have one (skipped for a
@@ -4033,7 +4093,7 @@ let ALLOC_TICK=0,ALLOCC={};
 function allocWeek(wk){if(!S.house||!S.house.menus)return null;const m0=S.house.menus[wk];if(!m0||!m0.mult||!Object.keys(m0.mult).length)return null;
   const c0=ALLOCC[wk];if(c0&&c0.t===ALLOC_TICK)return c0.v;ALLOCC[wk]={t:ALLOC_TICK,v:null};const v=allocCompute(wk);ALLOCC[wk]={t:ALLOC_TICK,v};return v;}
 function allocCompute(wk){const m=menuFor(wk),ov=m.mult||{},ppl=eaters(),ex=(S.house.extras||{})[wk]||S.house.extras||{};
-  const raw=weekCells(wk,true),pers=personalCells(wk),K=c=>c.d+'-'+c.slot,pos=c=>c.d*3+['breakfast','lunch','dinner'].indexOf(c.slot),kind=k=>R[k].cat==='breakfast'?'b':'m';
+  const raw=weekCells(wk,true).filter(c=>!c.carry),pers=personalCells(wk).filter(c=>!c.carry),K=c=>c.d+'-'+c.slot,pos=c=>c.d*3+['breakfast','lunch','dinner'].indexOf(c.slot),kind=k=>R[k].cat==='breakfast'?'b':'m';
   const dem=(c,k)=>{let t=c.personal?0:n0(ex[c.slot]);for(const p of ppl)if(eatsCell(p,c,wk))t+=portionFor(p,k,c.date,c.slot).n;return t;};
   const keys=[...new Set(raw.concat(pers).filter(c=>c.key).map(c=>c.key))],rawT=prepTotals(wk,true),rem={};
   for(const k of keys){const y=R[k].yield;if(!y){rem[k]=Infinity;continue;}const x=rawT.find(q=>q.key===k);rem[k]=(ov[k]||needBatches(k,x?x.total:0))*y;}
@@ -4049,7 +4109,7 @@ function allocCompute(wk){const m=menuFor(wk),ov=m.mult||{},ppl=eaters(),ex=(S.h
       if(moved)break;}
     if(!moved)break;}
   return {map,gaps:order.filter(c=>map[K(c)]==='__gap').sort((a,b)=>pos(a)-pos(b)).map(c=>({d:c.d,slot:c.slot,key:c.key}))};}
-function needBatches(key,total){const y=R[key]&&R[key].yield;if(!y||!(total>0))return 1;return Math.max(1,Math.ceil(total/y*2-1e-9)/2);}
+function needBatches(key,total){const y=R[key]&&R[key].yield;if(!y||!(total>0))return 1;return Math.max(1,Math.ceil(total/y-1e-9));}
 function autoMult(key,wk){const x=prepTotals(wk||curMenuWeek(),true).find(y=>y.key===key);return x?needBatches(key,x.total):1;}
 function multFor(key,wk){const m=menuFor(wk||curMenuWeek());return (m.mult&&m.mult[key])||autoMult(key,wk);}
 function batchName(b){return b===0.5?'Half batch':b===1?'1 batch':b===2?'Double batch':b===3?'Triple batch':fmtNum(b)+' batches';}
@@ -4142,14 +4202,14 @@ function weekCells(wk,raw){const out=[];
     if(slot==='dinner'&&isPizza(date)){out.push({d,date,slot,pizza:true,over:cellOverride(date,slot)==='__pizza'&&roleDefault(menuFor(wk),d,slot)!=='__pizza'});continue;}
     const o=cellOverride(date,slot);if(o==='__none'){out.push({d,date,slot,none:true,over:true});continue;}
     if(o==='__pizza'&&slot!=='breakfast'){out.push({d,date,slot,pizza:true,over:true});continue;}
-    const key=raw?rawRecipeForSlot(date,slot):recipeForSlot(date,slot);out.push({d,date,slot,key:R[key]?key:null,over:!!o,gap:!raw&&(slotGap(date,slot)||!R[key])});}}
+    const key=raw?rawRecipeForSlot(date,slot):recipeForSlot(date,slot);const cy=!o&&!!carryPlan(wk).map[d+'-'+slot];out.push({d,date,slot,key:R[key]?key:null,over:!!o,carry:cy,gap:!cy&&!raw&&(slotGap(date,slot)||!R[key])});}}
   return out;}
 function usesText(uses){const by={};for(const[d,slot]of uses)(by[slot]=by[slot]||[]).push(d);
   return ['breakfast','lunch','dinner'].filter(s=>by[s]).map(s=>{const ds=[...new Set(by[s])].sort();return (s.charAt(0).toUpperCase()+s.slice(1))+' '+(ds.length===7?'every day':ds.map(d=>DAYN[d].slice(0,3)).join(', '));}).join('; ');}
 function sessionOf(m,key,firstDay){if(key===m.m3)return 'mid';if([m.b1,m.b2,m.m1,m.m2].includes(key))return 'sun';return firstDay>=(m.mid===3?3:2)?'mid':'sun';}
 function prepTotals(wk,raw){
   const o={},ppl=eaters(),ex=S.house.extras||{},m=menuFor(wk);
-  for(const c of prepCells(wk,raw)){if(!c.key)continue;const x=o[c.key]=o[c.key]||{key:c.key,total:0,uses:[],per:{},kids:0,freeze:0,first:c.d};
+  for(const c of cookCells(wk,raw)){if(!c.key)continue;const x=o[c.key]=o[c.key]||{key:c.key,total:0,uses:[],per:{},kids:0,freeze:0,first:c.d};
     let tot=0;for(const p of ppl){if(!eatsCell(p,c,wk))continue;const n=portionFor(p,c.key,c.date,c.slot).n;x.per[p.name]=(x.per[p.name]||0)+n;tot+=n;}
     const k=c.personal?0:n0(ex[c.slot]);x.kids+=k;tot+=k;x.total+=tot;x.uses.push([c.d,c.slot]);x.first=Math.min(x.first,c.d);x._late=(x._late||0)+(c.d>=4?tot:0);}
   return Object.values(o).map(x=>{x.session=sessionOf(m,x.key,x.first);x.freeze=x.session==='sun'?x._late:0;x.roles=[usesText(x.uses)];return x;});
@@ -4190,6 +4250,7 @@ function mpSnacks(wk){
 function supplyTally(wk){
   const ppl=eaters(),ex=S.house.extras||{},cats={breakfast:{need:0,slots:{breakfast:0},keys:[]},main:{need:0,slots:{lunch:0,dinner:0},keys:[]}};let pizza=0,none=0;
   for(const c of prepCells(wk)){if(c.pizza){pizza++;continue;}if(c.gap){let cnt=n0(ex[c.slot]);for(const p of ppl)if(eatsCell(p,c,wk))cnt++;const cat=c.slot==='breakfast'?'breakfast':'main';cats[cat].need+=cnt;cats[cat].gap=(cats[cat].gap||0)+cnt;(cats[cat].gapL=cats[cat].gapL||[]).push(c);continue;}if(c.none||!c.key){none++;continue;}
+    if(c.carry){const cat=R[c.key].cat==='breakfast'?'breakfast':'main';let cnt=n0(ex[c.slot]);for(const p of ppl)if(eatsCell(p,c,wk))cnt++;cats[cat].need+=cnt;cats[cat].carry=(cats[cat].carry||0)+cnt;continue;}
     let cnt=c.personal?0:n0(ex[c.slot]);for(const p of ppl){if(eatsCell(p,c,wk))cnt++;}
     const cat=R[c.key].cat==='breakfast'?'breakfast':'main';cats[cat].need+=cnt;cats[cat].slots[c.slot]=(cats[cat].slots[c.slot]||0)+cnt;cats[cat].by=cats[cat].by||{};cats[cat].by[c.key]=(cats[cat].by[c.key]||0)+cnt;}
   for(const x of prepTotals(wk)){const r=R[x.key],cat=r.cat==='breakfast'?'breakfast':'main',b=multFor(x.key,wk);
@@ -4199,18 +4260,26 @@ function supplyTally(wk){
   for(const p of ppl)for(let d=0;d<7;d++)for(const slot of ['breakfast','lunch','dinner']){const v=personSlotPick(slot,p.name,wk,d);if(!v)continue;
     const hc=wc.find(x=>x.d===d&&x.slot===slot);if(hc&&(hc.pizza||hc.none))continue;
     if(v==='__pizza')pizza++;else if(v==='__none'){if(slot==='breakfast')noneB++;else noneM++;}else if(R[v].cat==='grab')grab++;else own++;}
+  const cf=carryFor(wk);for(const k in cf){const cat=R[k].cat==='breakfast'?'breakfast':'main';cats[cat].carry=(cats[cat].carry||0)+cf[k];}
   return {cats,pizza,none:noneB+noneM,noneB,noneM,snacks,grab,own,packs};
 }
+function carryCard(wk){const prev=addD(wk,-7),cf=carryFor(wk),tot=Object.values(cf).reduce((a,b)=>a+b,0),okCat=k=>R[k]&&!isHidden(k)&&(R[k].cat==='main'||R[k].cat==='breakfast');
+  const cooked=[...new Set(prepTotals(prev).map(x=>x.key))].filter(k=>okCat(k)&&!cf[k]).sort(byName),rest=Object.keys(R).filter(k=>okCat(k)&&!cf[k]&&!cooked.includes(k)).sort(byName);
+  let h='<div class="tblock"><div class="trow"><strong>Already made, carried over</strong><span class="tnum">'+tot+' meal'+(tot===1?'':'s')+'</span></div><div class="src" style="margin-bottom:6px">Leftovers or frozen meals going into this week. They count toward the meals covered above. To eat one, pick it for that meal in Meals by person below; it comes out of these instead of this week\u2019s cooking.'+(wk===monday(todayStr())?' To record what carries into next week, tap Next at the top.':'')+'</div>';
+  for(const k in cf)h+='<div class="tline"><span>'+esc(R[k].name)+'</span><span class="stepper"><input type="number" min="0" step="1" inputmode="numeric" data-carryn="'+k+'" value="'+cf[k]+'" aria-label="Meals of '+esc(R[k].name)+' carried over" style="width:64px;text-align:center"><span class="src">meals</span><button class="btn ghost" data-action="carryrm" data-k="'+k+'" aria-label="Remove '+esc(R[k].name)+'">\u00d7</button></span></div>';
+  h+='<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:6px"><select id="carryKey" aria-label="Meal carried over" style="flex:1 1 200px;min-width:0;max-width:100%"><option value="">Pick a meal you already have made</option>'+(cooked.length?'<optgroup label="Cooked the week of '+esc(fmtShort(prev))+'">'+cooked.map(k=>'<option value="'+k+'">'+esc(R[k].name)+'</option>').join('')+'</optgroup>':'')+'<optgroup label="Other recipes">'+rest.map(k=>'<option value="'+k+'">'+esc(R[k].name)+'</option>').join('')+'</optgroup></select><input id="carryN" type="number" min="1" step="1" inputmode="numeric" value="1" aria-label="How many meals" style="width:64px;text-align:center"><button class="btn" data-action="carryadd">Add</button></div></div>';
+  return h;}
 function tallyCard(wk){
   const T=supplyTally(wk),ppl=eaters().map(p=>p.name).join(' and ');
   const block=(title,c,sub)=>{const short=c.keys.filter(k=>!k.fit&&k.makes+1e-6<k.need);
-    const by=c.by||{},cov=Math.round(c.keys.reduce((a,k)=>a+n0(by[k.key])*(k.fit||!(k.need>0)?1:Math.min(1,k.makes/k.need)),0)),pct=c.need?Math.min(100,cov/c.need*100):100;
-    let h='<div class="tblock"><div class="trow"><strong>'+title+'</strong><span class="tnum'+(short.length||c.gap?' short':'')+'">'+cov+' of '+c.need+' meal'+(c.need===1?'':'s')+' covered</span></div><div class="tbar"><i class="'+(short.length||c.gap?'short':'')+'" style="width:'+pct+'%"></i></div><div class="src">'+(sub?sub+'. ':'')+(c.gap?(()=>{const gl=c.gapL||[];const nm=gl.map(g=>DAYN[g.d]+' '+g.slot),lst=nm.length>1?nm.slice(0,-1).join(', ')+' and '+nm[nm.length-1]:nm[0];return '<span style="color:var(--red)">Not enough cooked for '+lst+' ('+c.gap+' of the '+c.need+' meals). They are left empty for you to fill in, or add to a batch below.</span> ';})():'')+(short.length?short.map(k=>esc(R[k.key].name)).join(' and ')+(short.length>1?' come':' comes')+' up short; add to the batch below.':c.gap?'':'Every recipe covers what you need.')+'</div>';
+    const by=c.by||{},cov=Math.round(c.keys.reduce((a,k)=>a+n0(by[k.key])*(k.fit||!(k.need>0)?1:k.makes/k.need),0)+n0(c.carry)),pct=c.need?Math.min(100,cov/c.need*100):100,lowC=cov<c.need;
+    let h='<div class="tblock"><div class="trow"><strong>'+title+'</strong><span class="tnum'+(lowC?' short':'')+'">'+cov+' of '+c.need+' meal'+(c.need===1?'':'s')+' covered</span></div><div class="tbar"><i class="'+(lowC?'short':'')+'" style="width:'+pct+'%"></i></div><div class="src">'+(cov>c.need?'<strong>'+(cov-c.need)+' more than the week calls for.</strong> ':'')+(c.carry?'Includes '+c.carry+' already made, carried over from last week'+(c.gap?', which can fill the empty meals below':'')+'. ':'')+(sub?sub+'. ':'')+(c.gap?(()=>{const gl=c.gapL||[];const nm=gl.map(g=>DAYN[g.d]+' '+g.slot),lst=nm.length>1?nm.slice(0,-1).join(', ')+' and '+nm[nm.length-1]:nm[0];return '<span style="color:var(--red)">Not enough cooked for '+lst+' ('+c.gap+' of the '+c.need+' meals). They are left empty for you to fill in, or add to a batch below.</span> ';})():'')+(short.length?short.map(k=>esc(R[k.key].name)).join(' and ')+(short.length>1?' come':' comes')+' up short; add to the batch below.':c.gap?'':'Every recipe covers what you need.')+'</div>';
     for(const k of c.keys){const r=R[k.key],sh=!k.fit&&k.makes+1e-6<k.need,ext=k.fit?0:k.makes-k.need;
       h+='<div class="tline"><span>'+esc(r.name)+' <span class="src"'+(sh?' style="color:var(--red)"':'')+'>Need '+esc(qtyOf(k.key,k.need))+(k.fit?', made to fit':'; makes '+esc(qtyOf(k.key,k.makes))+(sh?', short '+esc(qtyOf(k.key,k.need-k.makes)):ext>0.12?', '+esc(qtyOf(k.key,ext))+' extra':''))+'</span>'+batchAutoLink(k.key,wk)+'</span>'+batchStepper(k.key,wk)+'</div>';}
     return h+'</div>';};
   const m=T.cats.main.slots;
   let h='<div class="card tally-card"><div class="subhead" style="margin-top:0">Meals to cover this week for '+esc(ppl)+'</div>';
+  const CP=carryPlan(wk);if(CP.items.length)h+='<div class="note good" style="margin:0 0 10px"><strong>Carried over, planned first:</strong> '+CP.items.map(x=>esc(R[x.k].name)+' ('+esc(amountText(x.k,x.amt))+') '+(x.cells.length?'for '+x.cells.map(c=>DAYN[c.d].slice(0,3)+' '+c.slot).join(', '):'has no open meal to go to')+(x.left>0?', with about '+esc(amountText(x.k,x.left))+' left over':'')).join('; ')+'. Change these on Pick meals.</div>';
   const hn=weekCells(wk).filter(c=>c.none);
   if(hn.length)h+='<div class="note" style="margin:0 0 10px;border-left:4px solid var(--red)"><strong>Marked eating out for both of you on the plan itself:</strong> '+hn.map(c=>DAYN[c.d]+' '+c.slot).join(', ')+'. These are left out of the counts below, and changing each person to eating out on these same meals will not change the counts. <button class="btn" style="margin-top:6px" data-action="clearnone">Put these back in the plan</button></div>';
   h+=block('Breakfasts',T.cats.breakfast,T.noneB?T.noneB+' breakfast'+(T.noneB>1?'s':'')+' marked as eating out or making something else, not counted':'');
@@ -4233,9 +4302,20 @@ function mpPlan(wk){
   if(SC().pizzaTue)h+='<div class="slot fixed"><div class="when">'+DAYN[pizzaDayOf(wk)]+' dinner</div><h3>Pizza Tuesday at the in-laws</h3><div class="src">Nothing to prep. Each person\'s plan builds Tuesday around their own slice count.</div></div>';
   const extra=prepTotals(wk).filter(x=>![m.b1,m.b2,m.m1,m.m2,m.m3].includes(x.key));
   if(extra.length)h+='<div class="note" style="margin-top:10px">You also added '+extra.map(x=>esc(R[x.key].name)+' ('+esc(x.roles[0])+')').join(', ')+' in The week. It is included in the cooking list.</div>';
+  h+=carryoverSection(wk);
   h+='<div class="row" style="margin:14px 0"><button class="btn primary" data-action="mpstep" data-v="prep">Next: Cooking day</button></div>';
   return h+viewLibrary();
 }
+function unitWord(k){return amountText(k,2).replace(/^[\d\s\/]+/,'')||'portions';}
+function carryoverSection(wk){const prev=addD(wk,-7),c=(S.house.carryover||{})[wk]||{},on=!!c.on,items=Array.isArray(c.items)?c.items:[],P=carryPlan(wk),okCat=k=>R[k]&&!isHidden(k)&&(R[k].cat==='main'||R[k].cat==='breakfast');
+  let h='<div class="card" style="margin-top:12px"><label class="gitem" style="border:0"><input type="checkbox" data-carryon'+(on?' checked':'')+'><span><strong>We have meals carrying over from the week of '+esc(fmtShort(prev))+'</strong></span></label>';
+  if(!on)return h+'</div>';
+  h+='<p class="src" style="margin:4px 0 8px">Carried-over meals are planned first, starting Monday, before this week\u2019s cooking. Whatever they cover comes off what you cook and shop for.</p>';
+  items.forEach((x,i)=>{if(!R[x.k])return;const pi=P.items.find(y=>y.k===x.k);
+    h+='<div class="tline"><span>'+esc(R[x.k].name)+'<span class="src" style="display:block">'+(pi&&pi.cells.length?'Planned for '+pi.cells.map(c=>DAYN[c.d].slice(0,3)+' '+c.slot).join(', ')+(pi.left>0?'. About '+esc(amountText(x.k,pi.left))+' left over, not enough for another meal for both of you':''):'Not enough for a meal for both of you yet')+'</span></span><span class="stepper"><input type="number" inputmode="decimal" min="0" step="any" data-coamt="'+i+'" value="'+esc(x.amt)+'" aria-label="Amount of '+esc(R[x.k].name)+'" style="width:70px;text-align:center"><span class="src">'+esc(unitWord(x.k))+'</span><button class="btn ghost" data-action="corm" data-v="'+i+'" aria-label="Remove '+esc(R[x.k].name)+'">\u00d7</button></span></div>';});
+  const have=items.map(x=>x.k),cooked=[...new Set(prepTotals(prev).map(x=>x.key))].filter(k=>okCat(k)&&!have.includes(k)).sort(byName),rest=Object.keys(R).filter(k=>okCat(k)&&!have.includes(k)&&!cooked.includes(k)).sort(byName),sel=S.coKey&&R[S.coKey]?S.coKey:'';
+  h+='<div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px"><select data-cokey aria-label="Meal carrying over" style="flex:1 1 220px;min-width:0;max-width:100%"><option value="">Pick the meal carrying over</option>'+(cooked.length?'<optgroup label="Cooked the week of '+esc(fmtShort(prev))+'">'+cooked.map(k=>'<option value="'+k+'"'+(k===sel?' selected':'')+'>'+esc(R[k].name)+'</option>').join('')+'</optgroup>':'')+'<optgroup label="Every other recipe">'+rest.map(k=>'<option value="'+k+'"'+(k===sel?' selected':'')+'>'+esc(R[k].name)+'</option>').join('')+'</optgroup></select><input id="coAmt" type="number" inputmode="decimal" min="0" step="any" placeholder="Amount" aria-label="Amount carrying over" style="width:80px;text-align:center"><span class="src">'+(sel?esc(unitWord(sel)):'')+'</span><button class="btn" data-action="coadd">Add</button></div>';
+  return h+'</div>';}
 function recipeScore(k){const a=hAvg(k),r=a||3,ds=daysSince(S.house.made[k]);let s=r*10;if(ds!=null&&ds<10)s-=25;if(a&&a<=2)s-=20;return s;}
 function pickerHTML(role,cat,cur){
   const tag=S.pickTag||'',ks=Object.keys(R).filter(k=>R[k].cat===cat&&!isHidden(k)&&k!==cur&&tagMatch(k,tag)).sort(tag==='top'?byTop:tag?byName:byTagName);
@@ -4264,7 +4344,7 @@ function mpGlance(wk){
     h+='<div class="gday'+(date===td?' today':'')+'"><div class="gdh"><strong>'+DAYN[d]+'</strong> <span class="src">'+fmtShort(date)+'</span></div>';
     for(const slot of ['breakfast','lunch','dinner']){const c=cells.find(x=>x.d===d&&x.slot===slot),def=roleDefault(m,d,slot),cur=c.pizza?'__pizza':c.none?'__none':c.gap?'__gap':c.key;
       let sub='';
-      if(c.key)sub=ppl.filter(p=>eatsCell(p,c,wk)).map(p=>esc(p.name)+' '+esc(amountText(c.key,portionFor(p,c.key,date,slot).n))).join(', ');
+      if(c.key)sub=(c.carry?'Carried over. ':'')+ppl.filter(p=>eatsCell(p,c,wk)).map(p=>esc(p.name)+' '+esc(amountText(c.key,portionFor(p,c.key,date,slot).n))).join(', ');
       else if(c.gap)sub='<span style="color:var(--red)">Not enough cooked for this meal. Pick something here, add to a batch, or fill it in that day.</span>';
       const own=ppl.map(p=>{const v=personSlotPick(slot,p.name,wk,d);return v?esc(p.name)+': '+(v==='__pizza'?'pizza':v==='__none'?'eating out':esc(R[v].name)):'';}).filter(Boolean);if(own.length)sub+=(sub?'. ':'')+own.join('; ');
       if(c.pizza&&!own.length)sub='Each person\'s plan sets their own slice count';else if(c.none&&!own.length)sub='Nothing to prep';
@@ -4430,7 +4510,7 @@ function buildReport(n){
   for(const wk of [monday(td),addD(monday(td),7)]){const sp=snackPicks(wk);if(wk!==monday(td)&&!sp.length&&!(S.house.lunch&&S.house.lunch[wk])&&!(S.house.bfast&&S.house.bfast[wk])&&!(S.house.dinner&&S.house.dinner[wk]))continue;
     const ownText=slot=>[0,1,2,3,4,5,6].map(d=>{const v=personSlotPick(slot,p.name,wk,d);return v?DAYN[d].slice(0,3)+' '+(v==='__pizza'?'pizza':v==='__none'?'eating out':R[v].name):'';}).filter(Boolean);
     const bp=ownText('breakfast'),lp=ownText('lunch'),dp=ownText('dinner');
-    ln('Snacks picked for the week of '+wk+': '+(sp.length?sp.map(k=>SNACK_BY_ID[k].name).join(', '):'none yet')+'. Plan snacks only from these.'+(bp.length?' Own breakfasts: '+bp.join('; ')+'.':'')+(lp.length?' Own lunches: '+lp.join('; ')+'.':'')+(dp.length?' Own dinners: '+dp.join('; ')+'.':''));}
+    ln('Snacks picked for the week of '+wk+': '+(sp.length?sp.map(k=>SNACK_BY_ID[k].name).join(', '):'none yet')+'. Plan snacks only from these.'+(bp.length?' Own breakfasts: '+bp.join('; ')+'.':'')+(lp.length?' Own lunches: '+lp.join('; ')+'.':'')+(dp.length?' Own dinners: '+dp.join('; ')+'.':'')+(()=>{const it=carryPlan(wk).items;return it.length?' Carried over into this week and planned first: '+it.map(x=>amountText(x.k,x.amt)+' '+R[x.k].name+(x.cells.length?' for '+x.cells.map(c=>DAYN[c.d].slice(0,3)+' '+c.slot).join(', '):'')).join('; ')+'.':'';})());}
   ln('Range: '+from+' to '+td+'. Program week '+weekNum(td)+', phase '+phaseOf(weekNum(td))+'. Start date '+p.startDate+'.');
   if((p.pendingNotes||[]).length){ln('');ln('NOTES FOR CLAUDE (act on these, then clear with clearNotes in the reply block):');for(const n of p.pendingNotes)ln('- ['+n.id+'] ('+n.date+', left on the '+(VIEWLABEL[n.view]||n.view)+' view): '+n.text);}
   {const H=(S.house&&S.house.foods)||{},need=Object.keys(H).filter(id=>H[id]&&!H[id].del&&H[id].fullRecipe&&H[id].url);
@@ -4453,6 +4533,7 @@ function buildReport(n){
     if(l.gym&&(l.gym.status||l.gym.type))ln('  Gym: '+gymLine(l.gym)+'.');
     ln('  Workout'+(primaryMode()==='gym'?' (home plan)':'')+(l.times&&l.times.workout?' at '+fmtTime(l.times.workout):'')+': '+wk.title+', planned about '+wk.minutes+' min. '+(ws2?({done:'Completed',partial:'Partial',skip:'Skipped'}[ws2]):'Not logged')+(l.workout&&l.workout.minutes?', '+l.workout.minutes+' min':'')+(l.workout&&l.workout.note?'. Note: '+l.workout.note:'')+(l.workoutOverride?'. Moved from the previous day':'')+'.');
     if(l.lifts&&Object.keys(l.lifts).length)ln('  Lifts (weight x reps per set): '+Object.entries(l.lifts).map(([k,v])=>k+' '+v).join('; ')+'.');
+    if(l.mylog&&l.mylog.length)ln('  Own workout log: '+l.mylog.map(myLogText).join('; ')+'.');
     if(l.cardio&&Object.keys(l.cardio).length){const c=l.cardio;ln('  Cardio detail: '+[c.min?c.min+' min':'',c.mph?c.mph+' mph':'',c.inc?c.inc+' percent incline':'',c.dist?c.dist+' mi':'',c.hr?'avg heart rate '+c.hr:'',c.act||'',c.rounds&&c.rounds.filter(Boolean).length?c.rounds.filter(Boolean).length+' hard rounds':''].filter(Boolean).join(', ')+'.');}
     if(l.free&&l.free.some(x=>x.n))ln('  Exercises: '+l.free.filter(x=>x.n).map(x=>x.n+' '+x.t).join('; ')+'.');
     if(l.wo&&l.wo.effort)ln('  Effort: '+EFFORT[l.wo.effort].toLowerCase()+'.');
@@ -5023,6 +5104,19 @@ document.addEventListener('click',ev=>{
   if(a==='trophy'){S.trophyOpen=(v&&S.trophyOpen!==v)?v:null;render();return;}
   if(a==='recipe'){const id=b.dataset.id;S.recOpen[id]=!S.recOpen[id];render();return;}
   if(a==='clearnone'){const wk=curMenuWeek(),m=clone(menuFor(wk));if(m.cells)for(const k of Object.keys(m.cells))if(m.cells[k]==='__none')delete m.cells[k];setMenu(wk,m);render();return;}
+  if(a==='carryadd'){const wk=curMenuWeek(),k=(document.getElementById('carryKey')||{}).value,n=Math.round(n0((document.getElementById('carryN')||{}).value));if(!k||!R[k]||!(n>0))return;hset(['carry',wk,k],n0(carryFor(wk)[k])+n);render();return;}
+  if(a==='carryrm'){hdel(['carry',curMenuWeek(),b.dataset.k]);render();return;}
+  if(a==='mylogadd'){const e=equipById(S.myEq)||equipList()[0],f={};for(const k of e.fields){const el=document.getElementById('myf-'+k);if(!el)continue;const v=String(el.value||'').trim();if(v!=='')f[k]=FIELD_LIB[k].t==='num'?+v:v;}
+    const req=e.fields.filter(k=>FIELD_LIB[k]&&!FIELD_LIB[k].opt&&(k==='min'||k==='sets'));if(req.some(k=>f[k]==null)||!Object.keys(f).length){S.myLogMsg='Fill in '+req.map(k=>FIELD_LIB[k].l.split(',')[0].toLowerCase()).join(' and ')+' first.';render();return;}
+    S.myLogMsg='';const l=day(S.date);l.mylog=(l.mylog||[]).concat([{eq:e.id,name:e.name,f}]);saveDay(S.date);render();return;}
+  if(a==='mylogrm'){const l=day(S.date);l.mylog=(l.mylog||[]).filter((_,i)=>i!==+v);saveDay(S.date);render();return;}
+  if(a==='myeqnew'){S.myEqNew=!S.myEqNew;render();return;}
+  if(a==='myeqsave'){const nm=String((document.getElementById('myeqName')||{}).value||'').trim(),fs=[...document.querySelectorAll('[data-myeqf]:checked')].map(x=>x.dataset.myeqf);
+    if(!nm||!fs.length){S.myLogMsg='Give it a name and pick at least one thing to fill in.';render();return;}
+    const id='c_'+nm.toLowerCase().replace(/[^a-z0-9]+/g,'_').slice(0,30)+'_'+Date.now().toString(36);hset(['equip'],((S.house.equip)||[]).concat([{id,name:nm,fields:fs}]));S.myEq=id;S.myEqNew=false;S.myLogMsg='';render();return;}
+  if(a==='myeqdel'){hset(['equip'],((S.house.equip)||[]).filter(e=>e.id!==v));S.myEq=null;render();return;}
+  if(a==='coadd'){const wk=curMenuWeek(),k=S.coKey,amt=n0((document.getElementById('coAmt')||{}).value);if(!k||!R[k]||!(amt>0))return;const c=clone((S.house.carryover||{})[wk]||{on:true,items:[]});c.on=true;c.items=(c.items||[]).filter(x=>x.k!==k).concat([{k,amt:Math.round((amt+n0(((c.items||[]).find(x=>x.k===k)||{}).amt))*100)/100}]);hset(['carryover',wk],c);S.coKey='';render();return;}
+  if(a==='corm'){const wk=curMenuWeek(),c=clone((S.house.carryover||{})[wk]||{on:true,items:[]});c.items=(c.items||[]).filter((_,i)=>i!==+v);hset(['carryover',wk],c);render();return;}
   if(a==='batchauto'){const wk=curMenuWeek(),m=clone(menuFor(wk));m.mult=Object.assign({},m.mult||{});delete m.mult[b.dataset.k];setMenu(wk,m);render();return;}
   if(a==='batch'){const wk=curMenuWeek(),m=clone(menuFor(wk)),k=b.dataset.k;m.mult=Object.assign({},m.mult||{});const n=Math.max(0.5,Math.min(4,multFor(k,wk)+n0(v)));if(Math.abs(n-autoMult(k,wk))<1e-9)delete m.mult[k];else m.mult[k]=n;setMenu(wk,m);render();return;}
   if(a==='shapply'){shApply(v,addD(todayStr(),-60));render();return;}
@@ -5229,6 +5323,11 @@ document.addEventListener('change',ev=>{
   if(el.dataset.side!==undefined){const wk=curMenuWeek();if(!el.value)hdel(['sides',wk,el.dataset.side]);else hset(['sides',wk,el.dataset.side],el.value);render();return;}
   if(el.dataset.pick!==undefined){const wk=curMenuWeek(),k=el.dataset.pick;if(k!==pkey({name:S.profile.name})){render();return;}if(el.checked)hset(['picked',wk,k],new Date().toISOString());else hdel(['picked',wk,k]);render();return;}
   if(el.dataset.pl!==undefined){const wk=curMenuWeek(),[nm,d]=el.dataset.pl.split('|');if(el.value==='__plan')hdel(['lunch',wk,nm,d]);else hset(['lunch',wk,nm,d],el.value);render();return;}
+  if(el.dataset.carryon!==undefined){const wk=curMenuWeek(),c=clone((S.house.carryover||{})[wk]||{items:[]});c.on=el.checked;c.items=c.items||[];hset(['carryover',wk],c);render();return;}
+  if(el.dataset.cokey!==undefined){S.coKey=el.value;render();return;}
+  if(el.dataset.coamt!==undefined){const wk=curMenuWeek(),i=+el.dataset.coamt,c=clone((S.house.carryover||{})[wk]||{on:true,items:[]}),n=n0(el.value);if(!c.items||!c.items[i])return;if(n>0)c.items[i].amt=n;else c.items.splice(i,1);hset(['carryover',wk],c);render();return;}
+  if(el.dataset.myeq!==undefined){S.myEq=el.value;S.myLogMsg='';render();return;}
+  if(el.dataset.carryn!==undefined){const wk=curMenuWeek(),k=el.dataset.carryn,n=Math.round(n0(el.value));if(n>0)hset(['carry',wk,k],n);else hdel(['carry',wk,k]);render();return;}
   if(el.dataset.mp!==undefined){const[nm,d,slot]=el.dataset.mp.split('|'),wk=curMenuWeek(),sk=SLOT_STORE[slot];if(!sk)return;
     if(el.value==='__plan')hdel([sk,wk,nm,d]);else hset([sk,wk,nm,d],el.value);render();return;}
   if(el.dataset.pladd!==undefined){const[nm,d]=el.dataset.pladd.split('|'),v=el.value;if(!v){render();return;}
