@@ -49,6 +49,14 @@ button,input,select,textarea{font:inherit;color:inherit}
 .status{display:flex;flex-direction:column;align-items:flex-end;gap:2px;text-align:right;flex-shrink:0}
 .ver{font-size:11px;color:var(--headmuted);opacity:.85}
 .zoomctl{display:flex;align-items:center;gap:4px}
+.mptwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px}
+.mpt{border-collapse:collapse;font-size:13px;min-width:640px;width:100%}
+.mpt th,.mpt td{border:1px solid var(--line);padding:5px 6px;vertical-align:top;text-align:left;line-height:1.25}
+.mpt thead th{background:var(--soft,transparent);font-weight:700;text-align:center}
+.mpt tbody th{position:sticky;left:0;background:var(--panel);font-weight:700;white-space:nowrap;z-index:1}
+.mpt tr.grp>*{border-top:3px solid var(--line)}
+.mpt td span{display:block;font-size:11px;color:var(--muted)}
+.mpt td.red{color:var(--red);font-weight:700}
 .zoomctl button{background:none;border:1px solid var(--headmuted);color:var(--headink);border-radius:6px;width:20px;height:20px;line-height:1;font-size:13px;padding:0;cursor:pointer}
 .zoomctl button:disabled{opacity:.35;cursor:default}
 .zoompct{font-size:11px;color:var(--headmuted);min-width:30px;text-align:center}
@@ -982,7 +990,7 @@ function scheduleNeeds(){debounce('basis',()=>{if(!S.house||!S.profile)return;co
 function sharedSoon(){if(S._shPend)return;S._shPend=true;setTimeout(()=>{S._shPend=false;if(S.profile)wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2500);}
 function scheduleShared(){debounce('shared',()=>{if(!S.profile)return;wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2000);}
 /* App version shown in the header and stamped on every Claude report. Bump it with every index.html delivered. */
-const APP_VERSION='2.2';
+const APP_VERSION='2.3';
 function setSync(s){S.sync=s;const el=document.getElementById('sync');if(el)el.textContent=syncText();}
 function syncText(){return !navigator.onLine?'Offline; changes will sync':S.sync==='error'?'Last save failed':'Synced';}
 function nameOf(uid){if(uid===S.uid)return S.profile.name;const x=S.shared[uid];return (x&&x.name)||'Partner';}
@@ -1624,6 +1632,29 @@ function personAmountLine(p,wk,d,slot){const date=addD(wk,d),target=p.me?targets
   if(v&&R[v]){if(R[v].cat==='grab')return '';const pr=portionFor(p,v,date,slot);return pr?amountText(v,pr.n):'';}
   const c=weekCells(wk).find(x=>x.d===d&&x.slot===slot);
   return (c&&c.key)?amountText(c.key,portionFor(p,c.key,date,slot).n):'';}
+/* Meal prep table: the same week laid out the way Karl and Jen keep it on paper. One row per person per meal
+   (J-Break, K-Break, then lunches, then dinners), Monday through Sunday, then a line per cooked recipe with its batch,
+   what it covers, each person's amount, and what to freeze on Sunday. Read-only; changes are made in the dropdowns. */
+function prepCellText(p,wk,d,slot){
+  const v=slot==='lunch'?lunchPick(p.name,wk,d):personSlotPick(slot,p.name,wk,d);
+  if(v==='__pizza')return {t:'Pizza'};if(v==='__none')return {t:'Eating out'};
+  if(v&&R[v])return R[v].cat==='grab'?{t:'Pack lunch',s:R[v].name}:{t:R[v].name};
+  if(slot==='lunch'&&d<5&&ownLunch(p))return {t:'Pack lunch'};
+  const c=weekCells(wk).find(x=>x.d===d&&x.slot===slot);if(!c)return {t:''};
+  if(c.pizza)return {t:'Pizza'};if(c.none)return {t:'Eating out'};if(c.gap||!c.key)return {t:'Nothing planned',red:true};
+  return {t:R[c.key].name,s:c.carry?'carried over':''};}
+function prepTableCard(wk){const ppl=eaters();
+  let h='<div class="section"><h2>Meal prep table</h2><div class="card"><div class="mptwrap"><table class="mpt"><thead><tr><th></th>'+DAYN.map(n=>'<th>'+esc(n.slice(0,3))+'</th>').join('')+'</tr></thead><tbody>';
+  [['breakfast','Break'],['lunch','Lunch'],['dinner','Dinner']].forEach(([slot,lab],gi)=>{
+    ppl.slice().sort((a,b)=>a.name.toLowerCase()==='jen'?-1:b.name.toLowerCase()==='jen'?1:0).forEach((p,pi)=>{
+      h+='<tr class="'+(gi&&!pi?'grp':'')+'"><th>'+esc(p.name.charAt(0).toUpperCase())+'-'+lab+'</th>';
+      for(let d=0;d<7;d++){const x=prepCellText(p,wk,d,slot);h+='<td'+(x.red?' class="red"':'')+'>'+esc(x.t)+(x.s?'<span>'+esc(x.s)+'</span>':'')+'</td>';}
+      h+='</tr>';});});
+  h+='</tbody></table></div>';
+  const T=prepTotals(wk).sort((a,b)=>(R[a.key].cat==='breakfast'?0:1)-(R[b.key].cat==='breakfast'?0:1)||a.first-b.first);
+  for(const x of T){const r=R[x.key],b=multFor(x.key,wk),meals=x.uses.length;
+    h+='<p style="margin:10px 0 0"><strong>'+esc(r.name)+'</strong>, '+esc(batchName(b).toLowerCase())+(r.yield?', makes '+esc(qtyOf(x.key,b*r.yield)):'')+', covering '+meals+' meal'+(meals===1?'':'s')+': '+esc(usesText(x.uses))+'.<br><span class="src">'+Object.entries(x.per).map(([n,v])=>esc(n)+' '+esc(qtyOf(x.key,v))).join(', ')+(x.kids?', extra plates '+esc(qtyOf(x.key,x.kids)):'')+'.'+(x.freeze>0?' Freeze '+esc(qtyOf(x.key,x.freeze))+' on Sunday for Friday through Sunday.':'')+'</span></p>';}
+  return h+'</div></div>';}
 function mealsByPersonCard(wk){const ppl=eaters(),prev=addD(wk,-7),hasPrev=S.house.lunch&&S.house.lunch[prev]&&Object.keys(S.house.lunch[prev]).length;
   let h='<div class="section" style="margin-top:0"><h2>Meals by person</h2><div class="card"><p class="hint" style="margin-top:0">Each of you can eat something different for any meal, any day. Leave a slot on Same as the plan to eat the household meal. For lunch, grab-and-go items go on the shopping list; for any slot, a different recipe adds to that recipe\u2019s amounts, and pizza or eating out or making something else takes your share off. The count above updates as you pick.</p>'+(hasPrev?'<div class="row" style="margin-bottom:8px"><button class="btn" data-action="lunchcopy">Same lunches as last week</button></div>':'')+'<div class="lgrid">';
   const owners=ppl.filter(ownLunch);if(owners.length)h+='<div class="note" style="margin-bottom:8px">'+owners.map(p=>esc(p.name)).join(' and ')+' packs '+(owners.length>1?'their':'her or his').replace('her or his',owners[0].name.toLowerCase()==='jen'?'her':'his')+' own weekday lunches by default, so none of the prepped lunch is set aside for them Monday through Friday. Change any day below, including weekends.</div>';
@@ -4339,7 +4370,7 @@ function cellOptions(wk,d,slot,cur,def){
 }
 function mpGlance(wk){
   const ppl=eaters(),td=todayStr(),m=menuFor(wk),cells=weekCells(wk);
-  let h='<p class="prose" style="margin-top:0">Every meal for the week, filled from your Sunday and midweek cooking. Change any single meal with its dropdown: pick something already planned, anything from the library, pizza, or eating out. The meal count below updates as you change days, and so do the prep and shopping lists for both of you. For a different pick just for one of you, any day, use Meals by person below.</p>'+(SC().pizzaTue?'<div class="card" style="margin-bottom:10px"><label class="f" style="max-width:320px">Pizza Tuesday at the in-laws this week is on<select data-pzday="'+wk+'">'+DAYN.map((n,i)=>'<option value="'+i+'"'+(i===pizzaDayOf(wk)?' selected':'')+'>'+n+'</option>').join('')+'</select></label><p class="src" style="margin:4px 0 0">Moving it puts that night\'s planned dinner back on the menu where pizza was, and resizes both of your days around it.</p></div>':'')+tallyCard(wk)+mealsByPersonCard(wk)+'<div class="glance2">';
+  let h='<p class="prose" style="margin-top:0">Every meal for the week, filled from your Sunday and midweek cooking. Change any single meal with its dropdown: pick something already planned, anything from the library, pizza, or eating out. The meal count below updates as you change days, and so do the prep and shopping lists for both of you. For a different pick just for one of you, any day, use Meals by person below.</p>'+(SC().pizzaTue?'<div class="card" style="margin-bottom:10px"><label class="f" style="max-width:320px">Pizza Tuesday at the in-laws this week is on<select data-pzday="'+wk+'">'+DAYN.map((n,i)=>'<option value="'+i+'"'+(i===pizzaDayOf(wk)?' selected':'')+'>'+n+'</option>').join('')+'</select></label><p class="src" style="margin:4px 0 0">Moving it puts that night\'s planned dinner back on the menu where pizza was, and resizes both of your days around it.</p></div>':'')+tallyCard(wk)+prepTableCard(wk)+mealsByPersonCard(wk)+'<div class="glance2">';
   for(let d=0;d<7;d++){const date=addD(wk,d);
     h+='<div class="gday'+(date===td?' today':'')+'"><div class="gdh"><strong>'+DAYN[d]+'</strong> <span class="src">'+fmtShort(date)+'</span></div>';
     for(const slot of ['breakfast','lunch','dinner']){const c=cells.find(x=>x.d===d&&x.slot===slot),def=roleDefault(m,d,slot),cur=c.pizza?'__pizza':c.none?'__none':c.gap?'__gap':c.key;
