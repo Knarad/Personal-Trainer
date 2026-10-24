@@ -57,6 +57,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .mpt tr.grp>*{border-top:3px solid var(--line)}
 .mpt td span{display:block;font-size:11px;color:var(--muted)}
 .mpt td.red{color:var(--red);font-weight:700}
+.mpt td b.amt{display:block;margin-top:3px;font-size:12px;font-weight:700;color:var(--red)}
 .zoomctl button{background:none;border:1px solid var(--headmuted);color:var(--headink);border-radius:6px;width:20px;height:20px;line-height:1;font-size:13px;padding:0;cursor:pointer}
 .zoomctl button:disabled{opacity:.35;cursor:default}
 .zoompct{font-size:11px;color:var(--headmuted);min-width:30px;text-align:center}
@@ -990,7 +991,7 @@ function scheduleNeeds(){debounce('basis',()=>{if(!S.house||!S.profile)return;co
 function sharedSoon(){if(S._shPend)return;S._shPend=true;setTimeout(()=>{S._shPend=false;if(S.profile)wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2500);}
 function scheduleShared(){debounce('shared',()=>{if(!S.profile)return;wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2000);}
 /* App version shown in the header and stamped on every Claude report. Bump it with every index.html delivered. */
-const APP_VERSION='2.3';
+const APP_VERSION='2.4';
 function setSync(s){S.sync=s;const el=document.getElementById('sync');if(el)el.textContent=syncText();}
 function syncText(){return !navigator.onLine?'Offline; changes will sync':S.sync==='error'?'Last save failed':'Synced';}
 function nameOf(uid){if(uid===S.uid)return S.profile.name;const x=S.shared[uid];return (x&&x.name)||'Partner';}
@@ -1641,14 +1642,16 @@ function prepCellText(p,wk,d,slot){
   if(v&&R[v])return R[v].cat==='grab'?{t:'Pack lunch',s:R[v].name}:{t:R[v].name};
   if(slot==='lunch'&&d<5&&ownLunch(p))return {t:'Pack lunch'};
   const c=weekCells(wk).find(x=>x.d===d&&x.slot===slot);if(!c)return {t:''};
-  if(c.pizza)return {t:'Pizza'};if(c.none)return {t:'Eating out'};if(c.gap||!c.key)return {t:'Nothing planned',red:true};
+  if(c.pizza){const n=slicesFor(addD(wk,d),slot,p.me?targetsFor(addD(wk,d)).kcal*(shares(addD(wk,d))[slot]||BASIS[slot]):p.kcal*BASIS[slot]);return {t:'Pizza',a:n+' slice'+(n===1?'':'s')};}
+  if(c.none)return {t:'Eating out'};if(c.gap||!c.key)return {t:'Nothing planned',red:true};
   return {t:R[c.key].name,s:c.carry?'carried over':''};}
+function prepCellFull(p,wk,d,slot){const x=prepCellText(p,wk,d,slot);if(!x.a&&!x.red&&x.t!=='Eating out'&&x.t!=='Pack lunch')x.a=personAmountLine(p,wk,d,slot).replace(/ planned$/,'').replace(/\s*\([^)]*\)\s*$/,'');return x;}
 function prepTableCard(wk){const ppl=eaters();
   let h='<div class="section"><h2>Meal prep table</h2><div class="card"><div class="mptwrap"><table class="mpt"><thead><tr><th></th>'+DAYN.map(n=>'<th>'+esc(n.slice(0,3))+'</th>').join('')+'</tr></thead><tbody>';
   [['breakfast','Break'],['lunch','Lunch'],['dinner','Dinner']].forEach(([slot,lab],gi)=>{
     ppl.slice().sort((a,b)=>a.name.toLowerCase()==='jen'?-1:b.name.toLowerCase()==='jen'?1:0).forEach((p,pi)=>{
       h+='<tr class="'+(gi&&!pi?'grp':'')+'"><th>'+esc(p.name.charAt(0).toUpperCase())+'-'+lab+'</th>';
-      for(let d=0;d<7;d++){const x=prepCellText(p,wk,d,slot);h+='<td'+(x.red?' class="red"':'')+'>'+esc(x.t)+(x.s?'<span>'+esc(x.s)+'</span>':'')+'</td>';}
+      for(let d=0;d<7;d++){const x=prepCellFull(p,wk,d,slot);h+='<td'+(x.red?' class="red"':'')+'>'+esc(x.t)+(x.a?'<b class="amt">'+esc(x.a)+'</b>':'')+(x.s?'<span>'+esc(x.s)+'</span>':'')+'</td>';}
       h+='</tr>';});});
   h+='</tbody></table></div>';
   const T=prepTotals(wk).sort((a,b)=>(R[a.key].cat==='breakfast'?0:1)-(R[b.key].cat==='breakfast'?0:1)||a.first-b.first);
