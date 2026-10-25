@@ -57,6 +57,11 @@ button,input,select,textarea{font:inherit;color:inherit}
 .mpt tr.grp>*{border-top:3px solid var(--line)}
 .mpt td span{display:block;font-size:11px;color:var(--muted)}
 .mpt td.red{color:var(--red);font-weight:700}
+.mpt td.tap{cursor:pointer}
+.mpt td.tap:hover,.mpt td.tap:focus{background:var(--soft);outline:none}
+.mpt td.ed{background:var(--soft);min-width:150px}
+.mpt td.ed select{display:block;width:100%;max-width:100%;font-size:13px;min-height:36px;margin-bottom:4px}
+.mpt td.ed .btn{font-size:12px;padding:2px 8px;min-height:0}
 .mpt td b.amt{display:block;margin-top:3px;font-size:12px;font-weight:700;color:var(--red)}
 .zoomctl button{background:none;border:1px solid var(--headmuted);color:var(--headink);border-radius:6px;width:20px;height:20px;line-height:1;font-size:13px;padding:0;cursor:pointer}
 .zoomctl button:disabled{opacity:.35;cursor:default}
@@ -991,7 +996,7 @@ function scheduleNeeds(){debounce('basis',()=>{if(!S.house||!S.profile)return;co
 function sharedSoon(){if(S._shPend)return;S._shPend=true;setTimeout(()=>{S._shPend=false;if(S.profile)wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2500);}
 function scheduleShared(){debounce('shared',()=>{if(!S.profile)return;wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2000);}
 /* App version shown in the header and stamped on every Claude report. Bump it with every index.html delivered. */
-const APP_VERSION='2.4';
+const APP_VERSION='2.5';
 function setSync(s){S.sync=s;const el=document.getElementById('sync');if(el)el.textContent=syncText();}
 function syncText(){return !navigator.onLine?'Offline; changes will sync':S.sync==='error'?'Last save failed':'Synced';}
 function nameOf(uid){if(uid===S.uid)return S.profile.name;const x=S.shared[uid];return (x&&x.name)||'Partner';}
@@ -1646,12 +1651,19 @@ function prepCellText(p,wk,d,slot){
   if(c.none)return {t:'Eating out'};if(c.gap||!c.key)return {t:'Nothing planned',red:true};
   return {t:R[c.key].name,s:c.carry?'carried over':''};}
 function prepCellFull(p,wk,d,slot){const x=prepCellText(p,wk,d,slot);if(!x.a&&!x.red&&x.t!=='Eating out'&&x.t!=='Pack lunch')x.a=personAmountLine(p,wk,d,slot).replace(/ planned$/,'').replace(/\s*\([^)]*\)\s*$/,'');return x;}
+// The dropdown that opens in a tapped table cell: the same choices as Meals by person, for that one person and meal.
+function prepCellEditor(p,wk,d,slot){const nm=pkey(p);let sel;
+  if(slot==='lunch'){const own=ownLunch(p)&&d<5,L=S.house.lunch&&S.house.lunch[wk]&&S.house.lunch[wk][nm],raw=L?L[d]:undefined,arr=Array.isArray(raw)?raw.filter(k=>R[k]&&!isHidden(k)):null,cur=own?(arr&&arr[0]?arr[0]:(typeof raw==='string'?raw:null)):lunchPick(p.name,wk,d);
+    sel='<select data-pl="'+esc(nm)+'|'+d+'" aria-label="'+esc(p.name+' '+DAYN[d]+' lunch')+'">'+lunchOptions(wk,d,p.name,cur,own)+'</select>';}
+  else sel='<select data-mp="'+esc(nm)+'|'+d+'|'+slot+'" aria-label="'+esc(p.name+' '+DAYN[d]+' '+slot)+'">'+personSlotOptions(slot,wk,d,personSlotPick(slot,p.name,wk,d))+'</select>';
+  return sel+'<button class="btn ghost" data-action="mptedit" data-v="">Done</button>';}
 function prepTableCard(wk){const ppl=eaters();
-  let h='<div class="section"><h2>Meal prep table</h2><div class="card"><div class="mptwrap"><table class="mpt"><thead><tr><th></th>'+DAYN.map(n=>'<th>'+esc(n.slice(0,3))+'</th>').join('')+'</tr></thead><tbody>';
+  let h='<div class="section"><h2>Meal prep table</h2><div class="card"><p class="src" style="margin:0 0 8px">Tap any meal to change it for that person. Amounts, the counts above, cooking, and shopping all update.</p><div class="mptwrap"><table class="mpt"><thead><tr><th></th>'+DAYN.map(n=>'<th>'+esc(n.slice(0,3))+'</th>').join('')+'</tr></thead><tbody>';
   [['breakfast','Break'],['lunch','Lunch'],['dinner','Dinner']].forEach(([slot,lab],gi)=>{
     ppl.slice().sort((a,b)=>a.name.toLowerCase()==='jen'?-1:b.name.toLowerCase()==='jen'?1:0).forEach((p,pi)=>{
       h+='<tr class="'+(gi&&!pi?'grp':'')+'"><th>'+esc(p.name.charAt(0).toUpperCase())+'-'+lab+'</th>';
-      for(let d=0;d<7;d++){const x=prepCellFull(p,wk,d,slot);h+='<td'+(x.red?' class="red"':'')+'>'+esc(x.t)+(x.a?'<b class="amt">'+esc(x.a)+'</b>':'')+(x.s?'<span>'+esc(x.s)+'</span>':'')+'</td>';}
+      for(let d=0;d<7;d++){const x=prepCellFull(p,wk,d,slot),id=pkey(p)+'|'+d+'|'+slot,ed=S.mptEdit===id;
+        h+='<td class="'+(x.red?'red ':'')+(ed?'ed':'tap')+'"'+(ed?'':' data-action="mptedit" data-v="'+esc(id)+'" role="button" tabindex="0" aria-label="Change '+esc(p.name+' '+DAYN[d]+' '+slot)+'"')+'>'+(ed?prepCellEditor(p,wk,d,slot):esc(x.t)+(x.a?'<b class="amt">'+esc(x.a)+'</b>':'')+(x.s?'<span>'+esc(x.s)+'</span>':''))+'</td>';}
       h+='</tr>';});});
   h+='</tbody></table></div>';
   const T=prepTotals(wk).sort((a,b)=>(R[a.key].cat==='breakfast'?0:1)-(R[b.key].cat==='breakfast'?0:1)||a.first-b.first);
@@ -5151,6 +5163,7 @@ document.addEventListener('click',ev=>{
   if(a==='myeqdel'){hset(['equip'],((S.house.equip)||[]).filter(e=>e.id!==v));S.myEq=null;render();return;}
   if(a==='coadd'){const wk=curMenuWeek(),k=S.coKey,amt=n0((document.getElementById('coAmt')||{}).value);if(!k||!R[k]||!(amt>0))return;const c=clone((S.house.carryover||{})[wk]||{on:true,items:[]});c.on=true;c.items=(c.items||[]).filter(x=>x.k!==k).concat([{k,amt:Math.round((amt+n0(((c.items||[]).find(x=>x.k===k)||{}).amt))*100)/100}]);hset(['carryover',wk],c);S.coKey='';render();return;}
   if(a==='corm'){const wk=curMenuWeek(),c=clone((S.house.carryover||{})[wk]||{on:true,items:[]});c.items=(c.items||[]).filter((_,i)=>i!==+v);hset(['carryover',wk],c);render();return;}
+  if(a==='mptedit'){if(ev.target.closest('select'))return;S.mptEdit=v||null;render();if(v){const s=document.querySelector('td.ed select');if(s)s.focus();}return;}
   if(a==='batchauto'){const wk=curMenuWeek(),m=clone(menuFor(wk));m.mult=Object.assign({},m.mult||{});delete m.mult[b.dataset.k];setMenu(wk,m);render();return;}
   if(a==='batch'){const wk=curMenuWeek(),m=clone(menuFor(wk)),k=b.dataset.k;m.mult=Object.assign({},m.mult||{});const n=Math.max(0.5,Math.min(4,multFor(k,wk)+n0(v)));if(Math.abs(n-autoMult(k,wk))<1e-9)delete m.mult[k];else m.mult[k]=n;setMenu(wk,m);render();return;}
   if(a==='shapply'){shApply(v,addD(todayStr(),-60));render();return;}
@@ -5307,6 +5320,7 @@ document.addEventListener('input',ev=>{
 document.addEventListener('toggle',ev=>{const d=ev.target;if(d&&d.dataset&&d.dataset.sec){S.secOpen=S.secOpen||{};S.secOpen[d.dataset.sec]=d.open;}},true);
 document.addEventListener('change',ev=>{
   const el=ev.target,date=S.date;
+  if(S.mptEdit&&el.closest&&el.closest('table.mpt'))S.mptEdit=null;
   if(el.id==='shFiles'&&el.files&&el.files.length){S.shBusy=true;S.shMsg='';render();
     shReadFiles([...el.files]).then(fs=>{const r=shParse(fs);S.shPrev={days:r.days,useWeight:false,report:r.report};S.shBusy=false;render();})
       .catch(e=>{S.shBusy=false;S.shPrev=null;S.shMsg='Could not read those files: '+(e&&e.message||e);render();});return;}
