@@ -569,6 +569,14 @@ const PZ_PLACES={
   pizzahut:{n:'Pizza Hut'}
 };
 const PZ_TYPES={
+  // Typical kinds offered at every place, so a new place can be logged right away. Per large slice, estimated.
+  gencheese:{place:'*',n:'Cheese, typical slice (estimate)',k:285,p:12,c:36,f:10},
+  genpep:{place:'*',n:'Pepperoni, typical slice (estimate)',k:313,p:13,c:35,f:13},
+  gensaus:{place:'*',n:'Sausage, typical slice (estimate)',k:320,p:13,c:35,f:14},
+  gensup:{place:'*',n:'Supreme, typical slice (estimate)',k:330,p:14,c:37,f:14},
+  genmeat:{place:'*',n:'Meat lovers, typical slice (estimate)',k:360,p:16,c:35,f:17},
+  genveg:{place:'*',n:'Veggie, typical slice (estimate)',k:270,p:11,c:37,f:9},
+  genbuff:{place:'*',n:'Buffalo chicken, typical slice (estimate)',k:300,p:15,c:34,f:11},
   foxpep:{place:'foxs',n:'Big Daddy pepperoni',k:248,p:11,c:30,f:9},
   foxbbq:{place:'foxs',n:'Backyard BBQ (estimate)',k:270,p:12,c:27,f:12},
   foxchili:{place:'foxs',n:'Chili pizza (estimate)',k:260,p:12,c:26,f:12},
@@ -605,7 +613,9 @@ const POPS={
 const allPzPlaces=()=>Object.assign({},PZ_PLACES,(S.house&&S.house.pzPlaces)||{});
 const allPzTypes=()=>Object.assign({},PZ_TYPES,(S.house&&S.house.pzTypes)||{});
 const allPops=()=>Object.assign({},POPS,(S.house&&S.house.pops)||{});
-function pzTypesFor(pl){const T=allPzTypes();return Object.keys(T).filter(k=>T[k].place===pl).map(k=>Object.assign({id:k},T[k])).sort((a,b)=>abc(a.n,b.n));}
+function pzTypesFor(pl){const T=allPzTypes(),own=Object.keys(T).filter(k=>T[k].place===pl).map(k=>Object.assign({id:k},T[k])).sort((a,b)=>abc(a.n,b.n));
+  return own.concat(Object.keys(T).filter(k=>T[k].place==='*').map(k=>Object.assign({id:k,gen:true},T[k])));}
+function pzTypeOk(t,pl){return !!t&&(t.place===pl||t.place==='*');}
 function newPzId(pre){return pre+Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
 const STAPLES=[
   {sec:'Vegetables for lunches and dinners',items:['Frozen broccoli and green beans','Salad greens and light dressing']},
@@ -996,7 +1006,7 @@ function scheduleNeeds(){debounce('basis',()=>{if(!S.house||!S.profile)return;co
 function sharedSoon(){if(S._shPend)return;S._shPend=true;setTimeout(()=>{S._shPend=false;if(S.profile)wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2500);}
 function scheduleShared(){debounce('shared',()=>{if(!S.profile)return;wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2000);}
 /* App version shown in the header and stamped on every Claude report. Bump it with every index.html delivered. */
-const APP_VERSION='2.5';
+const APP_VERSION='2.6';
 function setSync(s){S.sync=s;const el=document.getElementById('sync');if(el)el.textContent=syncText();}
 function syncText(){return !navigator.onLine?'Offline; changes will sync':S.sync==='error'?'Last save failed':'Synced';}
 function nameOf(uid){if(uid===S.uid)return S.profile.name;const x=S.shared[uid];return (x&&x.name)||'Partner';}
@@ -1181,13 +1191,13 @@ function pzEnsureSel(slot){
   if(!sel){
     const place=PL[last.place]?last.place:Object.keys(PL)[0];
     const types=pzTypesFor(place);
-    const type=TY[last.type]&&TY[last.type].place===place?last.type:(types[0]?types[0].id:'');
+    const type=pzTypeOk(TY[last.type],place)?last.type:(types[0]?types[0].id:'');
     const popId=PO[last.popId]?last.popId:Object.keys(PO)[0];
-    sel=S.pzSel[slot]={place,type,parts:[],pop:true,popId};
+    sel=S.pzSel[slot]={place,type,parts:[],pop:slot!=='fp',popId};
   }else{
     if(!PL[sel.place])sel.place=Object.keys(PL)[0];
     const types=pzTypesFor(sel.place);
-    if(!TY[sel.type]||TY[sel.type].place!==sel.place)sel.type=types[0]?types[0].id:'';
+    if(!pzTypeOk(TY[sel.type],sel.place))sel.type=types[0]?types[0].id:'';
     if(!PO[sel.popId])sel.popId=Object.keys(PO)[0];
     sel.parts=sel.parts||[];
   }
@@ -1213,7 +1223,8 @@ function pzPlaceKind(slot){
   const sel=pzEnsureSel(slot),PL=allPzPlaces(),types=pzTypesFor(sel.place);
   let h='<div class="row" style="gap:8px;flex-wrap:wrap;align-items:flex-end">';
   h+='<label class="f">Where from?<select data-pzfield="place" data-pzslot="'+slot+'">'+Object.keys(PL).sort((x,y)=>abc(PL[x].n,PL[y].n)).map(id=>'<option value="'+id+'"'+(id===sel.place?' selected':'')+'>'+esc(PL[id].n)+'</option>').join('')+'<option value="__new">Add a new place\u2026</option></select></label>';
-  if(types.length)h+='<label class="f">What kind?<select data-pzfield="type" data-pzslot="'+slot+'">'+types.map(t=>'<option value="'+t.id+'"'+(t.id===sel.type?' selected':'')+'>'+esc(t.n)+'</option>').join('')+'<option value="__new">Add a new kind\u2026</option></select></label>';
+  const own=types.filter(t=>!t.gen),gen=types.filter(t=>t.gen),opt=t=>'<option value="'+t.id+'"'+(t.id===sel.type?' selected':'')+'>'+esc(t.n)+'</option>';
+  if(types.length)h+='<label class="f">What kind?<select data-pzfield="type" data-pzslot="'+slot+'">'+(own.length?'<optgroup label="'+esc(PL[sel.place]?PL[sel.place].n:'This place')+'">'+own.map(opt).join('')+'</optgroup>':'')+(gen.length?'<optgroup label="Typical pizza (estimate)">'+gen.map(opt).join('')+'</optgroup>':'')+'<option value="__new">Add a new kind\u2026</option></select></label>';
   else h+='<div class="f"><span class="src" style="display:block;margin-bottom:2px">What kind?</span><button class="btn" data-action="pzaddopen" data-v="type" data-slot="'+slot+'">+ Add a kind of pizza for '+esc(PL[sel.place]?PL[sel.place].n:'this place')+'</button></div>';
   return h+'</div>'+pzAddForm(slot);
 }
@@ -1223,10 +1234,11 @@ function pzPlaceKind(slot){
 function fpPizza(){
   const sel=pzEnsureSel('fp'),TY=allPzTypes(),PO=allPops(),t=TY[sel.type];
   let h='<div class="row" style="margin:0 0 6px;align-items:center"><button class="btn ghost" data-action="fpback">&larr; Back</button><strong>Pizza</strong></div><p class="src" style="margin-top:0">Pick where it came from and what kind, then tap how many pieces. Had more than one kind? Change the kind and tap again.</p>'+pzPlaceKind('fp');
-  if(t&&t.place===sel.place){h+='<div class="row" style="margin-top:8px">';for(let n=1;n<=8;n++)h+='<button class="btn" data-action="fppz" data-v="'+n+'">'+n+' piece'+(n>1?'s':'')+'</button>';h+='</div><div class="src" style="margin-top:4px">'+fmtN(t.k)+' kcal and '+fmtN(t.p)+' g protein per piece.</div>';}
-  h+='<div class="row" style="margin-top:10px;align-items:center;gap:6px;flex-wrap:wrap"><span class="src">Pop with it?</span><select data-pzfield="popid" data-pzslot="fp">'+Object.keys(PO).sort((x,y)=>abc(PO[x].n,PO[y].n)).map(id=>'<option value="'+id+'"'+(id===sel.popId?' selected':'')+'>'+esc(PO[id].n)+'</option>').join('')+'<option value="__new">Add a new pop\u2026</option></select><button class="btn" data-action="fppop">Add a can</button></div>';
+  if(pzTypeOk(t,sel.place)){h+='<div class="row" style="margin-top:8px">';for(let n=1;n<=8;n++)h+='<button class="btn" data-action="fppz" data-v="'+n+'">'+n+' piece'+(n>1?'s':'')+'</button>';h+='</div><div class="src" style="margin-top:4px">'+fmtN(t.k)+' kcal and '+fmtN(t.p)+' g protein per piece.</div>';}
+  h+='<div class="row" style="margin-top:10px;align-items:center;gap:6px;flex-wrap:wrap"><span class="src">Pop with it?</span>'+pzPopSelect('fp',sel)+'<button class="btn" data-action="fppop"'+(sel.pop?'':' disabled')+'>Add a can</button></div>';
   return h;
 }
+function pzPopSelect(slot,sel){const PO=allPops();return '<select data-pzfield="popid" data-pzslot="'+slot+'" aria-label="Pop with it"><option value=""'+(sel.pop?'':' selected')+'>None</option>'+Object.keys(PO).sort((x,y)=>abc(PO[x].n,PO[y].n)).map(id=>'<option value="'+id+'"'+(sel.pop&&id===sel.popId?' selected':'')+'>'+esc(PO[id].n)+'</option>').join('')+'<option value="__new">Add a new pop\u2026</option></select>';}
 function pizzaPicker(date,slot,m){
   const sel=pzEnsureSel(slot),PL=allPzPlaces(),TY=allPzTypes(),PO=allPops(),types=pzTypesFor(sel.place);
   let h=pzPlaceKind(slot);
@@ -1235,7 +1247,7 @@ function pizzaPicker(date,slot,m){
   if(rows.length){h+='<div class="card" style="margin-top:10px;border:1px solid var(--line)">';
     for(const r of rows)h+='<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--line);padding:4px 0"><span>'+esc(r.x.label)+' <span class="src">'+fmtN(r.x.kcal)+' kcal</span></span><button class="btn ghost" data-action="pzrm" data-slot="'+slot+'" data-v="'+r.i+'">Remove</button></div>';
     h+='</div>';}
-  h+='<div class="row" style="margin-top:10px;align-items:center;gap:6px;flex-wrap:wrap"><label class="row" style="gap:6px;align-items:center"><input type="checkbox" data-pzfield="pop" data-pzslot="'+slot+'"'+(sel.pop?' checked':'')+'> Can of pop</label>'+(sel.pop?'<select data-pzfield="popid" data-pzslot="'+slot+'">'+Object.keys(PO).sort((x,y)=>abc(PO[x].n,PO[y].n)).map(id=>'<option value="'+id+'"'+(id===sel.popId?' selected':'')+'>'+esc(PO[id].n)+'</option>').join('')+'<option value="__new">Add a new pop\u2026</option></select>':'')+'</div>';
+  h+='<div class="row" style="margin-top:10px;align-items:center;gap:6px;flex-wrap:wrap"><span class="src">Pop with it?</span>'+pzPopSelect(slot,sel)+'</div>';
   if(rows.length){const t=pzTotal(sel);h+='<div class="row" style="margin-top:8px;align-items:center;justify-content:space-between"><span class="src">So far: '+fmtN(t.kcal)+' kcal, '+fmtN(t.p)+' g protein</span><button class="btn primary" data-action="pzlogall" data-slot="'+slot+'">Done</button></div>';}
   h+='<div class="row" style="margin-top:8px"><button class="btn" data-action="custom" data-slot="'+slot+'">Ate something else</button></div>';
   return h;
@@ -5268,7 +5280,7 @@ document.addEventListener('click',ev=>{
     if(a==='fppz'){const sel=pzEnsureSel('fp'),T=allPzTypes()[sel.type],P=allPzPlaces()[sel.place],n=+v;if(!T||!(n>0))return;
       fp.items.push({id:'t:pz:'+sel.type,n:(P?P.n+' ':'')+T.n,s:'1 piece',q:n,k:T.k*n,p:T.p*n,c:T.c*n,f:T.f*n});
       hset(['pzLast'],{place:sel.place,type:sel.type,popId:sel.popId});fp.msg='Added '+n+' piece'+(n>1?'s':'')+' of '+T.n+'.';fpDone();return;}
-    if(a==='fppop'){const sel=pzEnsureSel('fp'),P=allPops()[sel.popId];if(!P)return;
+    if(a==='fppop'){const sel=pzEnsureSel('fp'),P=allPops()[sel.popId];if(!P||!sel.pop)return;
       fp.items.push({id:'t:pop:'+sel.popId,n:P.n,s:'1 can',q:1,k:P.k,p:P.p,c:P.c,f:P.f});fp.msg='Added a can of '+P.n+'.';fpDone();return;}
     if(a==='fpsel'){fp.sel=v;fp.qty=1;fp.msg='';render();return;}
     if(a==='fpqty'){fp.qty=+v;render();return;}
@@ -5363,7 +5375,7 @@ document.addEventListener('change',ev=>{
     if(el.dataset.pzfield==='place'){if(el.value==='__new'){S.pzAdd={kind:'place',slot};render();return;}sel.place=el.value;const ts=pzTypesFor(sel.place);sel.type=ts[0]?ts[0].id:'';}
     else if(el.dataset.pzfield==='type'){if(el.value==='__new'){S.pzAdd={kind:'type',slot,place:sel.place};render();return;}sel.type=el.value;}
     else if(el.dataset.pzfield==='pop'){sel.pop=el.checked;}
-    else if(el.dataset.pzfield==='popid'){if(el.value==='__new'){S.pzAdd={kind:'pop',slot};render();return;}sel.popId=el.value;}
+    else if(el.dataset.pzfield==='popid'){if(el.value==='__new'){S.pzAdd={kind:'pop',slot};render();return;}if(el.value===''){sel.pop=false;}else{sel.pop=true;sel.popId=el.value;}}
     render();return;}
   if(el.dataset.pzday!==undefined){const wk=el.dataset.pzday,nd=+el.value,od=pizzaDayOf(wk);if(nd===od)return;
     const m=clone(menuFor(wk));m.pzDay=nd;m.cells=Object.assign({},m.cells||{});delete m.cells[nd+'-dinner'];if(m.cells[od+'-dinner']==='__pizza')delete m.cells[od+'-dinner'];
