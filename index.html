@@ -3,7 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Karl's Training Plan</title>
+<title>Training Plan</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -316,52 +319,11 @@ table.psum{min-width:0}
 <body>
 <script>(function(){try{var z=localStorage.getItem('training-plan:zoom');if(z)document.documentElement.style.setProperty('--zoom',z);}catch(e){}})();</script>
 <div id="app"><main><p>Loading your plan...</p></main></div>
-<script>
-window.APP_CONFIG={firebase:{apiKey:'preview'},household:[{emailCode:'af5cd2b0b947d1e4964a48bf46f21433a4c32375b26aa07dc917679b4119189e',name:'Karl',preset:'karl'},{emailCode:'3b56635ea60d075178b506afaf969455f9fd34d78880d3915c80b8fc14d07a8d',name:'Jen',preset:'default'}]};
-</script>
-<script>
-"use strict";
-/* Preview backend: same interface as Firebase, stored in this browser. Used only for previewing inside Claude. */
-const PV_KEY='training-plan-preview:v1';
-const PV={mem:{},lis:[]};
-try{PV.mem=JSON.parse(localStorage.getItem(PV_KEY)||'{}')||{};}catch(e){PV.mem={};}
-const pvSave=()=>{try{localStorage.setItem(PV_KEY,JSON.stringify(PV.mem));}catch(e){}};
-const DELF={__del:1};
-const cl=o=>o===undefined?undefined:JSON.parse(JSON.stringify(o));
-function initializeApp(){return {};}
-/* Which household member is using the browser right now, which 4-digit PINs are set, and whether a PIN
-   is required at all. The active person resets every time the tab is opened fresh (sessionStorage); PINs
-   and the on/off setting persist across visits (localStorage) so they don't need to be re-created. */
-const PV_PEOPLE={karl:{uid:'karl-preview',email:'karl@preview.local'},jen:{uid:'jen-preview',email:'jen@preview.local'}};
-const PV_ACTIVE_KEY='training-plan-preview:activeperson',PV_PIN_KEY='training-plan-preview:pins',PV_REQPIN_KEY='training-plan-preview:requirepin';
-function pvActivePerson(){try{return sessionStorage.getItem(PV_ACTIVE_KEY)||'';}catch(e){return '';}}
-function pvSetActivePerson(k){try{sessionStorage.setItem(PV_ACTIVE_KEY,k);}catch(e){}}
-function pvPins(){try{return JSON.parse(localStorage.getItem(PV_PIN_KEY)||'{}');}catch(e){return {};}}
-function pvSetPin(k,pin){const p=pvPins();p[k]=pin;try{localStorage.setItem(PV_PIN_KEY,JSON.stringify(p));}catch(e){}}
-function pvForgetPin(k){const p=pvPins();delete p[k];try{localStorage.setItem(PV_PIN_KEY,JSON.stringify(p));}catch(e){}}
-function pvRequirePin(){try{return localStorage.getItem(PV_REQPIN_KEY)!=='0';}catch(e){return true;}}
-function pvSetRequirePin(v){try{localStorage.setItem(PV_REQPIN_KEY,v?'1':'0');}catch(e){}}
-window.PV_PEOPLE=PV_PEOPLE;window.pvActivePerson=pvActivePerson;window.pvSetActivePerson=pvSetActivePerson;
-window.pvPins=pvPins;window.pvSetPin=pvSetPin;window.pvForgetPin=pvForgetPin;window.pvRequirePin=pvRequirePin;window.pvSetRequirePin=pvSetRequirePin;
-function getAuth(){const k=pvActivePerson()||'karl',person=PV_PEOPLE[k]||PV_PEOPLE.karl;return {currentUser:{uid:person.uid,email:person.email,emailVerified:true,reload:async()=>{},getIdToken:async()=>''}};}
-function onAuthStateChanged(a,cb){setTimeout(()=>cb(getAuth().currentUser),0);}
-function initializeFirestore(){return {};} function getFirestore(){return {};} function persistentLocalCache(){return {};} function persistentMultipleTabManager(){return {};}
-async function signInWithEmailAndPassword(){} async function createUserWithEmailAndPassword(){} async function sendEmailVerification(){} async function sendPasswordResetEmail(){}
-async function signOut(){try{sessionStorage.removeItem(PV_ACTIVE_KEY);}catch(e){} location.reload();}
-function doc(db,...p){return {path:p.join('/'),id:p[p.length-1]};}
-function collection(db,...p){return {path:p.join('/'),coll:true};}
-function FieldPath(...parts){this.parts=parts;}
-function deleteField(){return DELF;}
-function pvKids(path){return Object.keys(PV.mem).filter(k=>k.startsWith(path+'/')&&k.slice(path.length+1).indexOf('/')<0);}
-function pvQs(path){const docs=pvKids(path).map(k=>({id:k.split('/').pop(),data:()=>cl(PV.mem[k])}));return {forEach:f=>docs.forEach(f),docs};}
-function pvNotify(path){for(const l of PV.lis.slice()){if(!l.coll&&l.path===path)l.cb({exists:()=>!!PV.mem[path],data:()=>cl(PV.mem[path])});else if(l.coll&&path.startsWith(l.path+'/')&&path.slice(l.path.length+1).indexOf('/')<0)l.cb(pvQs(l.path));}}
-async function getDoc(r){const d=PV.mem[r.path];return {exists:()=>!!d,data:()=>cl(d)};}
-async function getDocs(c){return pvQs(c.path);}
-function pvMerge(a,b){for(const k in b){if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])&&a[k]&&typeof a[k]==='object')pvMerge(a[k],b[k]);else a[k]=cl(b[k]);}return a;}
-async function setDoc(r,d,o){PV.mem[r.path]=o&&o.merge?pvMerge(PV.mem[r.path]||{},d):cl(d);pvSave();setTimeout(()=>pvNotify(r.path),0);}
-async function updateDoc(r,fp,val){if(!PV.mem[r.path])PV.mem[r.path]={};let o=PV.mem[r.path];const p=fp.parts;for(let i=0;i<p.length-1;i++){o[p[i]]=o[p[i]]||{};o=o[p[i]];}if(val===DELF)delete o[p[p.length-1]];else o[p[p.length-1]]=cl(val);pvSave();setTimeout(()=>pvNotify(r.path),0);}
-function onSnapshot(ref,cb){const l={path:ref.path,coll:!!ref.coll,cb};PV.lis.push(l);setTimeout(()=>{if(ref.coll)cb(pvQs(ref.path));else cb({exists:()=>!!PV.mem[ref.path],data:()=>cl(PV.mem[ref.path])});},0);return ()=>{const i=PV.lis.indexOf(l);if(i>=0)PV.lis.splice(i,1);};}
-
+<script src="config.js"></script>
+<script type="module">
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,signOut} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import {initializeFirestore,getFirestore,persistentLocalCache,persistentMultipleTabManager,doc,getDoc,getDocs,setDoc,updateDoc,deleteField,collection,onSnapshot,FieldPath} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 /* =============== Recipe library (posted nutrition per serving from each source) =============== */
 const EB='https://emilybites.com',ST='https://www.skinnytaste.com';
 const R={
@@ -1055,7 +1017,7 @@ function scheduleShared(){debounce('shared',()=>{if(!S.profile)return;wrote(FB.s
 /* App version shown in the header and stamped on every Claude report. Bump it with every index.html delivered. */
 const APP_VERSION='2.7';
 function setSync(s){S.sync=s;const el=document.getElementById('sync');if(el)el.textContent=syncText();}
-function syncText(){return !navigator.onLine?'Offline; changes will sync':S.sync==='error'?'Last save failed':'Saved in this browser';}
+function syncText(){return !navigator.onLine?'Offline; changes will sync':S.sync==='error'?'Last save failed':'Synced';}
 function nameOf(uid){if(uid===S.uid)return S.profile.name;const x=S.shared[uid];return (x&&x.name)||'Partner';}
 function softRender(){if(S.scanning){S.dirty=true;return;}const a=document.activeElement;if(a&&['INPUT','TEXTAREA','SELECT'].includes(a.tagName)&&a.type!=='checkbox'&&a.type!=='radio'){S.dirty=true;return;}render();}
 document.addEventListener('focusout',e=>{if(S.dirty){const n=e.relatedTarget;if(n&&['INPUT','TEXTAREA','SELECT'].includes(n.tagName))return;S.dirty=false;setTimeout(render,50);}});
@@ -1112,7 +1074,7 @@ function render(){
   if(!viewingOther){h+='<nav aria-label="Sections" class="mainnav">';for(const[k,v,on]of tabs)h+='<button data-action="view" data-v="'+k+'"'+(on?' aria-current="page"':'')+'>'+v+'</button>';h+='</nav>';
     if(inPP){h+='<nav aria-label="Plan and Progress" class="subnav">';for(const[k,v]of PP)h+='<button data-action="view" data-v="'+k+'"'+(S.view===k?' aria-current="page"':'')+'>'+v+'</button>';h+='</nav>';}
     if(S.view==='menu'){const st=S.mpStep||'plan';h+='<nav aria-label="Meals" class="subnav">';for(const[k,v]of MP_STEPS)h+='<button class="stepb" data-action="mpstep" data-v="'+k+'"'+(st===k?' aria-current="page"':'')+'>'+v+'</button>';h+='</nav>';}}
-  h+='</div></header><main><div class="note" style="margin-bottom:12px">Preview version. Entries are saved in this browser only. To carry them into the GitHub version later, use Download my data in My plan, then Restore from a backup there.</div>'+(viewingOther?viewPartner(S.viewing):S.view==='today'?viewToday():S.view==='week'?viewWeek():S.view==='workout'?viewWorkout():S.view==='menu'?viewMenu():S.view==='progress'?viewProgress():S.view==='ach'?viewAch():S.view==='plan'?viewPlan():viewPlan())+'</main>';h+=quoteOverlay();
+  h+='</div></header><main>'+(viewingOther?viewPartner(S.viewing):S.view==='today'?viewToday():S.view==='week'?viewWeek():S.view==='workout'?viewWorkout():S.view==='menu'?viewMenu():S.view==='progress'?viewProgress():S.view==='ach'?viewAch():S.view==='plan'?viewPlan():viewPlan())+'</main>';h+=quoteOverlay();
   if(S.fp&&S.fp.mode==='sand')h+=sandModal();
   app.innerHTML=h;
   try{achSync();}catch(e){console.warn(e);}
@@ -5892,7 +5854,7 @@ function personGate(){applyPinResets();
   });
   pick();
 }
-
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 if(window.pvActivePerson)personGate();else boot();
 
 </script>
