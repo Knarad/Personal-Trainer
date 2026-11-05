@@ -3,10 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Training Plan</title>
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="icon" type="image/png" href="icon-192.png">
+<title>Karl's Training Plan</title>
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -319,11 +316,52 @@ table.psum{min-width:0}
 <body>
 <script>(function(){try{var z=localStorage.getItem('training-plan:zoom');if(z)document.documentElement.style.setProperty('--zoom',z);}catch(e){}})();</script>
 <div id="app"><main><p>Loading your plan...</p></main></div>
-<script src="config.js"></script>
-<script type="module">
-import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,signOut} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {initializeFirestore,getFirestore,persistentLocalCache,persistentMultipleTabManager,doc,getDoc,getDocs,setDoc,updateDoc,deleteField,collection,onSnapshot,FieldPath} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+<script>
+window.APP_CONFIG={firebase:{apiKey:'preview'},household:[{emailCode:'af5cd2b0b947d1e4964a48bf46f21433a4c32375b26aa07dc917679b4119189e',name:'Karl',preset:'karl'},{emailCode:'3b56635ea60d075178b506afaf969455f9fd34d78880d3915c80b8fc14d07a8d',name:'Jen',preset:'default'}]};
+</script>
+<script>
+"use strict";
+/* Preview backend: same interface as Firebase, stored in this browser. Used only for previewing inside Claude. */
+const PV_KEY='training-plan-preview:v1';
+const PV={mem:{},lis:[]};
+try{PV.mem=JSON.parse(localStorage.getItem(PV_KEY)||'{}')||{};}catch(e){PV.mem={};}
+const pvSave=()=>{try{localStorage.setItem(PV_KEY,JSON.stringify(PV.mem));}catch(e){}};
+const DELF={__del:1};
+const cl=o=>o===undefined?undefined:JSON.parse(JSON.stringify(o));
+function initializeApp(){return {};}
+/* Which household member is using the browser right now, which 4-digit PINs are set, and whether a PIN
+   is required at all. The active person resets every time the tab is opened fresh (sessionStorage); PINs
+   and the on/off setting persist across visits (localStorage) so they don't need to be re-created. */
+const PV_PEOPLE={karl:{uid:'karl-preview',email:'karl@preview.local'},jen:{uid:'jen-preview',email:'jen@preview.local'}};
+const PV_ACTIVE_KEY='training-plan-preview:activeperson',PV_PIN_KEY='training-plan-preview:pins',PV_REQPIN_KEY='training-plan-preview:requirepin';
+function pvActivePerson(){try{return sessionStorage.getItem(PV_ACTIVE_KEY)||'';}catch(e){return '';}}
+function pvSetActivePerson(k){try{sessionStorage.setItem(PV_ACTIVE_KEY,k);}catch(e){}}
+function pvPins(){try{return JSON.parse(localStorage.getItem(PV_PIN_KEY)||'{}');}catch(e){return {};}}
+function pvSetPin(k,pin){const p=pvPins();p[k]=pin;try{localStorage.setItem(PV_PIN_KEY,JSON.stringify(p));}catch(e){}}
+function pvForgetPin(k){const p=pvPins();delete p[k];try{localStorage.setItem(PV_PIN_KEY,JSON.stringify(p));}catch(e){}}
+function pvRequirePin(){try{return localStorage.getItem(PV_REQPIN_KEY)!=='0';}catch(e){return true;}}
+function pvSetRequirePin(v){try{localStorage.setItem(PV_REQPIN_KEY,v?'1':'0');}catch(e){}}
+window.PV_PEOPLE=PV_PEOPLE;window.pvActivePerson=pvActivePerson;window.pvSetActivePerson=pvSetActivePerson;
+window.pvPins=pvPins;window.pvSetPin=pvSetPin;window.pvForgetPin=pvForgetPin;window.pvRequirePin=pvRequirePin;window.pvSetRequirePin=pvSetRequirePin;
+function getAuth(){const k=pvActivePerson()||'karl',person=PV_PEOPLE[k]||PV_PEOPLE.karl;return {currentUser:{uid:person.uid,email:person.email,emailVerified:true,reload:async()=>{},getIdToken:async()=>''}};}
+function onAuthStateChanged(a,cb){setTimeout(()=>cb(getAuth().currentUser),0);}
+function initializeFirestore(){return {};} function getFirestore(){return {};} function persistentLocalCache(){return {};} function persistentMultipleTabManager(){return {};}
+async function signInWithEmailAndPassword(){} async function createUserWithEmailAndPassword(){} async function sendEmailVerification(){} async function sendPasswordResetEmail(){}
+async function signOut(){try{sessionStorage.removeItem(PV_ACTIVE_KEY);}catch(e){} location.reload();}
+function doc(db,...p){return {path:p.join('/'),id:p[p.length-1]};}
+function collection(db,...p){return {path:p.join('/'),coll:true};}
+function FieldPath(...parts){this.parts=parts;}
+function deleteField(){return DELF;}
+function pvKids(path){return Object.keys(PV.mem).filter(k=>k.startsWith(path+'/')&&k.slice(path.length+1).indexOf('/')<0);}
+function pvQs(path){const docs=pvKids(path).map(k=>({id:k.split('/').pop(),data:()=>cl(PV.mem[k])}));return {forEach:f=>docs.forEach(f),docs};}
+function pvNotify(path){for(const l of PV.lis.slice()){if(!l.coll&&l.path===path)l.cb({exists:()=>!!PV.mem[path],data:()=>cl(PV.mem[path])});else if(l.coll&&path.startsWith(l.path+'/')&&path.slice(l.path.length+1).indexOf('/')<0)l.cb(pvQs(l.path));}}
+async function getDoc(r){const d=PV.mem[r.path];return {exists:()=>!!d,data:()=>cl(d)};}
+async function getDocs(c){return pvQs(c.path);}
+function pvMerge(a,b){for(const k in b){if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k])&&a[k]&&typeof a[k]==='object')pvMerge(a[k],b[k]);else a[k]=cl(b[k]);}return a;}
+async function setDoc(r,d,o){PV.mem[r.path]=o&&o.merge?pvMerge(PV.mem[r.path]||{},d):cl(d);pvSave();setTimeout(()=>pvNotify(r.path),0);}
+async function updateDoc(r,fp,val){if(!PV.mem[r.path])PV.mem[r.path]={};let o=PV.mem[r.path];const p=fp.parts;for(let i=0;i<p.length-1;i++){o[p[i]]=o[p[i]]||{};o=o[p[i]];}if(val===DELF)delete o[p[p.length-1]];else o[p[p.length-1]]=cl(val);pvSave();setTimeout(()=>pvNotify(r.path),0);}
+function onSnapshot(ref,cb){const l={path:ref.path,coll:!!ref.coll,cb};PV.lis.push(l);setTimeout(()=>{if(ref.coll)cb(pvQs(ref.path));else cb({exists:()=>!!PV.mem[ref.path],data:()=>cl(PV.mem[ref.path])});},0);return ()=>{const i=PV.lis.indexOf(l);if(i>=0)PV.lis.splice(i,1);};}
+
 /* =============== Recipe library (posted nutrition per serving from each source) =============== */
 const EB='https://emilybites.com',ST='https://www.skinnytaste.com';
 const R={
@@ -946,8 +984,17 @@ function plannedMealsFromMenu(date){ // ignores swaps and coach revisions, for p
 function primaryMode(){return S.profile.training==='own'?'gym':'home';}
 function woMode(){return S.woMode||primaryMode();}
 const RK=m=>m==='gym'?'gym':'workout';
-const WST={done:'Done',partial:'Partial',skip:'Skipped',rest:'Rest'};
+const WST={done:'Done',partial:'Partial',skip:'Skipped',rest:'Rest',replaced:'Replaced'};
 function sessDone(x){return !!(x&&(x.status==='done'||x.status==='partial'));}
+/* Once Log my own workout has an entry for a day, the home-plan session reads and counts as
+   replaced by it rather than as a separate Partial or Not logged session, unless the planned
+   session was itself genuinely marked Completed. This keeps a stray Finish workout partial
+   (0 sets done, a token minute) from ever showing or counting alongside the own-workout log. */
+function myLogged(l){return !!(l&&l.mylog&&l.mylog.length);}
+function myLogMinutes(l){let m=0;for(const x of ((l&&l.mylog)||[]))m+=n0(x.f&&x.f.min);return m;}
+function homeStatus(l){const r=l&&l.workout;if(r&&r.status==='done')return 'done';if(myLogged(l))return 'replaced';return r&&r.status;}
+function homeCounted(l){const s=homeStatus(l);return s==='done'||s==='replaced';}
+function dispStatus(l,mode){return mode==='gym'?(l&&l.gym&&l.gym.status):homeStatus(l);}
 function gymLine(g){return (g.type||'Gym workout')+': '+({done:'completed',partial:'partial',skip:'skipped',rest:'rest day'}[g.status]||g.status||'not logged')+(g.minutes?', '+g.minutes+' min':'')+(g.intensity?', '+g.intensity.toLowerCase():'')+(g.note?'. Note: '+g.note:'');}
 function workoutKey(date,mode){const l=S.days[date];if((mode||primaryMode())==='gym')return 'OWN';return (l&&l.workoutOverride)||['A','TREAD','B','BIKE','C','OUT','REC'][dow(date)];}
 function workoutFor(key,week){
@@ -1006,9 +1053,9 @@ function scheduleNeeds(){debounce('basis',()=>{if(!S.house||!S.profile)return;co
 function sharedSoon(){if(S._shPend)return;S._shPend=true;setTimeout(()=>{S._shPend=false;if(S.profile)wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2500);}
 function scheduleShared(){debounce('shared',()=>{if(!S.profile)return;wrote(FB.setDoc(refs.shared(S.uid),buildShared()));},2000);}
 /* App version shown in the header and stamped on every Claude report. Bump it with every index.html delivered. */
-const APP_VERSION='2.6';
+const APP_VERSION='2.7';
 function setSync(s){S.sync=s;const el=document.getElementById('sync');if(el)el.textContent=syncText();}
-function syncText(){return !navigator.onLine?'Offline; changes will sync':S.sync==='error'?'Last save failed':'Synced';}
+function syncText(){return !navigator.onLine?'Offline; changes will sync':S.sync==='error'?'Last save failed':'Saved in this browser';}
 function nameOf(uid){if(uid===S.uid)return S.profile.name;const x=S.shared[uid];return (x&&x.name)||'Partner';}
 function softRender(){if(S.scanning){S.dirty=true;return;}const a=document.activeElement;if(a&&['INPUT','TEXTAREA','SELECT'].includes(a.tagName)&&a.type!=='checkbox'&&a.type!=='radio'){S.dirty=true;return;}render();}
 document.addEventListener('focusout',e=>{if(S.dirty){const n=e.relatedTarget;if(n&&['INPUT','TEXTAREA','SELECT'].includes(n.tagName))return;S.dirty=false;setTimeout(render,50);}});
@@ -1065,7 +1112,7 @@ function render(){
   if(!viewingOther){h+='<nav aria-label="Sections" class="mainnav">';for(const[k,v,on]of tabs)h+='<button data-action="view" data-v="'+k+'"'+(on?' aria-current="page"':'')+'>'+v+'</button>';h+='</nav>';
     if(inPP){h+='<nav aria-label="Plan and Progress" class="subnav">';for(const[k,v]of PP)h+='<button data-action="view" data-v="'+k+'"'+(S.view===k?' aria-current="page"':'')+'>'+v+'</button>';h+='</nav>';}
     if(S.view==='menu'){const st=S.mpStep||'plan';h+='<nav aria-label="Meals" class="subnav">';for(const[k,v]of MP_STEPS)h+='<button class="stepb" data-action="mpstep" data-v="'+k+'"'+(st===k?' aria-current="page"':'')+'>'+v+'</button>';h+='</nav>';}}
-  h+='</div></header><main>'+(viewingOther?viewPartner(S.viewing):S.view==='today'?viewToday():S.view==='week'?viewWeek():S.view==='workout'?viewWorkout():S.view==='menu'?viewMenu():S.view==='progress'?viewProgress():S.view==='ach'?viewAch():S.view==='plan'?viewPlan():viewPlan())+'</main>';h+=quoteOverlay();
+  h+='</div></header><main><div class="note" style="margin-bottom:12px">Preview version. Entries are saved in this browser only. To carry them into the GitHub version later, use Download my data in My plan, then Restore from a backup there.</div>'+(viewingOther?viewPartner(S.viewing):S.view==='today'?viewToday():S.view==='week'?viewWeek():S.view==='workout'?viewWorkout():S.view==='menu'?viewMenu():S.view==='progress'?viewProgress():S.view==='ach'?viewAch():S.view==='plan'?viewPlan():viewPlan())+'</main>';h+=quoteOverlay();
   if(S.fp&&S.fp.mode==='sand')h+=sandModal();
   app.innerHTML=h;
   try{achSync();}catch(e){console.warn(e);}
@@ -1088,9 +1135,9 @@ function viewToday(){
   const hn=S.house&&S.house.notes&&S.house.notes[String(S.profile.name).toLowerCase()];
   if(hn&&hn.text)h+='<div class="note good"><strong>From Claude'+(hn.date?', '+esc(fmtShort(hn.date)):'')+':</strong> '+esc(hn.text)+' <button class="btn ghost" data-action="dismisshnote">Dismiss</button></div>';
   // Workout, one line
-  if(!before){const pm0=primaryMode(),om=pm0==='gym'?'home':'gym',w=workoutFor(workoutKey(date,pm0),wk),r1=l[RK(pm0)],st=r1&&r1.status,r2=l[RK(om)];
-    h+='<div class="woline"><span><span class="kicker">Workout</span> '+esc(pm0==='gym'?((r1&&r1.type)||'Gym'):w.title)+(st?' <span class="pill'+(st==='done'?' good':'')+'">'+(WST[st]||st)+'</span>':'')+'</span><button class="btn" data-action="womode" data-v="'+pm0+'">Open</button></div>';
-    if(r2&&r2.status)h+='<div class="woline"><span><span class="kicker">Also</span> '+esc(om==='gym'?((r2.type)||'Gym workout'):workoutFor(workoutKey(date,'home'),wk).title)+' <span class="pill'+(r2.status==='done'?' good':'')+'">'+(WST[r2.status]||r2.status)+'</span></span><button class="btn" data-action="womode" data-v="'+om+'">Open</button></div>';
+  if(!before){const pm0=primaryMode(),om=pm0==='gym'?'home':'gym',w=workoutFor(workoutKey(date,pm0),wk),r1=l[RK(pm0)],st=dispStatus(l,pm0),r2=l[RK(om)],st2=dispStatus(l,om);
+    h+='<div class="woline"><span><span class="kicker">Workout</span> '+esc(pm0==='gym'?((r1&&r1.type)||'Gym'):w.title)+(st?' <span class="pill'+(st==='done'||st==='replaced'?' good':'')+'">'+(WST[st]||st)+'</span>':'')+'</span><button class="btn" data-action="womode" data-v="'+pm0+'">Open</button></div>';
+    if(st2)h+='<div class="woline"><span><span class="kicker">Also</span> '+esc(om==='gym'?((r2&&r2.type)||'Gym workout'):workoutFor(workoutKey(date,'home'),wk).title)+' <span class="pill'+(st2==='done'||st2==='replaced'?' good':'')+'">'+(WST[st2]||st2)+'</span></span><button class="btn" data-action="womode" data-v="'+om+'">Open</button></div>';
     else h+='<div class="src" style="margin:-4px 0 8px"><button class="btn ghost" data-action="womode" data-v="'+om+'">'+(om==='gym'?'Log a gym workout too':'Log a home session too')+'</button></div>';}
   // Meals
   const tl=scheduleFor(date).filter(it=>pm[it.k]||(it.k==='workout'&&!before)).map(it=>({k:it.k,sug:it.t,t:(l.times&&l.times[it.k])||it.t}));
@@ -1163,8 +1210,8 @@ function timeEditor(date,slot,t,sug){return '<div class="row" style="margin:6px 
 function setTime(date,slot,v){const l=day(date);if(v){l.times=l.times||{};l.times[slot]=v;if(l.meals&&l.meals[slot])l.meals[slot].at=v;}else{if(l.times)delete l.times[slot];if(l.meals&&l.meals[slot])delete l.meals[slot].at;}S.edTime=null;saveDay(date);render();}
 function woLabel(date){if(primaryMode()==='gym')return 'Gym workout';const k=workoutKey(date,'home'),w=workoutFor(k,weekNum(date));
   if(['A','B','C'].includes(k))return 'Strength day: '+String(w.title||'').split(': ').slice(1).join(': ');return ({TREAD:'Cardio-only day',BIKE:'Cardio-only day',OUT:'Outdoor activity day',REC:'Easy recovery day'})[k]||w.title;}
-function woSlot(date,t,sug){const l=S.days[date]||{},r=l[RK(primaryMode())],st=r&&r.status;
-  return '<div class="mcard'+(st==='done'||st==='partial'?' done wglow':st==='skip'?' skip':'')+'"><div class="kicker">'+timeTag('workout',t,sug)+' to '+fmtTime(addMin(t,45))+' &middot; Suggested workout time</div>'+(S.edTime==='workout'?timeEditor(date,'workout',t,sug):'')+'<h3>'+esc(woLabel(date))+(st?' <span class="pill'+(st==='done'?' good':'')+'">'+esc(WST[st]||st)+'</span>':'')+'</h3><div class="src">30 to 45 minutes</div></div>';}
+function woSlot(date,t,sug){const l=S.days[date]||{},st=dispStatus(l,primaryMode());
+  return '<div class="mcard'+(st==='done'||st==='partial'||st==='replaced'?' done wglow':st==='skip'?' skip':'')+'"><div class="kicker">'+timeTag('workout',t,sug)+' to '+fmtTime(addMin(t,45))+' &middot; Suggested workout time</div>'+(S.edTime==='workout'?timeEditor(date,'workout',t,sug):'')+'<h3>'+esc(woLabel(date))+(st?' <span class="pill'+(st==='done'||st==='replaced'?' good':'')+'">'+esc(WST[st]||st)+'</span>':'')+'</h3><div class="src">30 to 45 minutes</div></div>';}
 function canAmt(m){return !!(m&&m.key&&R[m.key]&&R[m.key].cat!=='grab'&&!m.fixed&&m.n>0&&!(m.off&&m.off.includes('main')));}
 /* A different amount replaces only the main dish's amount. Every other item still checked on the card (side, vegetables,
    filler, anything added) is counted at its planned amount and recorded by name in o.with, so the logged meal and the
@@ -1365,7 +1412,10 @@ function tickWo(){if(S.view!=='workout'||!S.ready)return;const e=document.getEle
 setInterval(tickWo,500);
 async function toggleWake(){if(S.wake){try{await S.wake.release();}catch(e){}S.wake=null;S.wakeMsg='';}else{try{if(!('wakeLock' in navigator))throw new Error('unsupported');S.wake=await navigator.wakeLock.request('screen');S.wake.addEventListener('release',()=>{S.wake=null;});S.wakeMsg='';}catch(e){S.wake=null;S.wakeMsg='This browser did not allow keeping the screen on.';}}render();}
 function refreshWoStats(){const w=workoutFor(workoutKey(S.date),weekNum(S.date)),c=setCounts(S.date,w),el=document.getElementById('woProgress');if(el)el.textContent=c.total?c.done+' of '+c.total+' sets done':'';}
-function weekWoTotals(date){const mon=monday(date);let n=0,mins=0,plan=0;for(let i=0;i<7;i++){const d=addD(mon,i),l=S.days[d]||{};if(S.profile.training==='home'&&workoutKey(d)!=='REC')plan++;for(const r of [l.workout,l.gym])if(sessDone(r)){n++;mins+=n0(r.minutes);}for(const x of (l.mylog||[])){n++;mins+=n0(x.f&&x.f.min);}}return {n,mins,plan};}
+function weekWoTotals(date){const mon=monday(date);let n=0,mins=0,plan=0;for(let i=0;i<7;i++){const d=addD(mon,i),l=S.days[d]||{},hr=l.workout;if(S.profile.training==='home'&&workoutKey(d)!=='REC')plan++;
+  if(hr&&(hr.status==='done'||(hr.status==='partial'&&!myLogged(l)))){n++;mins+=n0(hr.minutes);}
+  if(sessDone(l.gym)){n++;mins+=n0(l.gym.minutes);}
+  for(const x of (l.mylog||[])){n++;mins+=n0(x.f&&x.f.min);}}return {n,mins,plan};}
 /* =============== Log my own workout ===============
    A plain log on the Workout page: pick the equipment or exercise, fill in its fields, Add. Entries live on the day as
    days[date].mylog = [{eq, name, f:{field:value}}] and count as a session in the week totals. Built-in equipment is the
@@ -1405,8 +1455,8 @@ function viewWorkout(){
   {const ok2=own?'workout':'gym',o=l[ok2];if(o&&(o.status||o.minutes||o.type)){const t=own?workoutFor(workoutKey(date,'home'),wk).title:(o.type||'Gym workout');h+='<div class="note good" style="margin-bottom:10px"><strong>Also logged today, '+(own?'home plan':'gym')+':</strong> '+esc(t)+(o.status?', '+({done:'completed',partial:'partial',skip:'skipped',rest:'rest day'}[o.status]||o.status):'')+(o.minutes?', '+o.minutes+' min':'')+(o.intensity?', '+esc(o.intensity.toLowerCase()):'')+'. <button class="btn ghost" data-action="womode" data-v="'+(own?'home':'gym')+'">Open it</button></div>';}}
   // week strip
   h+='<div class="wstrip">';const mon=monday(date);
-  for(let i=0;i<7;i++){const d=addD(mon,i),x=S.days[d]||{},ww=workoutFor(workoutKey(d,mode),weekNum(d)),s=x[rk]&&x[rk].status,os=x[RK(own?'home':'gym')]&&x[RK(own?'home':'gym')].status;
-    h+='<button class="wchip'+(d===date?' on':'')+'" data-action="wday2" data-v="'+d+'"><span class="d">'+DAYN[i].slice(0,3)+' '+fmtShort(d)+'</span><strong>'+esc(own?(x.gym&&x.gym.type)||'Gym':ww.title.replace(/^Strength /,'Str ').replace('Treadmill incline walk','Treadmill').replace('Active recovery after meal prep','Recovery').replace('Outdoor session','Outdoors'))+'</strong><span class="pill'+(s==='done'?' good':'')+'">'+(s==='done'?'Done':s==='partial'?'Partial':s==='skip'?'Skipped':s==='rest'?'Rest':'Planned')+'</span>'+(os==='done'||os==='partial'?'<span class="pill good">+ '+(own?'Home':'Gym')+'</span>':'')+'</button>';}
+  for(let i=0;i<7;i++){const d=addD(mon,i),x=S.days[d]||{},ww=workoutFor(workoutKey(d,mode),weekNum(d)),s=dispStatus(x,mode),os=dispStatus(x,own?'home':'gym');
+    h+='<button class="wchip'+(d===date?' on':'')+'" data-action="wday2" data-v="'+d+'"><span class="d">'+DAYN[i].slice(0,3)+' '+fmtShort(d)+'</span><strong>'+esc(own?(x.gym&&x.gym.type)||'Gym':ww.title.replace(/^Strength /,'Str ').replace('Treadmill incline walk','Treadmill').replace('Active recovery after meal prep','Recovery').replace('Outdoor session','Outdoors'))+'</strong><span class="pill'+(s==='done'||s==='replaced'?' good':'')+'">'+(s==='done'?'Done':s==='replaced'?'Replaced':s==='partial'?'Partial':s==='skip'?'Skipped':s==='rest'?'Rest':'Planned')+'</span>'+(os==='done'||os==='partial'||os==='replaced'?'<span class="pill good">+ '+(own?'Home':'Gym')+'</span>':'')+'</button>';}
   h+='</div><div class="src" style="margin:-4px 0 12px">This week: '+tot.n+(tot.plan?' of '+tot.plan:'')+' sessions logged, '+fmtN(tot.mins)+' minutes.</div>';
   // session controls
   const running=wo.start&&!wo.end,strength=w.type==='strength';
@@ -1444,14 +1494,17 @@ function viewWorkout(){
     h+='</div>';
   }
   // finish
-  const cn=setCounts(date,w);
+  const cn=setCounts(date,w),replaced=rk==='workout'&&myLogged(l)&&st!=='done';
   h+='<div class="card" style="margin-top:12px"><h3>Finish</h3><div class="src" id="woProgress" style="margin-bottom:6px">'+(cn.total?cn.done+' of '+cn.total+' sets done':'')+'</div><div class="subhead" style="margin-top:0">How hard was it</div><div class="energy">'+[1,2,3,4,5].map(i=>'<button class="btn'+(wo.effort===i?' on':'')+'" data-action="woeffort" data-v="'+i+'" aria-pressed="'+(wo.effort===i)+'">'+EFFORT[i]+'</button>').join('')+'</div>';
   if(S.profile.kneeCheck){h+='<div class="subhead">Knees</div><div class="energy">'+[['good','Feeling fine'],['sore','A little sore'],['bad','Painful']].map(([k,v])=>'<button class="btn'+(l.knee===k?' on':'')+'" data-action="knee" data-v="'+k+'" aria-pressed="'+(l.knee===k)+'">'+v+'</button>').join('')+'</div>';}
-  h+='<div class="form"><label class="f">Minutes<input type="number" inputmode="numeric" data-w="minutes" value="'+esc((l[rk]&&l[rk].minutes)||'')+'" placeholder="'+(wo.start?Math.max(1,Math.round(woElapsed(date)/60)):'')+'"></label><label class="f" style="grid-column:span 3">Notes<input type="text" data-w="note" value="'+esc((l[rk]&&l[rk].note)||'')+'" placeholder="Example: bench felt easy, knees fine"></label></div>'+
-    '<div class="row" style="margin-top:10px"><button class="btn primary" data-action="finishwo">Finish workout</button>'+[['done','Completed'],['partial','Partial'],['skip','Skipped']].map(([k,v])=>'<button class="btn'+(st===k?' on':'')+'" data-action="wstatus" data-v="'+k+'" aria-pressed="'+(st===k)+'">'+v+'</button>').join('')+'</div>'+(st?'<div class="logged'+(st==='skip'?' skip':'')+'" style="margin-top:10px">Logged as '+({done:'completed',partial:'partial',skip:'skipped',rest:'a rest day'}[st])+(l[rk].minutes?', '+l[rk].minutes+' minutes':'')+'.</div>':'')+'</div>';
+  h+='<div class="form"><label class="f">Minutes<input type="number" inputmode="numeric" data-w="minutes" value="'+esc((l[rk]&&l[rk].minutes)||'')+'" placeholder="'+(wo.start?Math.max(1,Math.round(woElapsed(date)/60)):'')+'"></label><label class="f" style="grid-column:span 3">Notes<input type="text" data-w="note" value="'+esc((l[rk]&&l[rk].note)||'')+'" placeholder="Example: bench felt easy, knees fine"></label></div>';
+  if(replaced)h+='<div class="note good" style="margin-top:10px">You logged your own workout today, so this planned session shows as replaced. Finish workout is not needed.</div>';
+  h+='<div class="row" style="margin-top:10px">'+(replaced?'':'<button class="btn primary" data-action="finishwo">Finish workout</button>')+[['done','Completed'],['partial','Partial'],['skip','Skipped']].map(([k,v])=>'<button class="btn'+(st===k?' on':'')+'" data-action="wstatus" data-v="'+k+'" aria-pressed="'+(st===k)+'">'+v+'</button>').join('')+'</div>'+(replaced?'<div class="logged" style="margin-top:10px">Replaced by your own workout log.</div>':st?'<div class="logged'+(st==='skip'?' skip':'')+'" style="margin-top:10px">Logged as '+({done:'completed',partial:'partial',skip:'skipped',rest:'a rest day'}[st])+(l[rk].minutes?', '+l[rk].minutes+' minutes':'')+'.</div>':'')+'</div>';
   // history
-  const past=Object.keys(S.days).filter(d=>d<date&&((S.days[d].workout&&S.days[d].workout.status)||(S.days[d].gym&&S.days[d].gym.status))).sort().reverse().slice(0,6);
-  if(past.length){h+='<div class="section"><h2>Recent sessions</h2><div class="card">'+past.map(d=>{const x=S.days[d];let gy='';if(x.gym&&x.gym.status)gy='<div class="prep-row"><div><strong>'+esc(x.gym.type||'Gym workout')+' <span class="tag">Gym</span></strong><div class="src">'+DAYN[dow(d)]+', '+fmtShort(d)+'. '+esc(gymLine(x.gym).replace(/^[^:]*: /,''))+'</div></div></div>';if(!(x.workout&&x.workout.status))return gy;const ww=workoutFor(workoutKey(d,'home'),weekNum(d)),c2=setCounts(d,ww),s2=x.workout.status,cd=x.cardio||{};
+  const past=Object.keys(S.days).filter(d=>d<date&&((S.days[d].workout&&S.days[d].workout.status)||(S.days[d].gym&&S.days[d].gym.status)||myLogged(S.days[d]))).sort().reverse().slice(0,6);
+  if(past.length){h+='<div class="section"><h2>Recent sessions</h2><div class="card">'+past.map(d=>{const x=S.days[d];let gy='';if(x.gym&&x.gym.status)gy='<div class="prep-row"><div><strong>'+esc(x.gym.type||'Gym workout')+' <span class="tag">Gym</span></strong><div class="src">'+DAYN[dow(d)]+', '+fmtShort(d)+'. '+esc(gymLine(x.gym).replace(/^[^:]*: /,''))+'</div></div></div>';const s2=homeStatus(x);if(!s2)return gy;const ww=workoutFor(workoutKey(d,'home'),weekNum(d)),cd=x.cardio||{};
+    if(s2==='replaced')return gy+'<div class="prep-row"><div><strong>'+esc(ww.title)+'</strong><div class="src">'+DAYN[dow(d)]+', '+fmtShort(d)+'. Replaced by your own workout log.</div></div></div>';
+    const c2=setCounts(d,ww);
     return gy+'<div class="prep-row"><div><strong>'+esc(ww.title)+'</strong><div class="src">'+DAYN[dow(d)]+', '+fmtShort(d)+'. '+({done:'Completed',partial:'Partial',skip:'Skipped',rest:'Rest day'}[s2]||s2)+(x.workout.minutes?', '+x.workout.minutes+' min':'')+(c2.total?', '+c2.done+' of '+c2.total+' sets':'')+(cd.mph?', '+cd.mph+' mph':'')+(cd.inc?' at '+cd.inc+'%':'')+(cd.dist?', '+cd.dist+' mi':'')+(x.wo&&x.wo.effort?', effort '+EFFORT[x.wo.effort].toLowerCase():'')+'</div></div></div>';}).join('')+'</div></div>';}
   return h;
 }
@@ -1459,8 +1512,8 @@ function viewWorkout(){
 function viewWeek(){
   const mon=monday(S.date);
   let h='<div class="daybar"><div><h2>Week of '+fmtDate(mon)+'</h2><div class="sub">Tap a day to open it</div></div><div class="navbtns"><button class="btn" data-action="wkshift" data-v="-7">Prev week</button><button class="btn" data-action="wkshift" data-v="7">Next week</button></div></div><div class="week">';
-  for(let i=0;i<7;i++){const d=addD(mon,i),pm=plannedMeals(d),w=workoutFor(workoutKey(d),weekNum(d)),l=S.days[d]||{},e=dayEaten(d),ws=(sessDone(l.workout)||sessDone(l.gym))?'done':(l.workout&&l.workout.status)||(l.gym&&l.gym.status),nm=Object.keys(pm).length;
-    h+='<button class="wday'+(d===todayStr()?' today':'')+'" data-action="open" data-v="'+d+'"><div><h3>'+DAYN[i]+'</h3><div class="d">'+fmtShort(d)+'</div></div><div class="m"><strong>'+esc(primaryMode()==='gym'?((l.gym&&l.gym.type)||'Gym'):w.title)+(primaryMode()!=='gym'&&sessDone(l.gym)?' + gym':'')+(primaryMode()==='gym'&&sessDone(l.workout)?' + home session':'')+(i===4&&SC().friSkate?' and skating':'')+'</strong><br>'+['breakfast','lunch','dinner'].filter(s=>pm[s]).map(s=>esc(pm[s].name)).join(', ')+'</div><div style="display:grid;gap:4px;justify-items:end"><span class="pill'+(e.meals>=nm?' good':'')+'">'+e.meals+' of '+nm+' meals</span><span class="pill'+(ws==='done'?' good':'')+'">'+(ws==='done'?'Trained':ws==='partial'?'Partial':ws==='skip'?'Skipped':'Not logged')+'</span></div></button>';}
+  for(let i=0;i<7;i++){const d=addD(mon,i),pm=plannedMeals(d),w=workoutFor(workoutKey(d),weekNum(d)),l=S.days[d]||{},e=dayEaten(d),hs=homeStatus(l),ws=(hs==='done'||hs==='replaced'||sessDone(l.gym))?'done':hs||(l.gym&&l.gym.status),nm=Object.keys(pm).length;
+    h+='<button class="wday'+(d===todayStr()?' today':'')+'" data-action="open" data-v="'+d+'"><div><h3>'+DAYN[i]+'</h3><div class="d">'+fmtShort(d)+'</div></div><div class="m"><strong>'+esc(primaryMode()==='gym'?((l.gym&&l.gym.type)||'Gym'):w.title)+(primaryMode()!=='gym'&&sessDone(l.gym)?' + gym':'')+(primaryMode()==='gym'&&(hs==='done'||hs==='replaced')?' + home session':'')+(i===4&&SC().friSkate?' and skating':'')+'</strong><br>'+['breakfast','lunch','dinner'].filter(s=>pm[s]).map(s=>esc(pm[s].name)).join(', ')+'</div><div style="display:grid;gap:4px;justify-items:end"><span class="pill'+(e.meals>=nm?' good':'')+'">'+e.meals+' of '+nm+' meals</span><span class="pill'+(ws==='done'?' good':'')+'">'+(ws==='done'?'Trained':ws==='partial'?'Partial':ws==='skip'?'Skipped':'Not logged')+'</span></div></button>';}
   return h+'</div>';
 }
 
@@ -4472,7 +4525,7 @@ function viewProgress(){
   if(p.kcalOffset)h+='<button class="btn ghost" data-action="offset" data-v="reset">Reset the adjustment</button>';
   h+='</div></div><div class="section"><h2>Week by week</h2><div class="tbl"><table><thead><tr><th>Week</th><th>Avg weight</th><th>Avg calories</th><th>Avg protein</th><th>Workouts</th><th>Avg steps</th></tr></thead><tbody>';
   for(let w=Math.max(1,cw-11);w<=cw;w++){const st=addD(p.startDate,(w-1)*7);let kc=[],pr=[],wo=0,stp=[],wt=[];
-    for(let i=0;i<7;i++){const d=addD(st,i),x=S.days[d]||{},e=dayEaten(d);if(e.meals>=3){kc.push(e.kcal);pr.push(e.p);}if((sessDone(x.workout)&&workoutKey(d,'home')!=='REC')||sessDone(x.gym))wo++;if(x.steps)stp.push(+x.steps);if(x.weight)wt.push(+x.weight);}
+    for(let i=0;i<7;i++){const d=addD(st,i),x=S.days[d]||{},e=dayEaten(d);if(e.meals>=3){kc.push(e.kcal);pr.push(e.p);}if((homeCounted(x)&&workoutKey(d,'home')!=='REC')||sessDone(x.gym))wo++;if(x.steps)stp.push(+x.steps);if(x.weight)wt.push(+x.weight);}
     h+='<tr><td>Week '+w+' <span class="kicker">'+fmtShort(st)+'</span></td><td>'+(wt.length?avg(wt).toFixed(1):'')+'</td><td>'+(kc.length?fmtN(avg(kc)):'')+'</td><td>'+(pr.length?fmtN(avg(pr))+' g':'')+'</td><td>'+wo+(S.profile.training==='own'?' done':' of 6')+'</td><td>'+(stp.length?fmtN(avg(stp)):'')+'</td></tr>';}
   return h+'</tbody></table></div><p class="hint">Calorie and protein averages include only days with at least 3 meals logged.</p></div>';
 }
@@ -4581,15 +4634,15 @@ function buildReport(n){
     ln('Streaks (days in a row): '+(sk.length?sk.join(', '):'none running')+'.'+(rec.length?' Achievements earned recently: '+rec.join('; ')+'.':''));}catch(e){}
   let sumK=0,nK=0,sumP=0,wDone=0,wPlan=0,stepsHit=0,stepsDays=0;
   for(let d=from;d<=td;d=addD(d,1)){
-    const l=S.days[d]||{},pm=plannedMeals(d),e=dayEaten(d),adj=adjustedTarget(d),wk=workoutFor(workoutKey(d,'home'),weekNum(d)),ws2=l.workout&&l.workout.status;
+    const l=S.days[d]||{},pm=plannedMeals(d),e=dayEaten(d),adj=adjustedTarget(d),wk=workoutFor(workoutKey(d,'home'),weekNum(d)),ws2=homeStatus(l);
     ln('');ln(DAYN[dow(d)]+' '+d+': target '+adj.kcal+' kcal'+(adj.kcal!==adj.base?' (base '+adj.base+')':'')+'. Logged '+e.kcal+' kcal and '+e.p+' g protein ('+e.meals+' of '+Object.keys(pm).length+' meals logged). Difference '+(e.any?(e.kcal-adj.kcal>0?'+':'')+(e.kcal-adj.kcal):'n/a')+'.');
     if(e.meals>=3){sumK+=e.kcal;sumP+=e.p;nK++;}
     for(const s of Object.keys(pm)){const m=l.meals&&l.meals[s],pl=pm[s];
       ln('  '+(SLOT_LABEL[s]||s)+(l.times&&l.times[s]?' at '+fmtTime(l.times[s]):'')+': planned '+pl.name+' ('+pl.kcal+' kcal). '+(!m?'Not logged.':m.status==='skip'?'Skipped.':m.status==='plan'?(m.n&&pl.n&&Math.abs(m.n-pl.n)>1e-6?'Ate '+m.amt+' instead of the planned '+(pl.amt||'')+withText(m.with)+' ('+m.kcal+' kcal, '+m.p+' g protein for the meal).':'Ate as planned'+(m.amt?' ('+m.amt+')':'')+'.')+(pl.off&&pl.off.length&&pl.cparts?' Left out: '+pl.cparts.filter(x=>x.on===false).map(x=>x.label).join(', ')+'.':''):'Ate instead: '+m.name+' ('+m.kcal+' kcal, '+m.p+' g protein).'));}
     for(const x of (l.extras||[]))ln('  Extra: '+x.name+' ('+n0(x.kcal)+' kcal, '+n0(x.p)+' g protein).');
-    if(wk.key!=='REC'){wPlan++;if(ws2==='done'||ws2==='partial')wDone++;}
+    if(wk.key!=='REC'){wPlan++;if(ws2==='done'||ws2==='replaced'||ws2==='partial')wDone++;}
     if(l.gym&&(l.gym.status||l.gym.type))ln('  Gym: '+gymLine(l.gym)+'.');
-    ln('  Workout'+(primaryMode()==='gym'?' (home plan)':'')+(l.times&&l.times.workout?' at '+fmtTime(l.times.workout):'')+': '+wk.title+', planned about '+wk.minutes+' min. '+(ws2?({done:'Completed',partial:'Partial',skip:'Skipped'}[ws2]):'Not logged')+(l.workout&&l.workout.minutes?', '+l.workout.minutes+' min':'')+(l.workout&&l.workout.note?'. Note: '+l.workout.note:'')+(l.workoutOverride?'. Moved from the previous day':'')+'.');
+    ln('  Workout'+(primaryMode()==='gym'?' (home plan)':'')+(l.times&&l.times.workout?' at '+fmtTime(l.times.workout):'')+': '+wk.title+', planned about '+wk.minutes+' min. '+({done:'Completed',replaced:'Replaced by his own workout log',partial:'Partial',skip:'Skipped'}[ws2]||'Not logged')+(l.workout&&l.workout.minutes&&ws2!=='replaced'?', '+l.workout.minutes+' min':'')+(l.workout&&l.workout.note&&ws2!=='replaced'?'. Note: '+l.workout.note:'')+(l.workoutOverride?'. Moved from the previous day':'')+'.');
     if(l.lifts&&Object.keys(l.lifts).length)ln('  Lifts (weight x reps per set): '+Object.entries(l.lifts).map(([k,v])=>k+' '+v).join('; ')+'.');
     if(l.mylog&&l.mylog.length)ln('  Own workout log: '+l.mylog.map(myLogText).join('; ')+'.');
     if(l.cardio&&Object.keys(l.cardio).length){const c=l.cardio;ln('  Cardio detail: '+[c.min?c.min+' min':'',c.mph?c.mph+' mph':'',c.inc?c.inc+' percent incline':'',c.dist?c.dist+' mi':'',c.hr?'avg heart rate '+c.hr:'',c.act||'',c.rounds&&c.rounds.filter(Boolean).length?c.rounds.filter(Boolean).length+' hard rounds':''].filter(Boolean).join(', ')+'.');}
@@ -4937,7 +4990,7 @@ function achSig(){const p=S.profile||{},H=S.house||{};return JSON.stringify([p.t
 function dayStats(d){const c=DAYC[d];if(c)return c;const l=S.days[d],r={weigh:!!(l&&l.weight),ci:ciDone(l),woSched:woScheduled(d),wo:woRecs(l).length,steps:n0(l&&l.steps),sleep:n0(l&&l.sleep),water:n0(l&&l.water),active:activeMin(l)};
   r.stepsOk=r.steps>=stepGoal(d);if(l&&l.meals){const e=dayEaten(d);r.meals=mealsAll(d);r.budget=r.meals&&e.kcal<=adjustedTarget(d).kcal;r.prot=e.any&&e.p>=targetsFor(d).protein;}else{r.meals=false;r.budget=false;r.prot=false;}
   if(d<=todayStr())DAYC[d]=r;return r;}
-const woRecs=l=>[l&&l.workout,l&&l.gym].filter(r=>r&&(r.status==='done'||r.status==='partial'));
+const woRecs=l=>{const out=[],hr=l&&l.workout;if(hr&&hr.status==='done')out.push(hr);else if(myLogged(l))out.push({status:'done',minutes:myLogMinutes(l)});else if(hr&&hr.status==='partial')out.push(hr);const gr=l&&l.gym;if(gr&&(gr.status==='done'||gr.status==='partial'))out.push(gr);return out;};
 function woMin(l){let m=0;for(const r of woRecs(l))m+=n0(r.minutes);if(!m&&l&&l.cardio)m+=n0(l.cardio.min);return m;}
 const activeMin=l=>l?Math.max(n0(l.active),woMin(l)):0;
 const ciDone=l=>!!(l&&l.weight&&l.steps&&l.water&&l.sleep);
@@ -5839,7 +5892,7 @@ function personGate(){applyPinResets();
   });
   pick();
 }
-if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+
 if(window.pvActivePerson)personGate();else boot();
 
 </script>
