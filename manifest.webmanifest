@@ -1,7 +1,7 @@
 {
   "name": "Training Plan",
   "short_name": "Training",
-  "start_url": "./",
+  "start_url": "Training_Plan.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#000000",
